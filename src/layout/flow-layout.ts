@@ -78,9 +78,9 @@ export interface FlowLayout {
 const MARGIN_X = 80;
 const MARGIN_TOP = 30;
 const TITLE_HEIGHT = 55;
-const LAYER_GAP = 160;
+const LAYER_GAP = 120;
 const TB_LAYER_GAP = 100;
-const NODE_GAP = 80;
+const NODE_GAP = 55;
 const ACTOR_W = 50;
 const ACTOR_H = 70;
 const MIN_NODE_W = 100;
@@ -183,7 +183,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   // Step 2: Layer assignment
-  const layers = assignLayers(allNodes, dagAdj, dagInAdj);
+  const layers = assignLayers(allNodes, dagAdj, dagInAdj, direction);
 
   // Step 3: Crossing minimization
   const ordered = minimizeCrossings(layers, dagAdj, dagInAdj);
@@ -215,14 +215,26 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       }
       // Service nodes get taller to span connected neighbors
       if (n.kind === 'service') {
-        h = Math.max(h, 120);
+        // Count distinct neighbors with multi-edge pairs (2+ edges to same neighbor)
+        const pairCounts = new Map<string, number>();
+        for (const e of allEdges) {
+          if (e.from !== n.id && e.to !== n.id) continue;
+          const other = e.from === n.id ? e.to : e.from;
+          pairCounts.set(other, (pairCounts.get(other) || 0) + 1);
+        }
+        const multiPairGroups = [...pairCounts.values()].filter(c => c >= 2).length;
+        if (multiPairGroups >= 2) {
+          h = Math.max(h, multiPairGroups * 80 + (multiPairGroups - 1) * 40);
+        } else {
+          h = Math.max(h, 120);
+        }
       }
       nodeSizes.set(n.id, { w: Math.max(size.w, MIN_NODE_W), h });
     }
   }
 
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, title);
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title);
 
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
@@ -313,25 +325,66 @@ function assignLayers(
   nodes: FlowNode[],
   adj: Map<string, string[]>,
   inAdj: Map<string, string[]>,
+  direction?: FlowDirection,
 ): string[][] {
-  const layerOf = new Map<string, number>();
-  const visiting = new Set<string>();
+  // Compute layers via longest path, ignoring a set of excluded (same-layer) edges
+  function computeLayers(excludeEdges: Set<string>): Map<string, number> {
+    const layerOf = new Map<string, number>();
+    const visiting = new Set<string>();
 
-  function dfs(id: string): number {
-    if (layerOf.has(id)) return layerOf.get(id)!;
-    if (visiting.has(id)) return 0;
-    visiting.add(id);
-    const parents = inAdj.get(id) || [];
-    let maxParent = -1;
-    for (const p of parents) {
-      maxParent = Math.max(maxParent, dfs(p));
+    function dfs(id: string): number {
+      if (layerOf.has(id)) return layerOf.get(id)!;
+      if (visiting.has(id)) return 0;
+      visiting.add(id);
+      const parents = (inAdj.get(id) || [])
+        .filter(p => !excludeEdges.has(`${p}->${id}`));
+      let maxParent = -1;
+      for (const p of parents) maxParent = Math.max(maxParent, dfs(p));
+      layerOf.set(id, maxParent + 1);
+      return maxParent + 1;
     }
-    const layer = maxParent + 1;
-    layerOf.set(id, layer);
-    return layer;
+
+    for (const n of nodes) dfs(n.id);
+    return layerOf;
   }
 
-  for (const n of nodes) dfs(n.id);
+  const sameLayerEdges = new Set<string>();
+
+  // For TB mode, detect same-layer edges iteratively:
+  // An edge A→B is same-layer if B has other parents that already place it at A's layer.
+  if (direction === 'TB') {
+    for (let iter = 0; iter < 10; iter++) {
+      const layerOf = computeLayers(sameLayerEdges);
+      let changed = false;
+
+      for (const n of nodes) {
+        const allParents = inAdj.get(n.id) || [];
+        for (const p of allParents) {
+          const edgeKey = `${p}->${n.id}`;
+          if (sameLayerEdges.has(edgeKey)) continue;
+
+          // Only consider if target has other non-excluded parents
+          const otherParents = allParents
+            .filter(pp => pp !== p && !sameLayerEdges.has(`${pp}->${n.id}`));
+          if (otherParents.length === 0) continue;
+
+          // Without this edge, would the target be at the source's layer or earlier?
+          const layerWithout = Math.max(...otherParents.map(pp => layerOf.get(pp)!)) + 1;
+          const pLayer = layerOf.get(p)!;
+
+          if (layerWithout <= pLayer) {
+            sameLayerEdges.add(edgeKey);
+            changed = true;
+          }
+        }
+      }
+
+      if (!changed) break;
+    }
+  }
+
+  // Final layer computation with all same-layer edges excluded
+  const layerOf = computeLayers(sameLayerEdges);
 
   const maxLayer = Math.max(...Array.from(layerOf.values()), 0);
   const layers: string[][] = [];
@@ -380,10 +433,30 @@ function minimizeCrossings(
 
 // ─── Coordinate assignment ───────────────────────────────
 
+function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
+  // Find the max labeled edge pair count for any node in this layer
+  let maxPairCount = 0;
+  for (const id of layerNodes) {
+    const pairCounts = new Map<string, number>();
+    for (const e of allEdges) {
+      if (e.from !== id && e.to !== id) continue;
+      if (!e.label) continue;
+      const other = e.from === id ? e.to : e.from;
+      pairCounts.set(other, (pairCounts.get(other) || 0) + 1);
+    }
+    for (const count of pairCounts.values()) {
+      maxPairCount = Math.max(maxPairCount, count);
+    }
+  }
+  // Boost gap when nodes have labeled multi-edge pairs (e.g. bidirectional labeled edges)
+  return maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 80 : NODE_GAP;
+}
+
 function assignCoordinates(
   layers: string[][],
   nodeSizes: Map<string, { w: number; h: number }>,
   direction: FlowDirection,
+  allEdges: FlowEdge[],
   title?: string,
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
@@ -394,15 +467,18 @@ function assignCoordinates(
   if (direction === 'LR') {
     const layerWidths: number[] = [];
     const layerHeights: number[] = [];
+    const layerGaps: number[] = [];
 
     for (const layer of layers) {
       let maxW = 0, totalH = 0;
+      const gap = computeLayerGap(layer, allEdges);
+      layerGaps.push(gap);
       for (const id of layer) {
         const sz = nodeSizes.get(id)!;
         maxW = Math.max(maxW, sz.w);
         totalH += sz.h;
       }
-      totalH += (layer.length - 1) * NODE_GAP;
+      totalH += (layer.length - 1) * gap;
       layerWidths.push(maxW);
       layerHeights.push(totalH);
     }
@@ -414,12 +490,13 @@ function assignCoordinates(
       const layer = layers[li];
       const layerW = layerWidths[li];
       const layerH = layerHeights[li];
+      const gap = layerGaps[li];
       let curY = startY + (maxCrossHeight - layerH) / 2;
 
       for (const id of layer) {
         const sz = nodeSizes.get(id)!;
         positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
-        curY += sz.h + NODE_GAP;
+        curY += sz.h + gap;
       }
       curX += layerW + LAYER_GAP;
     }
