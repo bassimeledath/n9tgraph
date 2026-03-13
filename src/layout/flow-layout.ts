@@ -256,7 +256,8 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Adjust diagram bounds to include multi-line annotations
   let finalWidth = positioned.width;
   let finalHeight = positioned.height;
-  const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + 10 : MARGIN_TOP;
+  const titleLinesCount = title ? title.split('\n').length : 0;
+  const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 24 + 10 : MARGIN_TOP;
   let minAnnY = titleAreaBottom;
   let maxAnnY = finalHeight;
 
