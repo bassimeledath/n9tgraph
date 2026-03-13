@@ -1,0 +1,16 @@
+type sequence
+title Streaming shell command output
+
+participant MODEL { fill: dotgrid }
+participant CONTAINER { fill: crosshatch }
+
+MODEL -> CONTAINER: **START COMMAND** | Launch process
+MODEL -> CONTAINER: | Collect output for N seconds
+MODEL <- CONTAINER: **CHUNK #1** | (running or done)
+MODEL -> CONTAINER: **FOLLOW-UP REQUEST** | (same live session)
+MODEL -> CONTAINER: | Apply input (if any)
+MODEL -> CONTAINER: | Collect output for N seconds
+MODEL <- CONTAINER: **CHUNK #2**
+MODEL <- CONTAINER: ... repeat until completed ...
+MODEL <- CONTAINER: **FINAL CHUNK** | (completed)
+MODEL <- CONTAINER: Session cleaned up
