@@ -63,6 +63,7 @@ export interface PositionedCodeBlock {
 export interface FlowLayout {
   width: number;
   height: number;
+  direction: FlowDirection;
   title?: string;
   nodes: PositionedNode[];
   edges: PositionedEdge[];
@@ -77,7 +78,7 @@ export interface FlowLayout {
 const MARGIN_X = 80;
 const MARGIN_TOP = 30;
 const TITLE_HEIGHT = 55;
-const LAYER_GAP = 140;
+const LAYER_GAP = 160;
 const TB_LAYER_GAP = 100;
 const NODE_GAP = 80;
 const ACTOR_W = 50;
@@ -212,8 +213,8 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       if (sublabel) {
         h += 20; // extra space for sublabel
       }
-      // Service nodes with sublabels get taller to span connected neighbors
-      if (n.kind === 'service' && sublabel) {
+      // Service nodes get taller to span connected neighbors
+      if (n.kind === 'service') {
         h = Math.max(h, 120);
       }
       nodeSizes.set(n.id, { w: Math.max(size.w, MIN_NODE_W), h });
@@ -290,6 +291,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   return {
     width: finalWidth,
     height: finalHeight,
+    direction,
     title,
     nodes: posNodes,
     edges: allEdges.map(e => ({

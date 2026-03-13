@@ -2,7 +2,7 @@
 import type { FlowLayout, PositionedNode, PositionedEdge, PositionedAnnotation, PositionedSubgraph, PositionedOverflow, PositionedCodeBlock } from '../layout/flow-layout.js';
 import { colors, fonts, fontSizes, spacing, opacity, stroke } from './theme.js';
 import { rect, cylinder, doubleBorder, actor, annotation } from './shapes.js';
-import { straightEdge, biEdge, edgeLabelMultiline, numberedCircle } from './edges.js';
+import { straightEdge, biEdge, polylineEdge, edgeLabelMultiline, numberedCircle } from './edges.js';
 import type { EdgeOpts } from './edges.js';
 
 function escapeXml(s: string): string {
@@ -141,7 +141,7 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
-function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[]): string {
+function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): string {
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
@@ -172,11 +172,72 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     let fromPt: { x: number; y: number };
     let toPt: { x: number; y: number };
 
+    // TB mode: orthogonal routing for single edges
+    if (direction === 'TB' && siblings.length === 1) {
+      const fc = nodeCenter(fromNode);
+      const tc = nodeCenter(toNode);
+      const isForward = fromNode.y + fromNode.h <= toNode.y + 5;
+      const isBackward = toNode.y + toNode.h <= fromNode.y + 5;
+
+      if (isForward) {
+        // Forward edge: exit bottom center, enter top center
+        fromPt = { x: fc.x, y: fromNode.y + fromNode.h };
+        toPt = { x: tc.x, y: toNode.y };
+        if (Math.abs(fc.x - tc.x) < 10) {
+          parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
+        } else {
+          const midY = (fromPt.y + toPt.y) / 2;
+          parts.push(polylineEdge({
+            from: fromPt, to: toPt,
+            waypoints: [{ x: fc.x, y: midY }, { x: tc.x, y: midY }],
+            dashed: edge.dashed, color: colors.accent,
+          }));
+        }
+        if (edge.label) {
+          const lx = (fc.x + tc.x) / 2;
+          const ly = (fromPt.y + toPt.y) / 2;
+          parts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
+        }
+      } else if (isBackward) {
+        // Route along left side of diagram
+        const minX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
+        const leftX = minX - 30;
+        fromPt = { x: fromNode.x, y: fc.y };
+        toPt = { x: toNode.x, y: tc.y };
+        parts.push(polylineEdge({
+          from: fromPt, to: toPt,
+          waypoints: [{ x: leftX, y: fc.y }, { x: leftX, y: tc.y }],
+          dashed: edge.dashed, color: colors.accent,
+        }));
+        if (edge.label) {
+          parts.push(edgeLabelMultiline(leftX, (fc.y + tc.y) / 2, escapeXml(edge.label), 30));
+        }
+      } else {
+        // Same row: standard routing
+        fromPt = connectionPoint(fromNode, tc.x, tc.y);
+        toPt = connectionPoint(toNode, fc.x, fc.y);
+        const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
+        parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
+        if (edge.label) {
+          parts.push(edgeLabelMultiline((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30));
+        }
+      }
+
+      const step = edge.properties?.step;
+      if (step) {
+        const stepNum = parseInt(step, 10);
+        if (!isNaN(stepNum)) {
+          parts.push(numberedCircle((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, stepNum));
+        }
+      }
+      continue;
+    }
+
     if (siblings.length > 1) {
       // Multi-edge pair: create truly horizontal (or vertical) parallel edges
       // Use wider spread when edges have labels to prevent label overlap
       const hasLabels = siblings.some(s => s.label && s.label.length > 0);
-      const spread = hasLabels ? 65 : 35;
+      const spread = hasLabels ? 80 : 35;
       const shift = (idx - (siblings.length - 1) / 2) * spread;
       const fc = nodeCenter(fromNode);
       const tc = nodeCenter(toNode);
@@ -376,7 +437,7 @@ export function renderFlow(layout: FlowLayout): string {
   }
 
   // Edges behind nodes
-  parts.push(renderEdges(layout.edges, layout.nodes, layout.codeblocks));
+  parts.push(renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction));
 
   // Nodes
   for (const node of layout.nodes) {

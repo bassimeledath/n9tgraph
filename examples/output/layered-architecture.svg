@@ -24,14 +24,14 @@
 <text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">Layered domain architecture with</text><text x="30" y="58" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">explicit cross-cutting boundaries</text>
 <rect x="40" y="215" width="584" height="458" rx="12" fill="transparent" stroke="#ffffff" stroke-width="1.5" opacity="0.5"/><rect x="40" y="215" width="584" height="458" rx="12" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/><text x="58" y="241" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9">Business logic domain</text>
 <line x1="193.5" y1="165" x2="193.5" y2="265" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="238.19230769230768" y1="165" x2="397.8076923076923" y2="265" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="184.07692307692307" y1="321" x2="150.42307692307693" y2="421" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="220.33333333333334" y1="321" x2="316.1666666666667" y2="421" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="458.9230769230769" y1="321" x2="517.5769230769231" y2="421" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="141.80769230769232" y1="477" x2="144.69230769230768" y2="577" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="341.29487179487177" y1="477" x2="335.20512820512823" y2="577" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="531.4871794871794" y1="477" x2="522.5128205128206" y2="577" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="148.37179487179486" y1="577" x2="190.62820512820514" y2="165" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="193.5,165 193.5,215 442.5,215 442.5,265" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="193.5,321 193.5,371 141,371 141,421" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="193.5,321 193.5,371 343,371 343,421" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="442.5,321 442.5,371 534,371 534,421" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="141" y1="477" x2="145.5" y2="577" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="343" y1="477" x2="333.5" y2="577" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="534,477 534,527 520,527 520,577" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="94,605 50,605 50,137 142,137" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <rect x="142" y="109" width="103" height="56" rx="999" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="193.5" y="137" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">UTILS</text>
 <rect x="123" y="265" width="141" height="56" rx="999" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="193.5" y="293" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">PROVIDERS</text>
 <rect x="344" y="265" width="197" height="56" rx="999" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="442.5" y="293" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">APP WIRING + UI</text>
