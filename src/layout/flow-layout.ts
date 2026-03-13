@@ -1,5 +1,5 @@
 // Sugiyama-style layered layout for flow diagrams
-import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock } from '../parser/ast.js';
+import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName } from '../parser/ast.js';
 import { nodeSizeForLabel, measureLineWidth } from './text-measure.js';
 import { fontSizes } from '../render/theme.js';
 
@@ -64,6 +64,7 @@ export interface FlowLayout {
   width: number;
   height: number;
   direction: FlowDirection;
+  theme?: ThemeName;
   title?: string;
   nodes: PositionedNode[];
   edges: PositionedEdge[];
@@ -78,9 +79,9 @@ export interface FlowLayout {
 const MARGIN_X = 80;
 const MARGIN_TOP = 30;
 const TITLE_HEIGHT = 55;
-const LAYER_GAP = 120;
+const LAYER_GAP = 100;
 const TB_LAYER_GAP = 100;
-const NODE_GAP = 55;
+const NODE_GAP = 40;
 const ACTOR_W = 50;
 const ACTOR_H = 70;
 const MIN_NODE_W = 100;
@@ -185,6 +186,59 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 2: Layer assignment
   const layers = assignLayers(allNodes, dagAdj, dagInAdj, direction);
 
+  // Step 2b: Collapse bidirectional leaf pairs to same layer
+  // When A→B and B→A both exist (separate edges, not <-->), and the later node
+  // has no forward children in the DAG, move it to the earlier node's layer.
+  // This enables vertical stacking of mutually-connected nodes (e.g. CODEX ↔ CODEBASE).
+  {
+    const edgeKeySet = new Set<string>();
+    for (const e of allEdges) {
+      const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+      const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+      edgeKeySet.add(`${src}->${tgt}`);
+    }
+
+    for (const e of allEdges) {
+      const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+      const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+      if (!edgeKeySet.has(`${tgt}->${src}`)) continue; // not bidirectional
+
+      // Skip collapsing if any edge in this bidirectional pair has a label —
+      // labeled edges need horizontal space (in LR) to display labels clearly
+      const hasLabeledEdge = allEdges.some(ed => {
+        const s = (ed.arrow === '<--' || ed.arrow === '<-.-') ? ed.to : ed.from;
+        const t = (ed.arrow === '<--' || ed.arrow === '<-.-') ? ed.from : ed.to;
+        return ((s === src && t === tgt) || (s === tgt && t === src)) && !!ed.label;
+      });
+      if (hasLabeledEdge) continue;
+
+      // Find which layers contain src and tgt
+      let srcLayerIdx = -1, tgtLayerIdx = -1;
+      for (let li = 0; li < layers.length; li++) {
+        if (layers[li].includes(src)) srcLayerIdx = li;
+        if (layers[li].includes(tgt)) tgtLayerIdx = li;
+      }
+      if (srcLayerIdx === tgtLayerIdx) continue; // already same layer
+
+      const laterNode = srcLayerIdx > tgtLayerIdx ? src : tgt;
+      const laterLayerIdx = Math.max(srcLayerIdx, tgtLayerIdx);
+      const earlierLayerIdx = Math.min(srcLayerIdx, tgtLayerIdx);
+
+      // Only collapse if the later node is a leaf in the DAG
+      const dagChildren = dagAdj.get(laterNode) || [];
+      if (dagChildren.length > 0) continue;
+
+      // Move later node to earlier layer
+      layers[laterLayerIdx] = layers[laterLayerIdx].filter(id => id !== laterNode);
+      layers[earlierLayerIdx].push(laterNode);
+    }
+
+    // Remove empty layers
+    for (let i = layers.length - 1; i >= 0; i--) {
+      if (layers[i].length === 0) layers.splice(i, 1);
+    }
+  }
+
   // Step 3: Crossing minimization
   const ordered = minimizeCrossings(layers, dagAdj, dagInAdj);
 
@@ -208,8 +262,12 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     } else {
       // Account for sublabel in height
       const sublabel = n.properties.sublabel;
-      const size = nodeSizeForLabel(n.label, fontSizes.nodeLabel, 'mono', 28, 18);
-      let h = Math.max(size.h, 44);
+      // Pills need wider padding and less height for proper capsule shape
+      const isPill = n.properties.shape === 'pill';
+      const padX = isPill ? 34 : 28;
+      const padY = isPill ? 10 : 18;
+      const size = nodeSizeForLabel(n.label, fontSizes.nodeLabel, 'mono', padX, padY);
+      let h = Math.max(size.h, isPill ? 40 : 44);
       if (sublabel) {
         h += 20; // extra space for sublabel
       }
@@ -234,7 +292,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title);
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations);
 
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
@@ -285,6 +343,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const lines = ann.text.split('\n');
     const annBottom = ann.y + lines.length * 18 + 10;
     maxAnnY = Math.max(maxAnnY, annBottom);
+
+    // Extend width for right-side annotations
+    const maxLineLen = Math.max(...lines.map(l => l.length));
+    const annRight = ann.x + maxLineLen * 8 + 20;
+    if (annRight > finalWidth) finalWidth = annRight;
   }
 
   if (minAnnY < titleAreaBottom) {
@@ -304,6 +367,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     width: finalWidth,
     height: finalHeight,
     direction,
+    theme: diagram.theme,
     title,
     nodes: posNodes,
     edges: allEdges.map(e => ({
@@ -408,21 +472,23 @@ function minimizeCrossings(
   for (let sweep = 0; sweep < 4; sweep++) {
     for (let i = 1; i < result.length; i++) {
       const prevOrder = new Map(result[i - 1].map((id, idx) => [id, idx]));
+      const curPos = new Map(result[i].map((id, idx) => [id, idx]));
       result[i].sort((a, b) => {
         const aP = (inAdj.get(a) || []).filter(p => prevOrder.has(p));
         const bP = (inAdj.get(b) || []).filter(p => prevOrder.has(p));
-        const aBar = aP.length ? aP.reduce((s, p) => s + prevOrder.get(p)!, 0) / aP.length : 0;
-        const bBar = bP.length ? bP.reduce((s, p) => s + prevOrder.get(p)!, 0) / bP.length : 0;
+        const aBar = aP.length ? aP.reduce((s, p) => s + prevOrder.get(p)!, 0) / aP.length : curPos.get(a)!;
+        const bBar = bP.length ? bP.reduce((s, p) => s + prevOrder.get(p)!, 0) / bP.length : curPos.get(b)!;
         return aBar - bBar;
       });
     }
     for (let i = result.length - 2; i >= 0; i--) {
       const nextOrder = new Map(result[i + 1].map((id, idx) => [id, idx]));
+      const curPos = new Map(result[i].map((id, idx) => [id, idx]));
       result[i].sort((a, b) => {
         const aC = (adj.get(a) || []).filter(c => nextOrder.has(c));
         const bC = (adj.get(b) || []).filter(c => nextOrder.has(c));
-        const aBar = aC.length ? aC.reduce((s, c) => s + nextOrder.get(c)!, 0) / aC.length : 0;
-        const bBar = bC.length ? bC.reduce((s, c) => s + nextOrder.get(c)!, 0) / bC.length : 0;
+        const aBar = aC.length ? aC.reduce((s, c) => s + nextOrder.get(c)!, 0) / aC.length : curPos.get(a)!;
+        const bBar = bC.length ? bC.reduce((s, c) => s + nextOrder.get(c)!, 0) / bC.length : curPos.get(b)!;
         return aBar - bBar;
       });
     }
@@ -458,6 +524,7 @@ function assignCoordinates(
   direction: FlowDirection,
   allEdges: FlowEdge[],
   title?: string,
+  annotations?: FlowAnnotation[],
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
   const titleLines = title ? title.split('\n').length : 0;
@@ -471,7 +538,28 @@ function assignCoordinates(
 
     for (const layer of layers) {
       let maxW = 0, totalH = 0;
-      const gap = computeLayerGap(layer, allEdges);
+      let gap = computeLayerGap(layer, allEdges);
+
+      // Increase gap when nodes in this layer have annotations between them
+      if (annotations && layer.length > 1) {
+        for (let ni = 0; ni < layer.length - 1; ni++) {
+          let neededGap = 0;
+          for (const ann of annotations) {
+            // Bottom annotation on current node extends into the gap
+            if (ann.near === layer[ni] && (ann.side === 'bottom' || !ann.side)) {
+              const lines = ann.text.split('\n');
+              neededGap += 24 + lines.length * 18 + 10;
+            }
+            // Top annotation on next node extends into the gap from below
+            if (ann.near === layer[ni + 1] && ann.side === 'top') {
+              const lines = ann.text.split('\n');
+              neededGap += (lines.length > 1 ? lines.length * 18 + 20 : 26);
+            }
+          }
+          gap = Math.max(gap, neededGap);
+        }
+      }
+
       layerGaps.push(gap);
       for (const id of layer) {
         const sz = nodeSizes.get(id)!;

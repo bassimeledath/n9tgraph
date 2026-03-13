@@ -22,11 +22,12 @@ function renderSublabel(cx: number, y: number, text: string): string {
   return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
 }
 
-function renderNode(node: PositionedNode): string {
+function renderNode(node: PositionedNode, theme?: string): string {
   const { x, y, w, h, label, kind, properties } = node;
   const fill = fillForPattern(properties.fill);
   const hasSublabel = !!properties.sublabel;
   const labelOffsetY = hasSublabel ? -8 : 0;
+  const formatLabel = (l: string) => theme === 'white' ? l : l.toUpperCase();
 
   if (kind === 'actor') {
     const cx = x + w / 2;
@@ -40,7 +41,7 @@ function renderNode(node: PositionedNode): string {
     const r = Math.min(w, h) / 2;
     let svg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${colors.nodeBorder}" stroke-width="${stroke.node}"/>`;
     if (label) {
-      svg += `<text x="${cx}" y="${cy}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
+      svg += `<text x="${cx}" y="${cy}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
     }
     return svg;
   }
@@ -53,7 +54,7 @@ function renderNode(node: PositionedNode): string {
     let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill });
     // Render label manually to support sublabel offset
     if (label) {
-      svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
+      svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
     }
     if (properties.sublabel) {
       svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
@@ -66,10 +67,11 @@ function renderNode(node: PositionedNode): string {
   }
 
   // component, external, label, default — standard rect (or pill if shape: pill)
-  const rx = properties.shape === 'pill' ? spacing.pillRadius : undefined;
+  // Pill = rectangle with rx = height/2 (fully semicircular ends), NOT an ellipse
+  const rx = properties.shape === 'pill' ? h / 2 : undefined;
   let svg = rect({ x, y, w, h, label: undefined, fill, ...(rx !== undefined ? { rx } : {}) });
   if (label) {
-    svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
+    svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
   }
   if (properties.sublabel) {
     svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
@@ -141,11 +143,12 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
-function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): string {
+function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): { lines: string; labels: string } {
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
   const parts: string[] = [];
+  const labelParts: string[] = [];
 
   // Group edges by node pair
   const pairEdges = new Map<string, PositionedEdge[]>();
@@ -196,21 +199,22 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (edge.label) {
           const lx = (fc.x + tc.x) / 2;
           const ly = (fromPt.y + toPt.y) / 2;
-          parts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
+          labelParts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
         }
       } else if (isBackward) {
-        // Route along left side of diagram
+        // Route along left side of diagram, entering target from below
         const minX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
         const leftX = minX - 30;
         fromPt = { x: fromNode.x, y: fc.y };
-        toPt = { x: toNode.x, y: tc.y };
+        toPt = { x: tc.x, y: toNode.y + toNode.h };
+        const belowTarget = toNode.y + toNode.h + 15;
         parts.push(polylineEdge({
           from: fromPt, to: toPt,
-          waypoints: [{ x: leftX, y: fc.y }, { x: leftX, y: tc.y }],
+          waypoints: [{ x: leftX, y: fc.y }, { x: leftX, y: belowTarget }, { x: tc.x, y: belowTarget }],
           dashed: edge.dashed, color: colors.accent,
         }));
         if (edge.label) {
-          parts.push(edgeLabelMultiline(leftX, (fc.y + tc.y) / 2, escapeXml(edge.label), 30));
+          labelParts.push(edgeLabelMultiline(leftX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30));
         }
       } else {
         // Same row: standard routing
@@ -219,7 +223,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
         parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
         if (edge.label) {
-          parts.push(edgeLabelMultiline((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30));
+          labelParts.push(edgeLabelMultiline((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30));
         }
       }
 
@@ -303,7 +307,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const t = 0.5;
       const lx = fromPt.x + (toPt.x - fromPt.x) * t;
       const ly = fromPt.y + (toPt.y - fromPt.y) * t;
-      parts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
+      labelParts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
     }
 
     // Numbered step circle on edge
@@ -327,7 +331,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  return parts.join('\n');
+  return { lines: parts.join('\n'), labels: labelParts.join('\n') };
 }
 
 function renderSubgraph(sg: PositionedSubgraph): string {
@@ -436,13 +440,17 @@ export function renderFlow(layout: FlowLayout): string {
     parts.push(renderSubgraph(sg));
   }
 
-  // Edges behind nodes
-  parts.push(renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction));
+  // Edge lines behind nodes, labels on top
+  const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction);
+  parts.push(edgeResult.lines);
 
   // Nodes
   for (const node of layout.nodes) {
-    parts.push(renderNode(node));
+    parts.push(renderNode(node, layout.theme));
   }
+
+  // Edge labels on top of nodes so they're never clipped
+  parts.push(edgeResult.labels);
 
   // Code blocks
   for (const cb of layout.codeblocks) {

@@ -5,7 +5,7 @@ direction TB
 
 component Utils {shape: pill}
 
-subgraph "Business logic domain"
+subgraph "Business logic domain" {fill: dotgrid}
   component Providers {shape: pill}
   component "App Wiring + UI" {shape: pill}
   component Service {shape: pill}
