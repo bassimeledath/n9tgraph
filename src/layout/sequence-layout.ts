@@ -182,6 +182,10 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   function layoutFragment(frag: CombinedFragment): void {
     const fragStartY = cursorY - 10;
     cursorY += FRAGMENT_PAD_TOP;
+    // Extra space for condition text header to avoid overlap with first child
+    if (frag.condition) {
+      cursorY += 14;
+    }
 
     layoutElements(frag.children);
 

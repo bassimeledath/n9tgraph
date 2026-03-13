@@ -489,7 +489,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const cappedLineLen = Math.min(maxLineLen, 50);
     const textExtent = cappedLineLen * 7 + 12;
     const isSingleLine = lines.length === 1;
-    const annRight = isSingleLine ? ann.x + textExtent / 2 : ann.x + textExtent;
+    const annRight = ann.x + textExtent;
     if (annRight > finalWidth) {
       finalWidth = annRight;
     }
