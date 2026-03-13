@@ -315,6 +315,20 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
           h = Math.max(h, 65);
         }
       }
+      // Boost height for non-service nodes with labeled multi-edge pairs (skip subgraph children)
+      if (n.kind !== 'service' && n.kind !== 'actor' && n.kind !== 'circle' && !subgraphChildIds.has(n.id)) {
+        const labeledPairCounts = new Map<string, number>();
+        for (const e of allEdges) {
+          if (e.from !== n.id && e.to !== n.id) continue;
+          if (!e.label) continue;
+          const other = e.from === n.id ? e.to : e.from;
+          labeledPairCounts.set(other, (labeledPairCounts.get(other) || 0) + 1);
+        }
+        const multiPairGroups = [...labeledPairCounts.values()].filter(c => c >= 2).length;
+        if (multiPairGroups >= 1) {
+          h = Math.max(h, multiPairGroups * 65 + 8);
+        }
+      }
       nodeSizes.set(n.id, { w: Math.max(size.w, MIN_NODE_W), h });
     }
   }
@@ -683,7 +697,62 @@ function assignCoordinates(
     }
 
     const totalW = curX - LAYER_GAP + MARGIN_X;
-    const totalH = startY + maxCrossHeight + MARGIN_TOP;
+    let totalH = startY + maxCrossHeight + MARGIN_TOP;
+
+    // For LR diagrams with dense layers: if aspect ratio is too wide, stretch vertically
+    const maxLayerSize = Math.max(...layers.map(l => l.length));
+    // Use effective width including title for ratio calculation
+    let effectiveW = totalW;
+    if (title) {
+      const titleW = measureLineWidth(title, fontSizes.title, 'sans') + 140;
+      effectiveW = Math.max(effectiveW, titleW);
+    }
+    const lrRatio = effectiveW / totalH;
+    if (lrRatio > 1.6 && maxLayerSize >= 3) {
+      const targetRatio = 1.4;
+      const scale = lrRatio / targetRatio;
+      for (let li = 0; li < layers.length; li++) {
+        const layer = layers[li];
+        if (layer.length < 2) continue;
+        const ys = layer.map(id => {
+          const p = positions.get(id)!;
+          const s = nodeSizes.get(id)!;
+          return p.y + s.h / 2;
+        });
+        const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+        for (const id of layer) {
+          const pos = positions.get(id)!;
+          const s = nodeSizes.get(id)!;
+          const nodeCenterY = pos.y + s.h / 2;
+          const newCenterY = centerY + (nodeCenterY - centerY) * scale;
+          pos.y = newCenterY - s.h / 2;
+        }
+        // Ensure no node goes above startY after scaling
+        let minNodeY = Infinity;
+        for (const id of layer) {
+          minNodeY = Math.min(minNodeY, positions.get(id)!.y);
+        }
+        if (minNodeY < startY) {
+          const shift = startY - minNodeY;
+          for (const id of layer) {
+            positions.get(id)!.y += shift;
+          }
+        }
+      }
+      let newMaxCrossH = 0;
+      for (const layer of layers) {
+        let minY = Infinity, maxYH = -Infinity;
+        for (const id of layer) {
+          const p = positions.get(id)!;
+          const s = nodeSizes.get(id)!;
+          minY = Math.min(minY, p.y);
+          maxYH = Math.max(maxYH, p.y + s.h);
+        }
+        newMaxCrossH = Math.max(newMaxCrossH, maxYH - minY);
+      }
+      totalH = startY + newMaxCrossH + MARGIN_TOP;
+    }
+
     return { nodePositions: positions, width: totalW, height: totalH };
 
   } else {

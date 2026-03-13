@@ -152,6 +152,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   const parts: string[] = [];
   const labelBgParts: string[] = [];
   const labelParts: string[] = [];
+  // Collect label positions for collision resolution (non-TB edges)
+  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number }[] = [];
 
   // Group edges by node pair
   const pairEdges = new Map<string, PositionedEdge[]>();
@@ -317,7 +319,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
 
     // Edge label with collision avoidance
     if (edge.label) {
-      const t = 0.5;
+      // Stagger label position along edge for multi-edge siblings
+      const t = siblings.length > 1
+        ? 0.3 + (idx / Math.max(1, siblings.length - 1)) * 0.4
+        : 0.5;
       let lx = fromPt.x + (toPt.x - fromPt.x) * t;
       let ly = fromPt.y + (toPt.y - fromPt.y) * t;
 
@@ -349,8 +354,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      // Check label against all node bounding boxes and shift if overlapping
-      for (const [, node] of nodeById) {
+      // Check label against non-endpoint node bounding boxes and shift if overlapping
+      for (const [nodeId, node] of nodeById) {
+        if (nodeId === edge.from || nodeId === edge.to) continue;
         const hOverlap = lx - labelHalfW < node.x + node.w && lx + labelHalfW > node.x;
         const vOverlap = ly - labelHalfH < node.y + node.h && ly + labelHalfH > node.y;
         if (hOverlap && vOverlap) {
@@ -363,7 +369,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         }
       }
 
-      { const p = edgeLabelParts(lx, ly, eLabel, maxChars); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH });
     }
 
     // Numbered step circle on edge
@@ -385,6 +391,33 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         parts.push(numberedCircle(sx + nx * offset, sy + ny * offset, stepNum));
       }
     }
+  }
+
+  // Resolve label-label collisions (multi-pass)
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (let i = 0; i < pendingLabels.length; i++) {
+      for (let j = i + 1; j < pendingLabels.length; j++) {
+        const a = pendingLabels[i], b = pendingLabels[j];
+        const dx = Math.abs(a.x - b.x);
+        const dy = Math.abs(a.y - b.y);
+        if (dx < a.halfW + b.halfW && dy < a.halfH + b.halfH) {
+          const overlapY = (a.halfH + b.halfH) - dy;
+          const shift = overlapY / 2 + 4;
+          if (a.y <= b.y) { a.y -= shift; b.y += shift; }
+          else { a.y += shift; b.y -= shift; }
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+
+  // Generate SVG for collision-resolved labels
+  for (const label of pendingLabels) {
+    const p = edgeLabelParts(label.x, label.y, label.text, label.maxChars);
+    labelBgParts.push(p.bg);
+    labelParts.push(p.fg);
   }
 
   return { lines: parts.join('\n'), labelBgs: labelBgParts.join('\n'), labels: labelParts.join('\n') };
