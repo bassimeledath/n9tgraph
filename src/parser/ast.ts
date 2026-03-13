@@ -106,9 +106,12 @@ export interface CodeBlock {
   properties: Properties;
 }
 
+export type ThemeName = 'default' | 'white';
+
 export interface FlowDiagram {
   type: 'flow';
   title?: string;
+  theme?: ThemeName;
   direction: FlowDirection;
   nodes: FlowNode[];
   edges: FlowEdge[];
@@ -117,9 +120,15 @@ export interface FlowDiagram {
   codeblocks: CodeBlock[];
 }
 
-// ─── Card Diagram (placeholder for future) ───────────────
+// ─── Card Diagram ──────────────────────────────────────────
 
-export interface Card {
+export interface CardNode {
+  id: string;
+  label: string;
+  properties: Properties;
+}
+
+export interface CardCard {
   id: string;
   title: string;
   body?: string;
@@ -127,17 +136,46 @@ export interface Card {
   properties: Properties;
 }
 
-export interface Container {
+export interface CardContainer {
   id: string;
   label: string;
-  cards: Card[];
+  cards: CardCard[];
+  hasOverflow: boolean;
+  properties: Properties;
+}
+
+export interface CardEdgeIn {
+  target: string;
+  side: 'left' | 'right' | 'top' | 'bottom';
+  label?: string;
+  icon?: string;
+  properties: Properties;
+}
+
+export interface CardHangingLabel {
+  target: string;
+  side: 'top' | 'bottom' | 'left' | 'right';
+  label: string;
+  icon?: string;
+  properties: Properties;
+}
+
+export interface CardEdge {
+  from: string;
+  to: string;
+  arrow: string;
+  label?: string;
+  properties: Properties;
 }
 
 export interface CardDiagram {
   type: 'card';
   title?: string;
-  cards: Card[];
-  containers: Container[];
+  nodes: CardNode[];
+  containers: CardContainer[];
+  edges: CardEdge[];
+  edgesIn: CardEdgeIn[];
+  hangingLabels: CardHangingLabel[];
 }
 
 // ─── Union type ──────────────────────────────────────────

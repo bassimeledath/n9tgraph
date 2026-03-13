@@ -21,6 +21,7 @@
 Diagram
   = WS "type" HS+ t:Identifier EOL &{ return t === 'sequence'; } rest:SequenceBody { return rest; }
   / WS "type" HS+ t:Identifier EOL &{ return t === 'flow'; } rest:FlowBody { return rest; }
+  / WS "type" HS+ t:Identifier EOL &{ return t === 'card'; } rest:CardBody { return rest; }
 
 // ═══════════════════════════════════════════════════════════
 // SEQUENCE DIAGRAM
@@ -114,7 +115,7 @@ NoteTargets
 // ═══════════════════════════════════════════════════════════
 
 FlowBody
-  = WS title:TitleLine? WS dir:DirectionLine? stmts:( WS s:FlowStatement { return s; } )* WS {
+  = WS title:TitleLine? WS theme:ThemeLine? WS dir:DirectionLine? stmts:( WS s:FlowStatement { return s; } )* WS {
       const nodes = stmts.filter(s => s._kind === 'node').map(({ _kind, ...rest }) => rest);
       const edges = stmts.filter(s => s._kind === 'edge').map(({ _kind, ...rest }) => rest);
       const annotations = stmts.filter(s => s._kind === 'annotation').map(({ _kind, ...rest }) => rest);
@@ -123,6 +124,7 @@ FlowBody
       return {
         type: 'flow',
         title: title || undefined,
+        theme: theme || undefined,
         direction: dir || 'LR',
         nodes: nodes,
         edges: edges,
@@ -131,6 +133,9 @@ FlowBody
         codeblocks: codeblocks,
       };
     }
+
+ThemeLine
+  = "theme" HS+ t:$("white" / "default") EOL { return t; }
 
 DirectionLine
   = "direction" HS+ d:$("LR" / "TB" / "RL" / "BT") EOL { return d; }
@@ -269,11 +274,152 @@ AnnotationPropPair
   = HS* key:("near" / "side") HS+ value:Identifier HS* { return [key, value]; }
 
 // ═══════════════════════════════════════════════════════════
+// CARD DIAGRAM
+// ═══════════════════════════════════════════════════════════
+
+CardBody
+  = WS title:TitleLine? stmts:( WS s:CardStatement { return s; } )* WS {
+      return {
+        type: 'card',
+        title: title || undefined,
+        nodes: stmts.filter(s => s._kind === 'card_node').map(({ _kind, ...rest }) => rest),
+        containers: stmts.filter(s => s._kind === 'card_container').map(({ _kind, ...rest }) => rest),
+        edges: stmts.filter(s => s._kind === 'card_edge').map(({ _kind, ...rest }) => rest),
+        edgesIn: stmts.filter(s => s._kind === 'card_edge_in').map(({ _kind, ...rest }) => rest),
+        hangingLabels: stmts.filter(s => s._kind === 'card_hanging').map(({ _kind, ...rest }) => rest),
+      };
+    }
+
+CardStatement
+  = CardContainerStmt / CardEdgeInStmt / CardHangingStmt / CardNodeStmt / CardEdgeStmt
+
+// ─── Card Node ─────────────────────────────────────────────
+
+CardNodeStmt
+  = "node" HS+ label:FlowNodeLabel HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_node',
+        id: makeId(label),
+        label: label,
+        properties: props || {},
+      };
+    }
+
+// ─── Card Container ────────────────────────────────────────
+
+CardContainerStmt
+  = "container" HS+ label:FlowNodeLabel HS* props:PropertiesBlock? EOL
+    children:( WS s:CardContainerChild { return s; } )*
+    WS "end" EOL {
+      const cards = children.filter(s => s._kind === 'card_card').map(({ _kind, ...rest }) => rest);
+      const hasOverflow = children.some(s => s._kind === 'card_overflow');
+      return {
+        _kind: 'card_container',
+        id: makeId(label),
+        label: label,
+        cards: cards,
+        hasOverflow: hasOverflow,
+        properties: props || {},
+      };
+    }
+
+CardContainerChild
+  = CardOverflowStmt / CardCardStmt
+
+CardCardStmt
+  = "card" HS+ title:QuotedString HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_card',
+        id: makeId(title),
+        title: title,
+        body: (props && props.body) || undefined,
+        icon: (props && props.icon) || undefined,
+        properties: props || {},
+      };
+    }
+
+CardOverflowStmt
+  = "overflow" EOL {
+      return { _kind: 'card_overflow' };
+    }
+
+// ─── Card Edge In ──────────────────────────────────────────
+
+CardEdgeInStmt
+  = "edge_in" HS+ target:Identifier HS+ side:CardSide HS* ":" HS* label:EdgeText HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_edge_in',
+        target: target,
+        side: side,
+        label: label,
+        icon: (props && props.icon) || undefined,
+        properties: props || {},
+      };
+    }
+  / "edge_in" HS+ target:Identifier HS+ side:CardSide HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_edge_in',
+        target: target,
+        side: side,
+        label: undefined,
+        icon: undefined,
+        properties: props || {},
+      };
+    }
+
+// ─── Card Hanging Label ────────────────────────────────────
+
+CardHangingStmt
+  = "hanging" HS+ target:Identifier HS+ side:CardSide HS* ":" HS* label:EdgeText HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_hanging',
+        target: target,
+        side: side,
+        label: label,
+        icon: (props && props.icon) || undefined,
+        properties: props || {},
+      };
+    }
+
+// ─── Card Edge ─────────────────────────────────────────────
+
+CardEdgeStmt
+  = from:Identifier HS+ arrow:FlowArrow HS+ to:Identifier HS* ":" HS* label:EdgeText HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_edge',
+        from: from,
+        to: to,
+        arrow: arrow,
+        label: label,
+        properties: props || {},
+      };
+    }
+  / from:Identifier HS+ arrow:FlowArrow HS+ to:Identifier HS* props:PropertiesBlock? EOL {
+      return {
+        _kind: 'card_edge',
+        from: from,
+        to: to,
+        arrow: arrow,
+        label: undefined,
+        properties: props || {},
+      };
+    }
+
+// ─── Card Side ─────────────────────────────────────────────
+
+CardSide
+  = "left"   { return 'left'; }
+  / "right"  { return 'right'; }
+  / "top"    { return 'top'; }
+  / "bottom" { return 'bottom'; }
+
+// ═══════════════════════════════════════════════════════════
 // SHARED PRIMITIVES
 // ═══════════════════════════════════════════════════════════
 
 TitleLine
-  = "title" HS+ text:RestOfLine EOL { return text; }
+  = "title" HS+ text:QuotedString HS* EOL { return text; }
+  / "title" HS+ text:RestOfLine EOL { return text; }
 
 PropertiesBlock
   = "{" HS* pairs:PropertyPair* HS* "}" {

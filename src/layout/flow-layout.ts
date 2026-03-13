@@ -378,7 +378,8 @@ function assignCoordinates(
   title?: string,
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
-  const titleOffset = title ? TITLE_HEIGHT : 0;
+  const titleLines = title ? title.split('\n').length : 0;
+  const titleOffset = title ? TITLE_HEIGHT + Math.max(0, titleLines - 1) * 24 : 0;
   const startY = MARGIN_TOP + titleOffset;
 
   if (direction === 'LR') {

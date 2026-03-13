@@ -65,8 +65,9 @@ function renderNode(node: PositionedNode): string {
     return cylinder({ x, y, w, h, label, fill });
   }
 
-  // component, external, label, default — standard rect
-  let svg = rect({ x, y, w, h, label: undefined, fill });
+  // component, external, label, default — standard rect (or pill if shape: pill)
+  const rx = properties.shape === 'pill' ? spacing.pillRadius : undefined;
+  let svg = rect({ x, y, w, h, label: undefined, fill, ...(rx !== undefined ? { rx } : {}) });
   if (label) {
     svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
   }
@@ -348,7 +349,16 @@ function renderAnnotation(ann: PositionedAnnotation): string {
 }
 
 function renderTitle(title: string): string {
-  return `<text x="30" y="34" font-family="${fonts.sans}" font-size="${fontSizes.title}" fill="${colors.white}" font-weight="700">${escapeXml(title)}</text>`;
+  const lines = title.split('\n');
+  if (lines.length === 1) {
+    return `<text x="30" y="34" font-family="${fonts.sans}" font-size="${fontSizes.title}" fill="${colors.white}" font-weight="700">${escapeXml(title)}</text>`;
+  }
+  let svg = '';
+  const lineH = fontSizes.title + 6;
+  for (let i = 0; i < lines.length; i++) {
+    svg += `<text x="30" y="${34 + i * lineH}" font-family="${fonts.sans}" font-size="${fontSizes.title}" fill="${colors.white}" font-weight="700">${escapeXml(lines[i])}</text>`;
+  }
+  return svg;
 }
 
 export function renderFlow(layout: FlowLayout): string {
