@@ -76,19 +76,19 @@ export interface FlowLayout {
 
 // ─── Constants ───────────────────────────────────────────
 
-const MARGIN_X = 45;
-const MARGIN_TOP = 22;
-const TITLE_HEIGHT = 45;
-const LAYER_GAP = 60;
-const TB_LAYER_GAP = 55;
-const NODE_GAP = 22;
-const ACTOR_W = 50;
-const ACTOR_H = 70;
-const MIN_NODE_W = 90;
-const CIRCLE_R = 34;
-const SUBGRAPH_PAD_X = 22;
-const SUBGRAPH_PAD_TOP = 32;
-const SUBGRAPH_PAD_BOTTOM = 22;
+const MARGIN_X = 35;
+const MARGIN_TOP = 18;
+const TITLE_HEIGHT = 40;
+const LAYER_GAP = 42;
+const TB_LAYER_GAP = 38;
+const NODE_GAP = 16;
+const ACTOR_W = 42;
+const ACTOR_H = 58;
+const MIN_NODE_W = 72;
+const CIRCLE_R = 26;
+const SUBGRAPH_PAD_X = 16;
+const SUBGRAPH_PAD_TOP = 24;
+const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
 
