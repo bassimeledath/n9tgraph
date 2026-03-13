@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 946 540" width="946" height="540">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">HTTP request processing pipeline: 12-stage middleware chain</text>
+<line x1="210" y1="79" x2="279.5" y2="79" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="452.5" y1="79" x2="535" y2="79" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="680" y1="98.94172494172494" x2="749.5" y2="118.05827505827506" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="809.7966101694915" y1="158" x2="816.2033898305085" y2="147.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="722" y1="171.8664259927798" x2="613.5" y2="177.64395306859205" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="440.5" y1="185.0418490153173" x2="371" y2="187.28501094091905" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="233.73429710867396" y1="209.625" x2="160.26570289132604" y2="232.3125" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="107.62362911266202" y1="272.3125" x2="102.37637088733798" y2="263.65625" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="201" y1="289.81814630681816" x2="257.5" y2="293.84296875" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="411.5" y1="301.968681619256" x2="481" y2="304.3520411652079" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="645" y1="327.80115625" x2="733.5314459551747" y2="350.08203125" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="708" y1="376.6686580882353" x2="379" y2="397.30675551470586" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="244" y1="401.541015625" x2="220" y2="401.541015625" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="216" y="68.5" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="458.5" y="68.5" width="70.5" height="21" rx="4" fill="#000000"/>
+<rect x="686" y="98" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="771.25" y="142.25" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="642.25" y="164.25518953068593" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="357.5" y="175.6634299781182" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="168.25" y="210.46875" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="79.5" y="257.484375" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="207" y="281.3305575284091" width="44.5" height="21" rx="4" fill="#000000"/>
+<rect x="417.5" y="239.1640625" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="663.7657229775873" y="328.44159375000004" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="524.5" y="376.4877068014706" width="38" height="21" rx="4" fill="#000000"/>
+<rect x="203.25" y="391.041015625" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="28" y="59" width="182" height="40" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><rect x="47" y="67.9" width="144" height="22.2" fill="#000000" rx="2"/><text x="119" y="79" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INCOMING REQUEST</text>
+<rect x="279.5" y="59" width="173" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="298" y="67.9" width="136" height="22.2" fill="#000000" rx="2"/><text x="366" y="79" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">TLS TERMINATION</text>
+<rect x="535" y="59" width="145" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="551.5" y="67.9" width="112" height="22.2" fill="#000000" rx="2"/><text x="607.5" y="79" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">IP ALLOWLIST</text>
+<rect x="749.5" y="118" width="145" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="766" y="126.9" width="112" height="22.2" fill="#000000" rx="2"/><text x="822" y="138" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RATE LIMITER</text>
+<rect x="722" y="147.5" width="164" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="740" y="156.4" width="128" height="22.2" fill="#000000" rx="2"/><text x="804" y="167.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">REQUEST LOGGER</text>
+<rect x="440.5" y="162.25" width="173" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="459" y="171.15" width="136" height="22.2" fill="#000000" rx="2"/><text x="527" y="182.25" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">AUTH MIDDLEWARE</text>
+<rect x="226" y="169.625" width="145" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="242.5" y="178.525" width="112" height="22.2" fill="#000000" rx="2"/><text x="298.5" y="189.625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CORS HANDLER</text>
+<rect x="28" y="232.3125" width="135" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="43.5" y="241.2125" width="104" height="22.2" fill="#000000" rx="2"/><text x="95.5" y="252.3125" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">BODY PARSER</text>
+<rect x="28" y="263.65625" width="173" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="46.5" y="272.55625" width="136" height="22.2" fill="#000000" rx="2"/><text x="114.5" y="283.65625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INPUT VALIDATOR</text>
+<rect x="257.5" y="279.328125" width="154" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="274.5" y="288.228125" width="120" height="22.2" fill="#000000" rx="2"/><text x="334.5" y="299.328125" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ROUTE MATCHER</text>
+<rect x="481" y="278.1640625" width="164" height="58" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><rect x="499" y="288.0640625" width="128" height="22.2" fill="#000000" rx="2"/><text x="563" y="299.1640625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">BUSINESS LOGIC</text><rect x="534.25" y="310.6640625" width="57.5" height="17" fill="#000000" rx="2"/><text x="563" y="319.1640625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Handler</text>
+<rect x="708" y="350.08203125" width="210" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="729" y="358.98203125" width="168" height="22.2" fill="#000000" rx="2"/><text x="813" y="370.08203125" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RESPONSE SERIALIZER</text>
+<rect x="244" y="381.541015625" width="135" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="259.5" y="390.441015625" width="104" height="22.2" fill="#000000" rx="2"/><text x="311.5" y="401.541015625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">COMPRESSION</text>
+<rect x="28" y="381.541015625" width="192" height="40" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><rect x="48" y="390.441015625" width="152" height="22.2" fill="#000000" rx="2"/><text x="124" y="401.541015625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">OUTGOING RESPONSE</text>
+<text x="244.75" y="82.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Raw TCP</text>
+<text x="493.75" y="82.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Decrypted</text>
+<text x="714.75" y="112" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Allowed</text>
+<text x="813" y="156.25" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Under limit</text>
+<text x="667.75" y="178.25518953068593" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Logged</text>
+<text x="405.75" y="189.6634299781182" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Authenticated</text>
+<text x="197" y="224.46875" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">CORS OK</text>
+<text x="105" y="271.484375" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Parsed</text>
+<text x="229.25" y="295.3305575284091" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Valid</text>
+<text x="446.25" y="253.1640625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Matched</text>
+<text x="689.2657229775873" y="342.44159375000004" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Result</text>
+<text x="543.5" y="390.4877068014706" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">JSON</text>
+<text x="232" y="405.041015625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Gzipped</text>
+</g>
+</svg>

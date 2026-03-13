@@ -4,6 +4,9 @@ import { colors, fonts, fontSizes, spacing, opacity, stroke } from './theme.js';
 import { rect, cylinder, doubleBorder, actor, annotation } from './shapes.js';
 import { straightEdge, biEdge, polylineEdge, edgeLabelMultiline, edgeLabelParts, numberedCircle } from './edges.js';
 import type { EdgeOpts } from './edges.js';
+import { wrapLabel } from '../layout/text-measure.js';
+
+const MAX_NODE_LABEL_CHARS = 28;
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -19,7 +22,45 @@ function fillForPattern(fill?: string): string {
 }
 
 function renderSublabel(cx: number, y: number, text: string): string {
-  return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
+  // Wrap sublabel if too long
+  const MAX_SUBLABEL_CHARS = 34;
+  const lines = wrapLabel(text, MAX_SUBLABEL_CHARS);
+  if (lines.length === 1) {
+    return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
+  }
+  const lineH = fontSizes.edgeLabel * 1.4;
+  let svg = '';
+  for (let i = 0; i < lines.length; i++) {
+    svg += `<text x="${cx}" y="${y + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(lines[i])}</text>`;
+  }
+  return svg;
+}
+
+/** Render a (possibly multi-line wrapped) label inside a node */
+function renderWrappedLabel(cx: number, cy: number, label: string, formatLabel: (l: string) => string, offsetY: number): string {
+  const lines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+  if (lines.length === 1) {
+    return `<text x="${cx}" y="${cy + offsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+  }
+  const lineH = fontSizes.nodeLabel * 1.4;
+  const totalH = lines.length * lineH;
+  const startY = cy + offsetY - totalH / 2 + lineH / 2;
+  let svg = '';
+  for (let i = 0; i < lines.length; i++) {
+    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(lines[i]))}</text>`;
+  }
+  return svg;
+}
+
+/** Compute text background rect for wrapped labels */
+function wrappedLabelBg(cx: number, cy: number, label: string, formatLabel: (l: string) => string, offsetY: number): string {
+  const lines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+  const formatted = lines.map(l => formatLabel(l));
+  const maxLen = Math.max(...formatted.map(l => l.length));
+  const textW = maxLen * 8 + 16;
+  const lineH = fontSizes.nodeLabel * 1.4;
+  const textH = lines.length * lineH + 4;
+  return `<rect x="${cx - textW / 2}" y="${cy + offsetY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
 }
 
 function renderNode(node: PositionedNode, theme?: string): string {
@@ -54,9 +95,8 @@ function renderNode(node: PositionedNode, theme?: string): string {
   if (useDoubleBorder) {
     const dbFill = kind === 'service' && !properties.fill ? 'url(#hero)' : fill;
     let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill });
-    // Render label manually to support sublabel offset
     if (label) {
-      svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+      svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
     }
     if (properties.sublabel) {
       svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
@@ -74,13 +114,10 @@ function renderNode(node: PositionedNode, theme?: string): string {
   let svg = rect({ x, y, w, h, label: undefined, fill, ...(rx !== undefined ? { rx } : {}) });
   const hasPatternFill = rawFill.startsWith('url(');
   if (label) {
-    // Add solid background behind text for pattern-filled nodes to ensure readability
     if (hasPatternFill) {
-      const textW = formatLabel(label).length * 8 + 16;
-      const textH = fontSizes.nodeLabel + 6;
-      svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + h / 2 + labelOffsetY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
+      svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
     }
-    svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+    svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
   }
   if (properties.sublabel) {
     if (hasPatternFill) {
@@ -224,7 +261,15 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         }
         if (edge.label) {
           const lx = (fc.x + tc.x) / 2;
-          const ly = (fromPt.y + toPt.y) / 2;
+          let ly = (fromPt.y + toPt.y) / 2;
+          // Avoid subgraph label areas for edge labels
+          if (subgraphs) {
+            for (const sg of subgraphs) {
+              if (ly >= sg.y - 2 && ly <= sg.y + 40) {
+                ly = sg.y + 44;
+              }
+            }
+          }
           { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       } else if (isBackward) {
@@ -469,17 +514,41 @@ function renderSubgraphBg(sg: PositionedSubgraph): string {
   return svg;
 }
 
-function renderSubgraphLabel(sg: PositionedSubgraph): string {
+function renderSubgraphLabel(sg: PositionedSubgraph, allSubgraphs?: PositionedSubgraph[]): string {
   const { x, y, w, label } = sg;
   if (!label) return '';
 
   let svg = '';
-  // Background halo behind label so edge lines don't cross through text
   const textW = label.length * 7.5 + 20;
   const textH = fontSizes.subtitle + 10;
-  svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
-  // Title — mixed case, centered top inside
-  svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
+
+  // Check if centering would overlap with another subgraph label
+  let useLeftAlign = false;
+  if (allSubgraphs) {
+    const myCenterX = x + w / 2;
+    for (const other of allSubgraphs) {
+      if (other === sg || !other.label) continue;
+      // Check if other subgraph label area overlaps at the same y
+      if (Math.abs(other.y - y) < 50) {
+        const otherCenterX = other.x + other.w / 2;
+        const otherTextW = other.label.length * 7.5 + 20;
+        if (Math.abs(myCenterX - otherCenterX) < (textW + otherTextW) / 2 + 8) {
+          useLeftAlign = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (useLeftAlign) {
+    // Left-align to avoid collision with neighboring subgraph labels
+    svg += `<rect x="${x + 8}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
+    svg += `<text x="${x + 18}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="start">${escapeXml(label)}</text>`;
+  } else {
+    // Default: centered
+    svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
+    svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
+  }
 
   return svg;
 }
@@ -578,7 +647,7 @@ export function renderFlow(layout: FlowLayout): string {
 
   // Subgraph labels (on top of edges, with background halos)
   for (const sg of layout.subgraphs) {
-    parts.push(renderSubgraphLabel(sg));
+    parts.push(renderSubgraphLabel(sg, layout.subgraphs));
   }
 
   // Nodes

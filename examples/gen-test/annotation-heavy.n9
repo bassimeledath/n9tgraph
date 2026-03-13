@@ -1,0 +1,31 @@
+type flow
+title "Zero-trust network architecture with security annotations"
+direction LR
+
+actor "External Client"
+component "WAF" {fill: hero, sublabel: "Web Application Firewall"}
+component "Reverse Proxy" {fill: dotgrid}
+component "Auth Gateway" {fill: dotgrid, sublabel: "mTLS + JWT"}
+component "API Service" {fill: dotgrid}
+component "Internal Service" {fill: dotgrid}
+datastore "Secrets Vault" {fill: crosshatch}
+component "SIEM Collector" {fill: crosshatch}
+
+EXTERNAL_CLIENT --> WAF : HTTPS
+WAF --> REVERSE_PROXY : Filtered traffic
+REVERSE_PROXY --> AUTH_GATEWAY : Forwarded
+AUTH_GATEWAY --> API_SERVICE : Authenticated
+API_SERVICE --> INTERNAL_SERVICE : mTLS
+AUTH_GATEWAY --> SECRETS_VAULT : Fetch signing keys
+API_SERVICE --> SIEM_COLLECTOR : Audit events
+INTERNAL_SERVICE --> SIEM_COLLECTOR : Audit events
+
+annotation "OWASP Top 10 rule set\nDDoS mitigation layer\nGeo-blocking enabled" near WAF side top
+annotation "TLS 1.3 only\nHTTP/2 multiplexing\nNo TLS termination" near REVERSE_PROXY side top
+annotation "Token lifetime: 15 min\nRefresh rotation enabled\nDevice binding enforced" near AUTH_GATEWAY side bottom
+annotation "All requests require\nvalid service mesh identity\nNo ambient authority" near API_SERVICE side top
+annotation "Network segmented\nEgress restricted\nNo direct internet access" near INTERNAL_SERVICE side bottom
+annotation "HashiCorp Vault\nAuto-rotation every 24h\nSeal/unseal via Shamir" near SECRETS_VAULT side bottom
+annotation "Real-time correlation\nAnomaly detection ML model\n30-day retention policy" near SIEM_COLLECTOR side top
+annotation "Zero-trust principle:\nNever trust, always verify\nLeast privilege access" near EXTERNAL_CLIENT side top
+annotation "All inter-service calls\nlogged with trace ID\nand correlation ID" near API_SERVICE side bottom

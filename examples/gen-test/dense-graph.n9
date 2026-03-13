@@ -1,0 +1,46 @@
+type flow
+title "E-commerce microservices data pipeline\nwith event sourcing and CQRS"
+direction LR
+
+actor Client
+service "API Gateway" {fill: hero, sublabel: "Rate limiting + auth"}
+component "Auth Service" {fill: dotgrid}
+component "User Service" {fill: dotgrid}
+component "Product Catalog" {fill: dotgrid}
+component "Inventory Service" {fill: dotgrid}
+component "Order Service" {fill: dotgrid}
+component "Payment Service" {fill: dotgrid}
+component "Notification Service" {fill: dotgrid}
+component "Shipping Service" {fill: dotgrid}
+component "Analytics Service" {fill: dotgrid}
+datastore "User DB" {fill: crosshatch}
+datastore "Product DB" {fill: crosshatch}
+datastore "Order DB" {fill: crosshatch}
+datastore "Event Store" {fill: crosshatch}
+component "Message Broker" {fill: hero, sublabel: "Kafka"}
+component "Search Index" {fill: crosshatch}
+component "Cache Layer" {fill: dotgrid, sublabel: "Redis"}
+
+CLIENT --> API_GATEWAY : HTTPS requests
+API_GATEWAY --> AUTH_SERVICE : Validate JWT
+API_GATEWAY --> USER_SERVICE : User CRUD
+API_GATEWAY --> PRODUCT_CATALOG : Browse products
+API_GATEWAY --> ORDER_SERVICE : Place order
+AUTH_SERVICE --> USER_DB : Lookup credentials
+USER_SERVICE --> USER_DB : Read/write users
+PRODUCT_CATALOG --> PRODUCT_DB : Query products
+PRODUCT_CATALOG --> SEARCH_INDEX : Full-text search
+PRODUCT_CATALOG --> CACHE_LAYER : Cached reads
+INVENTORY_SERVICE --> PRODUCT_DB : Stock levels
+ORDER_SERVICE --> ORDER_DB : Persist orders
+ORDER_SERVICE --> PAYMENT_SERVICE : Charge card
+ORDER_SERVICE --> INVENTORY_SERVICE : Reserve stock
+ORDER_SERVICE --> MESSAGE_BROKER : OrderPlaced event
+PAYMENT_SERVICE --> MESSAGE_BROKER : PaymentProcessed event
+MESSAGE_BROKER --> NOTIFICATION_SERVICE : Send confirmation
+MESSAGE_BROKER --> SHIPPING_SERVICE : Initiate fulfillment
+MESSAGE_BROKER --> ANALYTICS_SERVICE : Track metrics
+MESSAGE_BROKER --> EVENT_STORE : Append events
+ANALYTICS_SERVICE --> SEARCH_INDEX : Update rankings
+SHIPPING_SERVICE --> ORDER_DB : Update status
+NOTIFICATION_SERVICE --> USER_SERVICE : Lookup contact info

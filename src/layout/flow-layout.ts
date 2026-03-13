@@ -1,6 +1,6 @@
 // Sugiyama-style layered layout for flow diagrams
 import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName } from '../parser/ast.js';
-import { nodeSizeForLabel, measureLineWidth } from './text-measure.js';
+import { nodeSizeForLabel, measureLineWidth, wrapLabel } from './text-measure.js';
 import { fontSizes } from '../render/theme.js';
 
 // ─── Layout output types ─────────────────────────────────
@@ -91,6 +91,9 @@ const SUBGRAPH_PAD_TOP = 36;
 const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
+const MAX_NODE_LABEL_CHARS = 28;  // Wrap labels longer than this
+const MAX_ASPECT_RATIO = 3.0;     // Fold chains when ratio exceeds this
+const MAX_NODES_PER_COL = 6;      // Grid fan-out threshold
 
 // ─── Main entry ──────────────────────────────────────────
 
@@ -297,12 +300,21 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       const isPill = n.properties.shape === 'pill';
       const padX = isPill ? 22 : 16;
       const padY = isPill ? 6 : 10;
-      const size = nodeSizeForLabel(n.label, fontSizes.nodeLabel, 'mono', padX, padY);
+      // Wrap long labels into multiple lines for compact node sizing
+      const wrappedLines = wrapLabel(n.label, MAX_NODE_LABEL_CHARS);
+      const maxLine = wrappedLines.reduce((a, b) => a.length > b.length ? a : b, '');
+      const size = nodeSizeForLabel(maxLine, fontSizes.nodeLabel, 'mono', padX, padY);
+      if (wrappedLines.length > 1) {
+        const lineH = fontSizes.nodeLabel * 1.4;
+        size.h = Math.ceil(wrappedLines.length * lineH + padY * 2);
+      }
       let h = Math.max(size.h, isPill ? 34 : 36);
       if (sublabel) {
-        h += 18; // extra space for sublabel
-        // Widen node to contain sublabel text
-        const sublabelW = measureLineWidth(sublabel, fontSizes.edgeLabel, 'mono') + padX * 2;
+        // Wrap sublabel too to prevent nodes from becoming excessively wide
+        const sublabelWrapped = wrapLabel(sublabel, MAX_NODE_LABEL_CHARS + 6);
+        const maxSubLine = sublabelWrapped.reduce((a, b) => a.length > b.length ? a : b, '');
+        h += 18 * sublabelWrapped.length; // extra space for sublabel lines
+        const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + padX * 2;
         if (sublabelW > size.w) {
           size.w = sublabelW;
         }
@@ -367,8 +379,15 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 8: Position annotations
   const posAnnotations = positionAnnotations(annotations, positioned.nodePositions, nodeSizes, subgraphChildIds);
 
-  // Step 8b: Resolve annotation overlaps (collision avoidance)
-  resolveAnnotationOverlaps(posAnnotations, posSubgraphs);
+  // Step 8b: Build positioned nodes early for collision check
+  const posNodesForCollision = allNodes.filter(n => !codeblockIds.has(n.id)).map(n => {
+    const pos = positioned.nodePositions.get(n.id)!;
+    const sz = nodeSizes.get(n.id)!;
+    return { id: n.id, x: pos.x, y: pos.y, w: sz.w, h: sz.h };
+  });
+
+  // Step 8c: Resolve annotation overlaps (collision avoidance)
+  resolveAnnotationOverlaps(posAnnotations, posSubgraphs, posNodesForCollision);
 
   // Step 9: Build positioned codeblocks
   const posCodeblocks: PositionedCodeBlock[] = codeblocks.map(cb => {
@@ -392,8 +411,50 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     return { ...n, x: pos.x, y: pos.y, w: sz.w, h: sz.h };
   });
 
+  // ─── Left-edge padding: ensure no elements get clipped at x=0 ───
+  // Compute minimum x needed, accounting for actor label overhang and backward edges
+  let minContentX = Infinity;
+  for (const n of posNodes) {
+    let nodeLeft = n.x;
+    // Actor labels are centered at node center; they overhang to the left
+    if (n.kind === 'actor') {
+      const labelW = measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel;
+      const cx = n.x + n.w / 2;
+      nodeLeft = Math.min(nodeLeft, cx - labelW / 2 - 4);
+    }
+    minContentX = Math.min(minContentX, nodeLeft);
+  }
+  for (const ann of posAnnotations) {
+    minContentX = Math.min(minContentX, ann.x);
+  }
+  for (const sg of posSubgraphs) {
+    minContentX = Math.min(minContentX, sg.x);
+  }
+  // Also account for backward edge routing (uses minNodeX - 30) and edge labels
+  const hasBackwardEdge = direction === 'TB' && allEdges.some(e => {
+    const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+    const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+    const srcPos = positioned.nodePositions.get(src);
+    const tgtPos = positioned.nodePositions.get(tgt);
+    if (!srcPos || !tgtPos) return false;
+    return tgtPos.y + (nodeSizes.get(tgt)?.h || 0) <= srcPos.y + 5;
+  });
+  if (hasBackwardEdge) {
+    minContentX = Math.min(minContentX, minContentX - 50);
+  }
+
+  const leftPad = MARGIN_X;
+  if (minContentX < leftPad) {
+    const shift = leftPad - minContentX;
+    for (const n of posNodes) { n.x += shift; }
+    for (const sg of posSubgraphs) { sg.x += shift; }
+    for (const ov of posOverflows) { ov.x += shift; }
+    for (const cb of posCodeblocks) { cb.x += shift; }
+    for (const ann of posAnnotations) { ann.x += shift; }
+  }
+
   // Adjust diagram bounds to include all elements
-  let finalWidth = positioned.width;
+  let finalWidth = positioned.width + (minContentX < leftPad ? leftPad - minContentX : 0);
 
   // Ensure width covers all positioned nodes with margin
   for (const n of posNodes) {
@@ -431,15 +492,19 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const annBottom = ann.y + lines.length * 18 + 10;
     maxAnnY = Math.max(maxAnnY, annBottom);
 
-    // Extend width for annotations — cap only right-side annotations
-    // (those starting beyond rightmost content edge) to prevent excessive width
+    // Extend width for annotations — cap line length to prevent extreme width from long text
     const maxLineLen = Math.max(...lines.map(l => l.length));
-    const annRight = ann.x + maxLineLen * 7 + 12;
+    const cappedLineLen = Math.min(maxLineLen, 50);
+    const textExtent = cappedLineLen * 7 + 12;
+    // Single-line annotations are centered (text-anchor=middle), so they extend half each way
+    const isSingleLine = lines.length === 1;
+    const annRight = isSingleLine ? ann.x + textExtent / 2 : ann.x + textExtent;
     if (annRight > finalWidth) {
+      // Annotations placed at the right margin (beyond content) get full extension
       if (ann.x >= maxContentRight) {
-        finalWidth = Math.min(annRight, maxAnnotationWidth);
-      } else {
         finalWidth = annRight;
+      } else {
+        finalWidth = Math.min(annRight, maxAnnotationWidth);
       }
     }
   }
@@ -652,8 +717,8 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
         // Tier 1: Multi-edge fan-out into subgraph — aggressive boost
         gap = Math.max(gap, targets.size * 75);
       } else if (targets.size >= 3) {
-        // Tier 2: Wide fan-out with labeled edges — moderate boost for vertical spread
-        gap = Math.max(gap, targets.size * 35);
+        // Tier 2: Wide fan-out with labeled edges — moderate capped boost
+        gap = Math.max(gap, Math.min(targets.size * 12, 80));
       }
     }
   }
@@ -727,6 +792,8 @@ function assignCoordinates(
     const maxCrossHeight = Math.max(...layerHeights);
 
     // Compute per-layer horizontal gaps to accommodate edge labels
+    // Cap label width since the renderer wraps long labels
+    const MAX_EDGE_LABEL_GAP = 160;
     const layerHGaps: number[] = [];
     for (let li = 0; li < layers.length; li++) {
       if (li === layers.length - 1) {
@@ -740,27 +807,125 @@ function assignCoordinates(
         if (!e.label) continue;
         if ((curSet.has(e.from) && nextSet.has(e.to)) ||
             (curSet.has(e.to) && nextSet.has(e.from))) {
-          const labelW = e.label.length * 6.5 + 24;
+          const labelW = Math.min(e.label.length * 6.5 + 24, MAX_EDGE_LABEL_GAP);
           maxLabelW = Math.max(maxLabelW, labelW);
         }
       }
       layerHGaps.push(maxLabelW > 0 ? Math.max(LAYER_GAP, maxLabelW) : LAYER_GAP);
     }
 
+    // Check if this is a long single-node chain that needs serpentine folding
+    const singleNodeLayers = layers.filter(l => l.length === 1).length;
+    const isMostlySingleNode = singleNodeLayers > layers.length * 0.7;
+    const prelimTotalW = (() => {
+      let x = MARGIN_X;
+      for (let li = 0; li < layers.length; li++) {
+        x += layerWidths[li] + layerHGaps[li];
+      }
+      return x - layerHGaps[layers.length - 1] + MARGIN_X;
+    })();
+    const prelimTotalH = startY + maxCrossHeight + MARGIN_TOP;
+    const prelimRatio = prelimTotalW / Math.max(prelimTotalH, 1);
+
+    if (prelimRatio > MAX_ASPECT_RATIO && isMostlySingleNode && layers.length >= 4) {
+      // ─── Serpentine chain folding ───────────────────────
+      // Fold long chains into multiple rows for compact layout
+      const targetRatio = 2.0;
+      const rowCount = Math.max(2, Math.ceil(Math.sqrt(prelimRatio / targetRatio)));
+      const layersPerRow = Math.ceil(layers.length / rowCount);
+
+      // Compute max node height for row spacing
+      let maxNodeH = 0;
+      for (const layer of layers) {
+        for (const id of layer) {
+          maxNodeH = Math.max(maxNodeH, nodeSizes.get(id)!.h);
+        }
+      }
+      const rowGap = maxNodeH + 60;
+
+      let maxRowW = 0;
+      for (let row = 0; row < rowCount; row++) {
+        const startLi = row * layersPerRow;
+        const endLi = Math.min(startLi + layersPerRow, layers.length);
+        const isReverse = row % 2 === 1;
+
+        // Compute row width
+        let rowW = 0;
+        for (let li = startLi; li < endLi; li++) {
+          rowW += layerWidths[li] + (li < endLi - 1 ? layerHGaps[li] : 0);
+        }
+        maxRowW = Math.max(maxRowW, rowW);
+
+        let curX = MARGIN_X;
+        for (let i = 0; i < endLi - startLi; i++) {
+          const li = isReverse ? (endLi - 1 - i) : (startLi + i);
+          const layer = layers[li];
+          const layerW = layerWidths[li];
+          const gap = layerGaps[li];
+          const layerH = layerHeights[li];
+
+          let curY = startY + row * rowGap + (maxNodeH - layerH) / 2;
+          for (const id of layer) {
+            const sz = nodeSizes.get(id)!;
+            positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
+            curY += sz.h + gap;
+          }
+          curX += layerW + layerHGaps[li];
+        }
+      }
+
+      const totalW = maxRowW + MARGIN_X * 2;
+      const totalH = startY + rowCount * rowGap + MARGIN_TOP;
+      return { nodePositions: positions, width: totalW, height: totalH };
+    }
+
+    // ─── Grid fan-out for large layers ──────────────────
+    // When a layer has many nodes, split into a grid of sub-columns
+    let hasGridLayer = false;
+    for (let li = 0; li < layers.length; li++) {
+      if (layers[li].length > MAX_NODES_PER_COL) {
+        hasGridLayer = true;
+        break;
+      }
+    }
+
     let curX = MARGIN_X;
     for (let li = 0; li < layers.length; li++) {
       const layer = layers[li];
       const layerW = layerWidths[li];
-      const layerH = layerHeights[li];
       const gap = layerGaps[li];
-      let curY = startY + (maxCrossHeight - layerH) / 2;
 
-      for (const id of layer) {
-        const sz = nodeSizes.get(id)!;
-        positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
-        curY += sz.h + gap;
+      if (hasGridLayer && layer.length > MAX_NODES_PER_COL) {
+        // Grid layout: split into sub-columns
+        const cols = Math.ceil(layer.length / MAX_NODES_PER_COL);
+        const perCol = Math.ceil(layer.length / cols);
+        const subColGap = layerW + 12;
+
+        for (let c = 0; c < cols; c++) {
+          const startIdx = c * perCol;
+          const endIdx = Math.min(startIdx + perCol, layer.length);
+          const subColH = (endIdx - startIdx) * (nodeSizes.get(layer[0])!.h + gap) - gap;
+          let curY = startY + (maxCrossHeight - subColH) / 2;
+
+          for (let ni = startIdx; ni < endIdx; ni++) {
+            const id = layer[ni];
+            const sz = nodeSizes.get(id)!;
+            positions.set(id, { x: curX + c * subColGap + (layerW - sz.w) / 2, y: curY });
+            curY += sz.h + gap;
+          }
+        }
+        curX += (cols - 1) * subColGap + layerW + layerHGaps[li];
+      } else {
+        const layerH = layerHeights[li];
+        let curY = startY + (maxCrossHeight - layerH) / 2;
+
+        for (const id of layer) {
+          const sz = nodeSizes.get(id)!;
+          positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
+          curY += sz.h + gap;
+        }
+        curX += layerW + layerHGaps[li];
       }
-      curX += layerW + layerHGaps[li];
     }
 
     const totalW = curX - layerHGaps[layers.length - 1] + MARGIN_X;
@@ -974,6 +1139,7 @@ function computeOverflowPositions(
 function resolveAnnotationOverlaps(
   annotations: PositionedAnnotation[],
   subgraphs: PositionedSubgraph[],
+  posNodes?: { id: string; x: number; y: number; w: number; h: number }[],
 ): void {
   if (annotations.length === 0) return;
 
@@ -1012,14 +1178,12 @@ function resolveAnnotationOverlaps(
         const annCenterY = b.y + b.h / 2;
         const sgCenterY = sg.y + sg.h / 2;
         if (annCenterY <= sgCenterY) {
-          // Push above subgraph
           const newY = sg.y - b.h - 10;
           if (newY < annotations[i].y) {
             annotations[i].y = newY;
             boxes[i].y = newY;
           }
         } else {
-          // Push below subgraph
           const newY = sg.y + sg.h + 10;
           if (newY > annotations[i].y) {
             annotations[i].y = newY;
@@ -1027,6 +1191,36 @@ function resolveAnnotationOverlaps(
           }
         }
       }
+    }
+  }
+
+  // Resolve annotation-node overlaps: push annotations away from overlapping nodes
+  if (posNodes) {
+    for (let pass = 0; pass < 3; pass++) {
+      let changed = false;
+      for (let i = 0; i < annotations.length; i++) {
+        const b = boxes[i];
+        for (const node of posNodes) {
+          const margin = 14;
+          const hOverlap = b.x < node.x + node.w + margin && node.x - margin < b.x + b.w;
+          const vOverlap = b.y < node.y + node.h + margin && node.y - margin < b.y + b.h;
+          if (hOverlap && vOverlap) {
+            const annCenterY = b.y + b.h / 2;
+            const nodeCenterY = node.y + node.h / 2;
+            if (annCenterY <= nodeCenterY) {
+              const newY = node.y - b.h - 16;
+              annotations[i].y = newY;
+              boxes[i].y = newY;
+            } else {
+              const newY = node.y + node.h + 16;
+              annotations[i].y = newY;
+              boxes[i].y = newY;
+            }
+            changed = true;
+          }
+        }
+      }
+      if (!changed) break;
     }
   }
 
@@ -1074,6 +1268,13 @@ function positionAnnotations(
   nodeSizes: Map<string, { w: number; h: number }>,
   subgraphChildIds: Set<string>,
 ): PositionedAnnotation[] {
+  // Compute rightmost content edge for placing right-side annotations at margin
+  let maxContentRight = 0;
+  for (const [id, pos] of nodePositions) {
+    const sz = nodeSizes.get(id);
+    if (sz) maxContentRight = Math.max(maxContentRight, pos.x + sz.w);
+  }
+
   return annotations.map(a => {
     const pos = nodePositions.get(a.near);
     const sz = nodeSizes.get(a.near);
@@ -1087,8 +1288,26 @@ function positionAnnotations(
 
     const side = a.side || 'right';
     switch (side) {
-      case 'right':
-        return { text: a.text, x: pos.x + sz.w + 12, y: pos.y + sz.h / 2 + 4, properties: a.properties };
+      case 'right': {
+        // Check if placing to the right of the node would overlap other nodes
+        const candX = pos.x + sz.w + 12;
+        const annH = isMultiline ? multilineHeight : 20;
+        const candY = pos.y + sz.h / 2 + 4;
+        let hasOverlap = false;
+        for (const [otherId, otherPos] of nodePositions) {
+          if (otherId === a.near) continue;
+          const otherSz = nodeSizes.get(otherId);
+          if (!otherSz) continue;
+          const hOverlap = candX < otherPos.x + otherSz.w + 6 && otherPos.x - 6 < candX + 250;
+          const vOverlap = candY < otherPos.y + otherSz.h + 6 && otherPos.y - 6 < candY + annH;
+          if (hOverlap && vOverlap) { hasOverlap = true; break; }
+        }
+        if (hasOverlap && isMultiline) {
+          // Place at diagram right margin instead
+          return { text: a.text, x: maxContentRight + 24, y: pos.y - 10, properties: a.properties };
+        }
+        return { text: a.text, x: candX, y: candY, properties: a.properties };
+      }
       case 'left':
         return { text: a.text, x: pos.x - 20, y: pos.y + sz.h / 2 + 4, properties: a.properties };
       case 'top':

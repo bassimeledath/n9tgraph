@@ -1,0 +1,60 @@
+type flow
+title "Multi-region Kubernetes deployment topology"
+direction TB
+
+subgraph "US-East Region (Primary)" {fill: dotgrid}
+  component "Ingress Controller" {fill: hero, sublabel: "NGINX"}
+  component "API Pods" {fill: dotgrid, sublabel: "3 replicas"}
+  component "Worker Pods" {fill: dotgrid, sublabel: "5 replicas"}
+  component "Redis Cache" {fill: crosshatch}
+  INGRESS_CONTROLLER --> API_PODS
+  API_PODS --> WORKER_PODS
+  API_PODS --> REDIS_CACHE
+end
+
+subgraph "US-West Region (Secondary)" {fill: dotgrid}
+  component "Ingress West" {fill: hero, sublabel: "NGINX"}
+  component "API Pods West" {fill: dotgrid, sublabel: "2 replicas"}
+  component "Worker Pods West" {fill: dotgrid, sublabel: "3 replicas"}
+  component "Redis Cache West" {fill: crosshatch}
+  INGRESS_WEST --> API_PODS_WEST
+  API_PODS_WEST --> WORKER_PODS_WEST
+  API_PODS_WEST --> REDIS_CACHE_WEST
+end
+
+subgraph "EU Region (GDPR)" {fill: crosshatch}
+  component "Ingress EU" {fill: hero, sublabel: "NGINX"}
+  component "API Pods EU" {fill: dotgrid, sublabel: "2 replicas"}
+  component "Worker Pods EU" {fill: dotgrid, sublabel: "2 replicas"}
+  component "Redis Cache EU" {fill: crosshatch}
+  INGRESS_EU --> API_PODS_EU
+  API_PODS_EU --> WORKER_PODS_EU
+  API_PODS_EU --> REDIS_CACHE_EU
+end
+
+subgraph "Shared Data Layer" {fill: crosshatch}
+  datastore "Primary Postgres" {fill: crosshatch}
+  datastore "Read Replica West" {fill: crosshatch}
+  datastore "Read Replica EU" {fill: crosshatch}
+  component "CockroachDB Global" {fill: dotgrid, sublabel: "Multi-region"}
+  PRIMARY_POSTGRES --> READ_REPLICA_WEST
+  PRIMARY_POSTGRES --> READ_REPLICA_EU
+end
+
+actor "Global DNS"
+
+GLOBAL_DNS --> INGRESS_CONTROLLER
+GLOBAL_DNS --> INGRESS_WEST
+GLOBAL_DNS --> INGRESS_EU
+WORKER_PODS --> PRIMARY_POSTGRES
+WORKER_PODS_WEST --> READ_REPLICA_WEST
+WORKER_PODS_EU --> READ_REPLICA_EU
+API_PODS --> COCKROACHDB_GLOBAL
+API_PODS_WEST --> COCKROACHDB_GLOBAL
+API_PODS_EU --> COCKROACHDB_GLOBAL
+REDIS_CACHE --> REDIS_CACHE_WEST : Cross-region sync
+REDIS_CACHE --> REDIS_CACHE_EU : Cross-region sync
+
+annotation "Active-active failover" near GLOBAL_DNS side top
+annotation "Async replication" near PRIMARY_POSTGRES side bottom
+annotation "GDPR data residency\nrequirements enforced" near INGRESS_EU side right

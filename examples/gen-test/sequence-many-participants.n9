@@ -1,0 +1,48 @@
+type sequence
+title "OAuth 2.0 authorization code flow with PKCE and token refresh"
+
+participant Browser {fill: none}
+participant "Auth Gateway" {fill: hero}
+participant "Identity Provider" {fill: dotgrid}
+participant "Token Service" {fill: dotgrid}
+participant "User Store" {fill: crosshatch}
+participant "API Server" {fill: dotgrid}
+participant "Audit Logger" {fill: crosshatch}
+
+BROWSER -> AUTH_GATEWAY : GET /authorize | code_challenge + redirect_uri
+AUTH_GATEWAY -> IDENTITY_PROVIDER : Validate client_id + redirect_uri
+IDENTITY_PROVIDER -> USER_STORE : Lookup client registration
+IDENTITY_PROVIDER <- USER_STORE : Client metadata
+AUTH_GATEWAY <- IDENTITY_PROVIDER : Client validated
+AUTH_GATEWAY -> BROWSER : 302 Redirect to login page
+
+BROWSER -> AUTH_GATEWAY : POST /login | username + password
+AUTH_GATEWAY -> IDENTITY_PROVIDER : Authenticate credentials
+IDENTITY_PROVIDER -> USER_STORE : Verify password hash
+IDENTITY_PROVIDER <- USER_STORE : Auth result
+AUTH_GATEWAY <- IDENTITY_PROVIDER : Authentication success
+AUTH_GATEWAY -> AUDIT_LOGGER : Log successful login
+AUTH_GATEWAY -> BROWSER : 302 Redirect with authorization code
+
+BROWSER -> AUTH_GATEWAY : POST /token | code + code_verifier
+AUTH_GATEWAY -> TOKEN_SERVICE : Exchange code for tokens
+TOKEN_SERVICE -> IDENTITY_PROVIDER : Validate code + verify PKCE
+TOKEN_SERVICE <- IDENTITY_PROVIDER : Verified
+TOKEN_SERVICE -> AUTH_GATEWAY : access_token + refresh_token + id_token
+AUTH_GATEWAY -> AUDIT_LOGGER : Log token issuance
+AUTH_GATEWAY -> BROWSER : 200 Token response
+
+BROWSER -> API_SERVER : GET /api/data | Bearer access_token
+API_SERVER -> TOKEN_SERVICE : Introspect token
+TOKEN_SERVICE -> API_SERVER : Token valid + scopes
+API_SERVER -> BROWSER : 200 Protected resource
+
+loop TOKEN REFRESH (every 15 min)
+  BROWSER -> AUTH_GATEWAY : POST /token | grant_type=refresh_token
+  AUTH_GATEWAY -> TOKEN_SERVICE : Rotate refresh token
+  TOKEN_SERVICE -> AUDIT_LOGGER : Log token rotation
+  AUTH_GATEWAY <- TOKEN_SERVICE : New token pair
+  AUTH_GATEWAY -> BROWSER : 200 Refreshed tokens
+end
+
+note over BROWSER: User session established with automatic token refresh

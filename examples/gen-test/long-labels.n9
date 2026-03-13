@@ -1,0 +1,20 @@
+type flow
+title "Enterprise data governance platform with automated compliance checks and audit trail generation"
+direction LR
+
+component "Data Ingestion Controller with Schema Validation and Deduplication" {fill: dotgrid, sublabel: "Handles incoming data streams from multiple upstream providers"}
+component "Transformation and Enrichment Pipeline Manager" {fill: dotgrid, sublabel: "Applies business rules, data quality checks, and field-level encryption"}
+component "Compliance Verification and Regulatory Audit Engine" {fill: hero, sublabel: "GDPR, CCPA, SOX, and HIPAA compliance verification module"}
+component "Long-Term Archival Storage with Tiered Retention Policies" {fill: crosshatch, sublabel: "Hot, warm, and cold storage with automated lifecycle management"}
+component "Real-Time Dashboard and Alerting Notification System" {fill: dotgrid, sublabel: "Sends alerts via email, Slack, PagerDuty, and SMS channels"}
+component "Machine Learning Feature Store and Model Registry" {fill: dotgrid}
+
+DATA_INGESTION_CONTROLLER_WITH_SCHEMA_VALIDATION_AND_DEDUPLICATION --> TRANSFORMATION_AND_ENRICHMENT_PIPELINE_MANAGER : Raw validated records with deduplication markers attached
+TRANSFORMATION_AND_ENRICHMENT_PIPELINE_MANAGER --> COMPLIANCE_VERIFICATION_AND_REGULATORY_AUDIT_ENGINE : Enriched and transformed records ready for compliance scanning
+COMPLIANCE_VERIFICATION_AND_REGULATORY_AUDIT_ENGINE --> LONG_TERM_ARCHIVAL_STORAGE_WITH_TIERED_RETENTION_POLICIES : Compliant records tagged with retention policy metadata annotations
+COMPLIANCE_VERIFICATION_AND_REGULATORY_AUDIT_ENGINE --> REAL_TIME_DASHBOARD_AND_ALERTING_NOTIFICATION_SYSTEM : Compliance violations and audit findings requiring immediate attention
+TRANSFORMATION_AND_ENRICHMENT_PIPELINE_MANAGER --> MACHINE_LEARNING_FEATURE_STORE_AND_MODEL_REGISTRY : Feature vectors extracted from enriched data pipeline output
+LONG_TERM_ARCHIVAL_STORAGE_WITH_TIERED_RETENTION_POLICIES --> REAL_TIME_DASHBOARD_AND_ALERTING_NOTIFICATION_SYSTEM : Storage utilization metrics and retention policy expiration notifications
+
+annotation "This entire pipeline processes approximately fifty thousand records per second during peak traffic hours" near TRANSFORMATION_AND_ENRICHMENT_PIPELINE_MANAGER side top
+annotation "Regulatory compliance checks must complete within two hundred milliseconds per record to meet SLA requirements" near COMPLIANCE_VERIFICATION_AND_REGULATORY_AUDIT_ENGINE side bottom

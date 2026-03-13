@@ -97,15 +97,19 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
     return { w: Math.max(size.w, 80), h: Math.max(size.h, 42) };
   });
 
-  // Participant x-positions — spread across minimum diagram width
+  // Participant x-positions — auto-size gap to fit all participant labels
   const maxHeaderW = Math.max(...headerSizes.map(s => s.w));
   let minDiagramWidth = maxHeaderW + 2 * MARGIN_X;
   if (diagram.title) {
     const titleW = measureLineWidth(diagram.title, fontSizes.title, 'sans') + 140;
     minDiagramWidth = Math.max(minDiagramWidth, titleW);
   }
+  // Ensure gap is wide enough so adjacent participant boxes don't overlap
+  const minGapForLabels = participants.length > 1
+    ? Math.max(...headerSizes.map(s => s.w)) + 16
+    : PARTICIPANT_GAP;
   const dynamicGap = participants.length > 1
-    ? Math.min(300, Math.max(PARTICIPANT_GAP, (minDiagramWidth - 2 * MARGIN_X - maxHeaderW) / (participants.length - 1)))
+    ? Math.max(minGapForLabels, Math.min(300, Math.max(PARTICIPANT_GAP, (minDiagramWidth - 2 * MARGIN_X - maxHeaderW) / (participants.length - 1))))
     : PARTICIPANT_GAP;
   const startX = MARGIN_X + maxHeaderW / 2;
   const participantXs = participants.map((_, i) => startX + i * dynamicGap);

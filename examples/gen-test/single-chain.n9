@@ -1,0 +1,32 @@
+type flow
+title "HTTP request processing pipeline: 12-stage middleware chain"
+direction LR
+
+component "Incoming Request" {fill: hero}
+component "TLS Termination" {fill: dotgrid}
+component "IP Allowlist" {fill: dotgrid}
+component "Rate Limiter" {fill: dotgrid}
+component "Request Logger" {fill: dotgrid}
+component "Auth Middleware" {fill: dotgrid}
+component "CORS Handler" {fill: dotgrid}
+component "Body Parser" {fill: dotgrid}
+component "Input Validator" {fill: dotgrid}
+component "Route Matcher" {fill: dotgrid}
+component "Business Logic" {fill: hero, sublabel: "Handler"}
+component "Response Serializer" {fill: dotgrid}
+component "Compression" {fill: dotgrid}
+component "Outgoing Response" {fill: hero}
+
+INCOMING_REQUEST --> TLS_TERMINATION : Raw TCP
+TLS_TERMINATION --> IP_ALLOWLIST : Decrypted
+IP_ALLOWLIST --> RATE_LIMITER : Allowed
+RATE_LIMITER --> REQUEST_LOGGER : Under limit
+REQUEST_LOGGER --> AUTH_MIDDLEWARE : Logged
+AUTH_MIDDLEWARE --> CORS_HANDLER : Authenticated
+CORS_HANDLER --> BODY_PARSER : CORS OK
+BODY_PARSER --> INPUT_VALIDATOR : Parsed
+INPUT_VALIDATOR --> ROUTE_MATCHER : Valid
+ROUTE_MATCHER --> BUSINESS_LOGIC : Matched
+BUSINESS_LOGIC --> RESPONSE_SERIALIZER : Result
+RESPONSE_SERIALIZER --> COMPRESSION : JSON
+COMPRESSION --> OUTGOING_RESPONSE : Gzipped

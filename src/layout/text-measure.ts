@@ -62,6 +62,24 @@ export function measureText(
   };
 }
 
+/** Word-wrap a label into lines of at most maxChars characters */
+export function wrapLabel(label: string, maxChars: number): string[] {
+  if (label.length <= maxChars) return [label];
+  const words = label.split(/\s+/);
+  const lines: string[] = [];
+  let cur = '';
+  for (const word of words) {
+    if (cur && (cur + ' ' + word).length > maxChars) {
+      lines.push(cur);
+      cur = word;
+    } else {
+      cur = cur ? cur + ' ' + word : word;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines.length > 0 ? lines : [label];
+}
+
 /** Compute required node dimensions for a label with padding */
 export function nodeSizeForLabel(
   label: string,

@@ -1,0 +1,38 @@
+type flow
+title "Infrastructure topology with every node shape"
+direction TB
+
+actor "DevOps Engineer"
+service "Control Plane" {fill: hero, sublabel: "Orchestrator"}
+component "Load Balancer" {shape: pill, fill: dotgrid}
+component "API Server" {fill: dotgrid, border: double}
+datastore "PostgreSQL" {fill: crosshatch}
+circle "Hub"
+component "Worker Pool" {shape: cylinder, fill: dotgrid}
+external "Third-Party CDN" {fill: none}
+label "Internal network boundary"
+component "Metrics Collector" {shape: pill, fill: dotgrid}
+component "Log Aggregator" {shape: pill, fill: dotgrid}
+datastore "Object Storage" {fill: crosshatch}
+component "Message Queue" {shape: cylinder, fill: crosshatch}
+component "Config Store" {shape: pill, fill: dotgrid, sublabel: "etcd"}
+actor "End User"
+
+END_USER --> THIRD_PARTY_CDN : Static assets
+END_USER --> LOAD_BALANCER : HTTPS
+LOAD_BALANCER --> API_SERVER : Round-robin
+API_SERVER --> POSTGRESQL : SQL queries
+API_SERVER --> MESSAGE_QUEUE : Async jobs
+API_SERVER --> HUB
+HUB --> WORKER_POOL : Distribute tasks
+HUB --> METRICS_COLLECTOR : Push metrics
+HUB --> LOG_AGGREGATOR : Ship logs
+WORKER_POOL --> OBJECT_STORAGE : Store artifacts
+WORKER_POOL --> POSTGRESQL : Write results
+DEVOPS_ENGINEER --> CONTROL_PLANE : kubectl apply
+CONTROL_PLANE --> CONFIG_STORE : Cluster state
+CONTROL_PLANE --> API_SERVER : Deploy updates
+METRICS_COLLECTOR --> OBJECT_STORAGE : Archive
+LOG_AGGREGATOR --> OBJECT_STORAGE : Archive
+
+annotation "All shapes represented:\nactor, service, component,\ndatastore, circle, external,\nlabel, pill, cylinder, double-border" near CONTROL_PLANE side right

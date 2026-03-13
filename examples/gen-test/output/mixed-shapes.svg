@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 917 715" width="917" height="715">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Infrastructure topology with every node shape</text>
+<line x1="525.5" y1="108" x2="531.5" y2="185.92352941176472" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="525.5,108 525.5,148.46176470588236 344,148.46176470588236 344,188.92352941176472" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="344,222.92352941176472 344,266.38529411764705 441,266.38529411764705 441,309.84705882352944" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="441,349.84705882352944 441,391.55882352941177 226.5,391.55882352941177 226.5,433.2705882352941" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="441" y1="349.84705882352944" x2="466.5" y2="433.2705882352941" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="441,349.84705882352944 441,385.55882352941177 339.5,385.55882352941177 339.5,421.2705882352941" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="339.5,485.2705882352941 339.5,517.9823529411765 145.5,517.9823529411765 145.5,550.6941176470589" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="339.5" y1="485.2705882352941" x2="333" y2="553.6941176470589" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="339.5,485.2705882352941 339.5,519.4823529411765 541,519.4823529411765 541,553.6941176470589" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="145.5,590.6941176470589 145.5,623.4058823529413 333,623.4058823529413 333,656.1176470588235" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="78,570.6941176470589 48,570.6941176470589 48,488.2705882352941 226.5,488.2705882352941 226.5,473.2705882352941" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="181.5" y1="108" x2="166" y2="173.42352941176472" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="166,238.42352941176472 166,271.13529411764705 281.5,271.13529411764705 281.5,303.84705882352944" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="166,238.42352941176472 166,274.13529411764705 441,274.13529411764705 441,309.84705882352944" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="333" y1="587.6941176470589" x2="333" y2="656.1176470588235" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="541,587.6941176470589 541,621.9058823529413 333,621.9058823529413 333,656.1176470588235" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="480.25" y="136.46176470588236" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="412.5" y="137.96176470588236" width="44.5" height="21" rx="4" fill="#000000"/>
+<rect x="350.75" y="255.88529411764705" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="292" y="381.05882352941177" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="415.25" y="381.05882352941177" width="77" height="21" rx="4" fill="#000000"/>
+<rect x="184.5" y="507.4823529411765" width="116" height="21" rx="4" fill="#000000"/>
+<rect x="291.25" y="508.9823529411765" width="90" height="21" rx="4" fill="#000000"/>
+<rect x="405" y="508.9823529411765" width="70.5" height="21" rx="4" fill="#000000"/>
+<rect x="184.5" y="612.9058823529413" width="109.5" height="21" rx="4" fill="#000000"/>
+<rect x="-0.25" y="518.9823529411765" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="125.5" y="130.21176470588236" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="175.5" y="260.63529411764705" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="252" y="263.63529411764705" width="103" height="21" rx="4" fill="#000000"/>
+<rect x="304.25" y="611.4058823529413" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="408.25" y="611.4058823529413" width="57.5" height="21" rx="4" fill="#000000"/>
+<circle cx="181.5" cy="57" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="181.5" y1="64" x2="181.5" y2="86" stroke="#b4f079" stroke-width="1.5"/><line x1="167.5" y1="70" x2="195.5" y2="70" stroke="#b4f079" stroke-width="1.5"/><line x1="181.5" y1="86" x2="171.5" y2="102" stroke="#b4f079" stroke-width="1.5"/><line x1="181.5" y1="86" x2="191.5" y2="102" stroke="#b4f079" stroke-width="1.5"/><text x="181.5" y="116" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" letter-spacing="0.12em">DEVOPS ENGINEER</text>
+<rect x="89" y="173.42352941176472" width="154" height="65" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="94" y="178.42352941176472" width="144" height="55" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="166" y="197.92352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CONTROL PLANE</text><text x="166" y="217.92352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Orchestrator</text>
+<rect x="261" y="188.92352941176472" width="166" height="34" rx="17" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="284" y="194.82352941176472" width="120" height="22.2" fill="#000000" rx="2"/><text x="344" y="205.92352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LOAD BALANCER</text>
+<rect x="378" y="309.84705882352944" width="126" height="40" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="383" y="314.84705882352944" width="116" height="30" rx="8" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1"/><text x="441" y="329.84705882352944" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">API SERVER</text>
+<rect x="163.5" y="443.2705882352941" width="126" height="20" fill="url(#crosshatch)" stroke="none"/><line x1="163.5" y1="443.2705882352941" x2="163.5" y2="463.2705882352941" stroke="#b4f079" stroke-width="1.5"/><line x1="289.5" y1="443.2705882352941" x2="289.5" y2="463.2705882352941" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="226.5" cy="443.2705882352941" rx="63" ry="10" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><path d="M163.5,463.2705882352941 A63,10 0 0,0 289.5,463.2705882352941" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><text x="226.5" y="453.2705882352941" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">POSTGRESQL</text>
+<circle cx="339.5" cy="453.2705882352941" r="32" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="339.5" y="453.2705882352941" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">HUB</text>
+<rect x="78" y="550.6941176470589" width="135" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="93.5" y="559.5941176470589" width="104" height="22.2" fill="#000000" rx="2"/><text x="145.5" y="570.6941176470589" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">WORKER POOL</text>
+<rect x="445" y="185.92352941176472" width="173" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="531.5" y="205.92352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">THIRD-PARTY CDN</text>
+<rect x="220.5" y="59" width="266" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="353.5" y="79" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INTERNAL NETWORK BOUNDARY</text>
+<rect x="231" y="553.6941176470589" width="204" height="34" rx="17" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="257" y="559.5941176470589" width="152" height="22.2" fill="#000000" rx="2"/><text x="333" y="570.6941176470589" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">METRICS COLLECTOR</text>
+<rect x="453" y="553.6941176470589" width="176" height="34" rx="17" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="477" y="559.5941176470589" width="128" height="22.2" fill="#000000" rx="2"/><text x="541" y="570.6941176470589" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LOG AGGREGATOR</text>
+<rect x="251" y="666.1176470588235" width="164" height="20" fill="url(#crosshatch)" stroke="none"/><line x1="251" y1="666.1176470588235" x2="251" y2="686.1176470588235" stroke="#b4f079" stroke-width="1.5"/><line x1="415" y1="666.1176470588235" x2="415" y2="686.1176470588235" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="333" cy="666.1176470588235" rx="82" ry="10" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><path d="M251,686.1176470588235 A82,10 0 0,0 415,686.1176470588235" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><text x="333" y="676.1176470588235" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">OBJECT STORAGE</text>
+<rect x="389.5" y="433.2705882352941" width="154" height="40" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="406.5" y="442.1705882352941" width="120" height="22.2" fill="#000000" rx="2"/><text x="466.5" y="453.2705882352941" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">MESSAGE QUEUE</text>
+<rect x="203" y="303.84705882352944" width="157" height="52" rx="26" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="225.5" y="310.7470588235294" width="112" height="22.2" fill="#000000" rx="2"/><text x="281.5" y="321.84705882352944" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CONFIG STORE</text><rect x="262.5" y="333.34705882352944" width="38" height="17" fill="#000000" rx="2"/><text x="281.5" y="341.84705882352944" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">etcd</text>
+<circle cx="525.5" cy="57" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="525.5" y1="64" x2="525.5" y2="86" stroke="#b4f079" stroke-width="1.5"/><line x1="511.5" y1="70" x2="539.5" y2="70" stroke="#b4f079" stroke-width="1.5"/><line x1="525.5" y1="86" x2="515.5" y2="102" stroke="#b4f079" stroke-width="1.5"/><line x1="525.5" y1="86" x2="535.5" y2="102" stroke="#b4f079" stroke-width="1.5"/><text x="525.5" y="116" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" letter-spacing="0.12em">END USER</text>
+<text x="528.5" y="150.46176470588236" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Static assets</text>
+<text x="434.75" y="151.96176470588236" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">HTTPS</text>
+<text x="392.5" y="269.88529411764705" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Round-robin</text>
+<text x="333.75" y="395.05882352941177" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">SQL queries</text>
+<text x="453.75" y="395.05882352941177" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Async jobs</text>
+<text x="242.5" y="521.4823529411765" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Distribute tasks</text>
+<text x="336.25" y="522.9823529411765" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Push metrics</text>
+<text x="440.25" y="522.9823529411765" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Ship logs</text>
+<text x="239.25" y="626.9058823529413" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Store artifacts</text>
+<text x="48" y="532.9823529411765" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Write results</text>
+<text x="173.75" y="144.21176470588236" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">kubectl apply</text>
+<text x="223.75" y="274.63529411764705" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Cluster state</text>
+<text x="303.5" y="277.63529411764705" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Deploy updates</text>
+<text x="333" y="625.4058823529413" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Archive</text>
+<text x="437" y="625.4058823529413" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Archive</text>
+<text x="653" y="177.42352941176472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">All shapes represented:</text><text x="653" y="195.42352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">actor, service, component,</text><text x="653" y="213.42352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">datastore, circle, external,</text><text x="653" y="231.42352941176472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">label, pill, cylinder, double-border</text>
+</g>
+</svg>

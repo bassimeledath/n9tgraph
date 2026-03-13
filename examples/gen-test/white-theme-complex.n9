@@ -1,0 +1,52 @@
+type flow
+title "Machine learning training pipeline with experiment tracking"
+theme white
+direction TB
+
+actor "Data Scientist"
+
+subgraph "Data Preparation" {fill: dotgrid}
+  component "Raw Data Lake" {shape: cylinder}
+  component "Feature Engineering" {shape: pill}
+  component "Data Validation" {shape: pill}
+  component "Train/Test Split" {shape: pill}
+  RAW_DATA_LAKE --> FEATURE_ENGINEERING
+  FEATURE_ENGINEERING --> DATA_VALIDATION
+  DATA_VALIDATION --> TRAIN_TEST_SPLIT
+end
+
+subgraph "Training Infrastructure" {fill: crosshatch}
+  component "Hyperparameter Search" {shape: pill}
+  component "Distributed Trainer" {fill: dotgrid, sublabel: "PyTorch DDP"}
+  component "GPU Cluster" {fill: dotgrid, sublabel: "8x A100"}
+  component "Checkpoint Storage" {shape: cylinder}
+  HYPERPARAMETER_SEARCH --> DISTRIBUTED_TRAINER
+  DISTRIBUTED_TRAINER --> GPU_CLUSTER
+  DISTRIBUTED_TRAINER --> CHECKPOINT_STORAGE
+end
+
+subgraph "Evaluation and Registry" {fill: dotgrid}
+  component "Model Evaluator" {shape: pill}
+  component "A/B Test Framework" {shape: pill}
+  component "Model Registry" {shape: cylinder, fill: crosshatch}
+  MODEL_EVALUATOR --> A_B_TEST_FRAMEWORK
+  A_B_TEST_FRAMEWORK --> MODEL_REGISTRY
+end
+
+service "MLflow Tracking" {fill: hero, sublabel: "Experiment metadata"}
+component "Serving Endpoint" {fill: dotgrid, sublabel: "TorchServe"}
+datastore "Prediction Logs" {fill: crosshatch}
+
+DATA_SCIENTIST --> RAW_DATA_LAKE : Upload dataset
+TRAIN_TEST_SPLIT --> HYPERPARAMETER_SEARCH : Training data
+TRAIN_TEST_SPLIT --> MODEL_EVALUATOR : Test data
+CHECKPOINT_STORAGE --> MODEL_EVALUATOR : Best checkpoint
+DISTRIBUTED_TRAINER --> MLFLOW_TRACKING : Log metrics
+MODEL_EVALUATOR --> MLFLOW_TRACKING : Log eval results
+MODEL_REGISTRY --> SERVING_ENDPOINT : Deploy champion model
+SERVING_ENDPOINT --> PREDICTION_LOGS : Log predictions
+DATA_SCIENTIST --> MLFLOW_TRACKING : Review experiments
+
+annotation "Automated retraining\ntrigger on data drift" near RAW_DATA_LAKE side left
+annotation "Shadow mode before\nfull traffic cutover" near A_B_TEST_FRAMEWORK side right
+annotation "Latency SLO: p99 < 50ms" near SERVING_ENDPOINT side bottom

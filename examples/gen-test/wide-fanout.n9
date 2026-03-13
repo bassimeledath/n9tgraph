@@ -1,0 +1,49 @@
+type flow
+title "CI/CD pipeline: build triggers parallel deployment targets"
+direction LR
+
+service "Build Server" {fill: hero, sublabel: "GitHub Actions"}
+component "Unit Tests" {fill: dotgrid}
+component "Integration Tests" {fill: dotgrid}
+component "Lint and Format" {fill: dotgrid}
+component "Security Scan" {fill: dotgrid}
+component "Docker Build" {fill: dotgrid}
+
+circle GATE
+
+component "Staging K8s" {fill: crosshatch}
+component "Preview Env" {fill: crosshatch}
+component "Canary Prod" {fill: crosshatch}
+component "Load Test Env" {fill: crosshatch}
+component "Docs Deploy" {fill: crosshatch}
+component "NPM Publish" {fill: crosshatch}
+component "CDN Purge" {fill: crosshatch}
+component "Sentry Release" {fill: crosshatch}
+component "Datadog Deploy Marker" {fill: crosshatch}
+component "Slack Notification" {fill: crosshatch}
+
+BUILD_SERVER --> UNIT_TESTS : Parallel
+BUILD_SERVER --> INTEGRATION_TESTS : Parallel
+BUILD_SERVER --> LINT_AND_FORMAT : Parallel
+BUILD_SERVER --> SECURITY_SCAN : Parallel
+BUILD_SERVER --> DOCKER_BUILD : Parallel
+
+UNIT_TESTS --> GATE
+INTEGRATION_TESTS --> GATE
+LINT_AND_FORMAT --> GATE
+SECURITY_SCAN --> GATE
+DOCKER_BUILD --> GATE
+
+GATE --> STAGING_K8S : Deploy
+GATE --> PREVIEW_ENV : Deploy
+GATE --> CANARY_PROD : Deploy 5%
+GATE --> LOAD_TEST_ENV : Deploy
+GATE --> DOCS_DEPLOY : Publish
+GATE --> NPM_PUBLISH : Publish
+GATE --> CDN_PURGE : Invalidate
+GATE --> SENTRY_RELEASE : Tag release
+GATE --> DATADOG_DEPLOY_MARKER : Annotate
+GATE --> SLACK_NOTIFICATION : Notify team
+
+annotation "All checks must pass" near GATE side top
+annotation "Fan-out to 10 targets" near GATE side bottom

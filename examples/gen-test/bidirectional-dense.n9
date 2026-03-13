@@ -1,0 +1,28 @@
+type flow
+title "Distributed consensus protocol: peer-to-peer message exchange"
+direction LR
+
+component "Node Alpha" {fill: dotgrid, sublabel: "Leader"}
+component "Node Beta" {fill: dotgrid, sublabel: "Follower"}
+component "Node Gamma" {fill: dotgrid, sublabel: "Follower"}
+component "Node Delta" {fill: dotgrid, sublabel: "Follower"}
+component "Node Epsilon" {fill: dotgrid, sublabel: "Candidate"}
+
+NODE_ALPHA <--> NODE_BETA : AppendEntries / ACK
+NODE_ALPHA <--> NODE_GAMMA : AppendEntries / ACK
+NODE_ALPHA <--> NODE_DELTA : AppendEntries / ACK
+NODE_ALPHA <--> NODE_EPSILON : AppendEntries / ACK
+NODE_BETA <--> NODE_GAMMA : RequestVote / VoteGranted
+NODE_BETA <--> NODE_DELTA : Heartbeat / Heartbeat
+NODE_GAMMA <--> NODE_DELTA : RequestVote / VoteGranted
+NODE_GAMMA <--> NODE_EPSILON : Heartbeat / Heartbeat
+NODE_DELTA <--> NODE_EPSILON : RequestVote / VoteGranted
+NODE_BETA <--> NODE_EPSILON : Heartbeat / Heartbeat
+
+NODE_ALPHA --> NODE_BETA : Snapshot transfer
+NODE_ALPHA --> NODE_GAMMA : Snapshot transfer
+NODE_ALPHA --> NODE_DELTA : Snapshot transfer
+NODE_ALPHA --> NODE_EPSILON : Snapshot transfer
+
+annotation "Raft consensus protocol\nwith leader election" near NODE_ALPHA side top
+annotation "Quorum: 3 of 5 nodes\nmust agree" near NODE_GAMMA side bottom
