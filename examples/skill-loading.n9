@@ -3,9 +3,9 @@ title The Responses API uses skills: Registry → Bundle → Runtime
 direction LR
 
 component MODELS {fill: dotgrid}
-service "RESPONSES API" {fill: hero, sublabel: "System prompt: name, description, path"}
-component "SKILL REGISTRY" {fill: dotgrid, sublabel: "name, description, object_id"}
-component "SKILL BUNDLE STORAGE" {fill: dotgrid, sublabel: "object_id, zip"}
+service "RESPONSES API" {fill: hero, sublabel: "System prompt: name, description, path", min-height: 120}
+component "SKILL REGISTRY" {fill: dotgrid, sublabel: "name, description, object_id", min-height: 70}
+component "SKILL BUNDLE STORAGE" {fill: dotgrid, sublabel: "object_id, zip", min-height: 70}
 component "CONTAINER RUNTIME" {fill: dotgrid, sublabel: "/home/oai/skills/..."}
 
 RESPONSES_API --> MODELS : COMMAND/OUTPUT

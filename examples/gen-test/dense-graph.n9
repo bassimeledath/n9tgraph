@@ -1,6 +1,6 @@
 type flow
 title "E-commerce microservices data pipeline\nwith event sourcing and CQRS"
-direction LR
+direction TB
 
 actor Client
 service "API Gateway" {fill: hero, sublabel: "Rate limiting + auth"}

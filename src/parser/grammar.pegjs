@@ -28,14 +28,22 @@ Diagram
 // ═══════════════════════════════════════════════════════════
 
 SequenceBody
-  = WS title:TitleLine? stmts:( WS s:SeqStatement { return s; } )* WS {
+  = WS title:TitleLine? WS msgStep:MessageStepLine? WS pGap:ParticipantGapLine? stmts:( WS s:SeqStatement { return s; } )* WS {
       return {
         type: 'sequence',
         title: title || undefined,
+        messageStep: msgStep || undefined,
+        participantGap: pGap || undefined,
         participants: stmts.filter(s => s._kind === 'participant').map(({ _kind, ...rest }) => rest),
         elements: stmts.filter(s => s._kind !== 'participant'),
       };
     }
+
+MessageStepLine
+  = "message-step" HS+ n:$[0-9]+ EOL { return parseInt(n, 10); }
+
+ParticipantGapLine
+  = "participant-gap" HS+ n:$[0-9]+ EOL { return parseInt(n, 10); }
 
 SeqStatement
   = ParticipantStmt / FragmentStmt / NoteStmt / MessageStmt
@@ -115,7 +123,7 @@ NoteTargets
 // ═══════════════════════════════════════════════════════════
 
 FlowBody
-  = WS title:TitleLine? WS theme:ThemeLine? WS dir:DirectionLine? stmts:( WS s:FlowStatement { return s; } )* WS {
+  = WS title:TitleLine? WS theme:ThemeLine? WS dir:DirectionLine? WS spc:SpacingLine? WS asp:AspectLine? WS wrp:WrapLine? stmts:( WS s:FlowStatement { return s; } )* WS {
       const nodes = stmts.filter(s => s._kind === 'node').map(({ _kind, ...rest }) => rest);
       const edges = stmts.filter(s => s._kind === 'edge').map(({ _kind, ...rest }) => rest);
       const annotations = stmts.filter(s => s._kind === 'annotation').map(({ _kind, ...rest }) => rest);
@@ -126,6 +134,9 @@ FlowBody
         title: title || undefined,
         theme: theme || undefined,
         direction: dir || 'LR',
+        spacing: spc || undefined,
+        aspect: asp || undefined,
+        wrap: wrp || undefined,
         nodes: nodes,
         edges: edges,
         annotations: annotations,
@@ -139,6 +150,15 @@ ThemeLine
 
 DirectionLine
   = "direction" HS+ d:$("LR" / "TB" / "RL" / "BT") EOL { return d; }
+
+SpacingLine
+  = "spacing" HS+ s:$("compact" / "balanced" / "spacious") EOL { return s; }
+
+AspectLine
+  = "aspect" HS+ a:$("auto" / "portrait" / "landscape" / "square") EOL { return a; }
+
+WrapLine
+  = "wrap" HS+ w:$("auto" / "none") EOL { return w; }
 
 FlowStatement
   = FlowAnnotationStmt / FlowSubgraphStmt / FlowCodeblockStmt / FlowNodeStmt / FlowEdgeStmt
@@ -428,8 +448,11 @@ PropertiesBlock
       return obj;
     }
 
+PropertyKey
+  = $( [A-Za-z_] [A-Za-z0-9_-]* )
+
 PropertyPair
-  = HS* key:Identifier HS* ":" HS* value:PropertyValue HS* ","? { return [key, value]; }
+  = HS* key:PropertyKey HS* ":" HS* value:PropertyValue HS* ","? { return [key, value]; }
 
 PropertyValue
   = QuotedString / Identifier / $[0-9]+

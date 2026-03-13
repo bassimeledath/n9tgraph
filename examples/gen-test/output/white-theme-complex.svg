@@ -25,15 +25,15 @@
 <rect x="272.875" y="118.5" width="277.625" height="308.5" rx="12" fill="url(#dotgrid)" stroke="#ffffff" stroke-width="1" opacity="0.35"/><rect x="272.875" y="118.5" width="277.625" height="308.5" rx="12" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
 <rect x="78" y="409" width="568" height="270" rx="12" fill="url(#crosshatch)" stroke="#ffffff" stroke-width="1" opacity="0.35"/><rect x="78" y="409" width="568" height="270" rx="12" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
 <rect x="231" y="409" width="369" height="261" rx="12" fill="url(#dotgrid)" stroke="#ffffff" stroke-width="1" opacity="0.35"/><rect x="231" y="409" width="369" height="261" rx="12" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
-<polyline points="366.75,108 366.75,162.5 457.5,162.5 457.5,154.5" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="385.875,411 385.875,453 260.5,453 260.5,445" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="385.875,411 385.875,453 491.5,453 491.5,445" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="366.75,108 366.75,156.5 457.5,156.5 457.5,154.5" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="385.875,411 385.875,447 260.5,447 260.5,445" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="385.875,411 385.875,447 491.5,447 491.5,445" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="429,634 64,634 64,494 491.5,494 491.5,479" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="141.5,542 64,542 64,222 276,222 276,207" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="399,462 64,462 64,222 276,222 276,207" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="329" y1="654" x2="345.5" y2="697" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="345.5" y1="755" x2="345.5" y2="789" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="366.75,108 366.75,162.5 276,162.5 276,142" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="366.75,108 366.75,156.5 276,156.5 276,142" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="457.5" y1="194.5" x2="409.75" y2="241" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="409.75" y1="275" x2="385.875" y2="309" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="385.875" y1="343" x2="385.875" y2="377" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
@@ -42,15 +42,15 @@
 <polyline points="246.5,571 246.5,592.5 529.5,592.5 529.5,614" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="491.5" y1="479" x2="476" y2="525" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="476,559 476,586.5 329,586.5 329,614" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="360.625" y="152" width="103" height="21" rx="4" fill="#000000"/>
-<rect x="274.9375" y="442.5" width="96.5" height="21" rx="4" fill="#000000"/>
-<rect x="403.4375" y="442.5" width="70.5" height="21" rx="4" fill="#000000"/>
+<rect x="360.625" y="146" width="103" height="21" rx="4" fill="#000000"/>
+<rect x="274.9375" y="436.5" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="403.4375" y="436.5" width="70.5" height="21" rx="4" fill="#000000"/>
 <rect x="9.25" y="553.5" width="109.5" height="21" rx="4" fill="#000000"/>
 <rect x="22.25" y="371.5" width="83.5" height="21" rx="4" fill="#000000"/>
 <rect x="6" y="331.5" width="116" height="21" rx="4" fill="#000000"/>
 <rect x="263" y="665" width="148.5" height="21" rx="4" fill="#000000"/>
 <rect x="290.75" y="761.5" width="109.5" height="21" rx="4" fill="#000000"/>
-<rect x="256.875" y="152" width="129" height="21" rx="4" fill="#000000"/>
+<rect x="256.875" y="146" width="129" height="21" rx="4" fill="#000000"/>
 <rect x="341.6875" y="131.5" width="140" height="24" fill="#000000" rx="3"/><text x="411.6875" y="144.5" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Data Preparation</text>
 <rect x="86" y="422" width="192.5" height="24" fill="#000000" rx="3"/><text x="96" y="435" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="start">Training Infrastructure</text>
 <rect x="239" y="422" width="192.5" height="24" fill="#000000" rx="3"/><text x="249" y="435" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="start">Evaluation and Registry</text>
@@ -69,15 +69,15 @@
 <rect x="399" y="445" width="185" height="34" rx="17" fill="#000000" stroke="#ffffff" stroke-width="1.5"/><text x="491.5" y="462" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Model Evaluator</text>
 <rect x="369.5" y="525" width="213" height="34" rx="17" fill="#000000" stroke="#ffffff" stroke-width="1.5"/><text x="476" y="542" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">A/B Test Framework</text>
 <rect x="247" y="614" width="164" height="40" rx="12" fill="url(#crosshatch)" stroke="#ffffff" stroke-width="1.5"/><rect x="265" y="622.9" width="128" height="22.2" fill="#000000" rx="2"/><text x="329" y="634" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Model Registry</text>
-<text x="412.125" y="166" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Upload dataset</text>
-<text x="323.1875" y="456.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Training data</text>
-<text x="438.6875" y="456.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Test data</text>
+<text x="412.125" y="160" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Upload dataset</text>
+<text x="323.1875" y="450.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Training data</text>
+<text x="438.6875" y="450.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Test data</text>
 <text x="64" y="567.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Best checkpoint</text>
 <text x="64" y="385.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Log metrics</text>
 <text x="64" y="345.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Log eval results</text>
 <text x="337.25" y="679" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Deploy champion model</text>
 <text x="345.5" y="775.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Log predictions</text>
-<text x="321.375" y="166" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Review experiments</text>
+<text x="321.375" y="160" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.85" text-anchor="middle">Review experiments</text>
 <text x="360.5" y="94" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Automated retraining</text><text x="360.5" y="112" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.7">trigger on data drift</text>
 <text x="594.5" y="703" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Shadow mode before</text><text x="594.5" y="721" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#ffffff" opacity="0.7">full traffic cutover</text>
 <text x="345.5" y="745" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#ffffff" opacity="0.6" font-style="italic">Latency SLO: p99 &lt; 50ms</text>

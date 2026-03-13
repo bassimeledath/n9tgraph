@@ -245,11 +245,12 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
         } else {
           let midY = (fromPt.y + toPt.y) / 2;
-          // Avoid subgraph label areas for edges entering from outside
+          // Avoid subgraph label areas — compute zone from font metrics
           if (subgraphs) {
+            const labelZoneH = fontSizes.subtitle + 20; // label height + padding
             for (const sg of subgraphs) {
-              if (midY >= sg.y - 2 && midY <= sg.y + 40) {
-                midY = sg.y + 44;
+              if (midY >= sg.y - 2 && midY <= sg.y + labelZoneH) {
+                midY = sg.y + labelZoneH + 4;
               }
             }
           }
@@ -262,11 +263,12 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (edge.label) {
           const lx = (fc.x + tc.x) / 2;
           let ly = (fromPt.y + toPt.y) / 2;
-          // Avoid subgraph label areas for edge labels
+          // Avoid subgraph label areas for edge labels — compute zone from font metrics
           if (subgraphs) {
+            const labelZoneH = fontSizes.subtitle + 20;
             for (const sg of subgraphs) {
-              if (ly >= sg.y - 2 && ly <= sg.y + 40) {
-                ly = sg.y + 44;
+              if (ly >= sg.y - 2 && ly <= sg.y + labelZoneH) {
+                ly = sg.y + labelZoneH + 4;
               }
             }
           }
@@ -383,9 +385,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       let lx = fromPt.x + (toPt.x - fromPt.x) * t;
       let ly = fromPt.y + (toPt.y - fromPt.y) * t;
 
-      // Compute available gap and use adaptive wrapping
-      const gapX = Math.abs(toPt.x - fromPt.x);
-      const maxChars = gapX > 150 ? 30 : Math.max(15, Math.floor((gapX * 0.85) / 6.5));
+      // Fixed wrap width for edge labels (adaptive wrapping removed)
+      const maxChars = 30;
 
       // Estimate label dimensions for collision check
       const eLabel = escapeXml(edge.label);
@@ -400,11 +401,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const maxLineLen = Math.max(...wrapLines.map(l => l.length));
       const labelHalfW = (maxLineLen * 6.5 + 12) / 2;
       const labelHalfH = (wrapLines.length * 15 + 6) / 2;
-      // Increase clearance when edge endpoints have sublabels
-      const hasSublabelEndpoint =
-        ('properties' in fromNode && (fromNode as PositionedNode).properties?.sublabel) ||
-        ('properties' in toNode && (toNode as PositionedNode).properties?.sublabel);
-      const clearance = hasSublabelEndpoint ? 18 : 6;
+      // Fixed clearance for edge labels (sublabel-specific logic removed)
+      const clearance = 8;
 
       // Clamp label horizontally to stay clear of edge endpoints
       const leftX = Math.min(fromPt.x, toPt.x);
@@ -415,27 +413,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      // Check label against node bounding boxes and shift if overlapping
-      for (const [nodeId, node] of nodeById) {
-        const isEndpoint = nodeId === edge.from || nodeId === edge.to;
-        if (isEndpoint) {
-          // Only check endpoint collision for nodes with sublabels (avoids regressing other diagrams)
-          if (!('properties' in node && (node as PositionedNode).properties?.sublabel)) continue;
-          const margin = clearance;
-          const hOverlap = lx - labelHalfW < node.x + node.w + margin && lx + labelHalfW > node.x - margin;
-          const vOverlap = ly - labelHalfH < node.y + node.h + margin && ly + labelHalfH > node.y - margin;
-          if (hOverlap && vOverlap) {
-            const nc = nodeCenter(node);
-            if (ly <= nc.y) {
-              ly = node.y - labelHalfH - clearance;
-            } else {
-              ly = node.y + node.h + labelHalfH + clearance;
-            }
-          }
-          continue;
-        }
-        const hOverlap = lx - labelHalfW < node.x + node.w && lx + labelHalfW > node.x;
-        const vOverlap = ly - labelHalfH < node.y + node.h && ly + labelHalfH > node.y;
+      // Check label against all node bounding boxes and shift if overlapping
+      for (const [, node] of nodeById) {
+        const hOverlap = lx - labelHalfW < node.x + node.w + clearance && lx + labelHalfW > node.x - clearance;
+        const vOverlap = ly - labelHalfH < node.y + node.h + clearance && ly + labelHalfH > node.y - clearance;
         if (hOverlap && vOverlap) {
           const nc = nodeCenter(node);
           if (ly <= nc.y) {

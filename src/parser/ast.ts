@@ -54,6 +54,8 @@ export type SequenceElement = Message | CombinedFragment | Note;
 export interface SequenceDiagram {
   type: 'sequence';
   title?: string;
+  messageStep?: number;
+  participantGap?: number;
   participants: Participant[];
   elements: SequenceElement[];
 }
@@ -107,12 +109,18 @@ export interface CodeBlock {
 }
 
 export type ThemeName = 'default' | 'white';
+export type SpacingPreset = 'compact' | 'balanced' | 'spacious';
+export type AspectHint = 'auto' | 'portrait' | 'landscape' | 'square';
+export type WrapMode = 'auto' | 'none';
 
 export interface FlowDiagram {
   type: 'flow';
   title?: string;
   theme?: ThemeName;
   direction: FlowDirection;
+  spacing?: SpacingPreset;
+  aspect?: AspectHint;
+  wrap?: WrapMode;
   nodes: FlowNode[];
   edges: FlowEdge[];
   annotations: FlowAnnotation[];

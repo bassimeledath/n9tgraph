@@ -1,5 +1,5 @@
 // Sugiyama-style layered layout for flow diagrams
-import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName } from '../parser/ast.js';
+import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName, SpacingPreset, WrapMode } from '../parser/ast.js';
 import { nodeSizeForLabel, measureLineWidth, wrapLabel } from './text-measure.js';
 import { fontSizes } from '../render/theme.js';
 
@@ -79,9 +79,18 @@ export interface FlowLayout {
 const MARGIN_X = 28;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
-const LAYER_GAP = 24;
-const TB_LAYER_GAP = 34;
-const NODE_GAP = 18;
+const DEFAULT_LAYER_GAP = 24;
+const DEFAULT_TB_LAYER_GAP = 34;
+const DEFAULT_NODE_GAP = 18;
+
+// Spacing presets: compact, balanced (default), spacious
+function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: number; tbLayerGap: number } {
+  switch (preset) {
+    case 'compact':  return { nodeGap: 12, layerGap: 18, tbLayerGap: 24 };
+    case 'spacious': return { nodeGap: 30, layerGap: 50, tbLayerGap: 60 };
+    default:         return { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP };
+  }
+}
 const ACTOR_W = 42;
 const ACTOR_H = 58;
 const MIN_NODE_W = 62;
@@ -99,6 +108,12 @@ const MAX_NODES_PER_COL = 6;      // Grid fan-out threshold
 
 export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   const { nodes, edges, annotations, direction, title, subgraphs, codeblocks } = diagram;
+
+  // Resolve spacing preset to concrete gap values
+  const sp = resolveSpacing(diagram.spacing);
+  const NODE_GAP = sp.nodeGap;
+  const LAYER_GAP = sp.layerGap;
+  const TB_LAYER_GAP = sp.tbLayerGap;
 
   // Flatten all nodes: top-level + subgraph children + codeblocks (as virtual nodes)
   const allNodes: FlowNode[] = [...nodes];
@@ -132,7 +147,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   if (allNodes.length === 0) {
-    return { width: 200, height: 100, title, nodes: [], edges: [], annotations: [], subgraphs: [], overflows: [], codeblocks: [] };
+    return { width: 200, height: 100, direction, title, nodes: [], edges: [], annotations: [], subgraphs: [], overflows: [], codeblocks: [] };
   }
 
   // Build forward adjacency from --> edges
@@ -245,33 +260,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 3: Crossing minimization
   const ordered = minimizeCrossings(layers, dagAdj, dagInAdj);
 
-  // Step 3b: Terminal-first sorting for LR 2D grid preservation
-  // In LR mode, put terminal nodes (no forward edges) before flow-through nodes
-  // in each layer. This creates a 2D grid effect where the "continuing" flow
-  // goes to the bottom and terminal branches stay at the top.
-  if (direction === 'LR') {
-    for (let li = 0; li < ordered.length; li++) {
-      const layer = ordered[li];
-      if (layer.length < 3) continue; // Only for layers with 3+ nodes
-      const isTerminal = (id: string) => {
-        const fwd = dagAdj.get(id) || [];
-        return !fwd.some(child => {
-          for (let lj = li + 1; lj < ordered.length; lj++) {
-            if (ordered[lj].includes(child)) return true;
-          }
-          return false;
-        });
-      };
-      // Stable sort: terminals first, flow-through last
-      const origOrder = [...layer];
-      ordered[li] = [...layer].sort((a, b) => {
-        const aT = isTerminal(a) ? 0 : 1;
-        const bT = isTerminal(b) ? 0 : 1;
-        if (aT !== bT) return aT - bT;
-        return origOrder.indexOf(a) - origOrder.indexOf(b);
-      });
-    }
-  }
+  // Terminal-first sorting removed — node order follows declaration order + barycenter
 
   // Step 4: Compute node sizes
   const nodeSizes = new Map<string, { w: number; h: number }>();
@@ -349,7 +338,13 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
           h = Math.max(h, multiPairGroups * 65 + 8);
         }
       }
-      nodeSizes.set(n.id, { w: Math.max(size.w, MIN_NODE_W), h });
+      // Apply DSL min-height / min-width overrides
+      const dslMinH = parseInt(n.properties['min-height'] || '', 10);
+      const dslMinW = parseInt(n.properties['min-width'] || '', 10);
+      if (!isNaN(dslMinH)) h = Math.max(h, dslMinH);
+      let finalW = Math.max(size.w, MIN_NODE_W);
+      if (!isNaN(dslMinW)) finalW = Math.max(finalW, dslMinW);
+      nodeSizes.set(n.id, { w: finalW, h });
     }
   }
 
@@ -360,7 +355,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds);
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds, sp, diagram.wrap || 'auto');
 
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
@@ -474,12 +469,6 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       if (titleW > finalWidth) finalWidth = titleW;
     }
   }
-  // Compute rightmost content edge (nodes + subgraphs) to identify right-side annotations
-  let maxContentRight = 0;
-  for (const n of posNodes) maxContentRight = Math.max(maxContentRight, n.x + n.w);
-  for (const sg of posSubgraphs) maxContentRight = Math.max(maxContentRight, sg.x + sg.w);
-  const maxAnnotationWidth = Math.max(finalWidth * 1.15, finalWidth + 60);
-
   let finalHeight = positioned.height;
   const titleLinesCount = title ? title.split('\n').length : 0;
   const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 21 + 10 : MARGIN_TOP;
@@ -492,20 +481,14 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const annBottom = ann.y + lines.length * 18 + 10;
     maxAnnY = Math.max(maxAnnY, annBottom);
 
-    // Extend width for annotations — cap line length to prevent extreme width from long text
+    // Extend width for annotations — no capping, annotations contribute their full width
     const maxLineLen = Math.max(...lines.map(l => l.length));
     const cappedLineLen = Math.min(maxLineLen, 50);
     const textExtent = cappedLineLen * 7 + 12;
-    // Single-line annotations are centered (text-anchor=middle), so they extend half each way
     const isSingleLine = lines.length === 1;
     const annRight = isSingleLine ? ann.x + textExtent / 2 : ann.x + textExtent;
     if (annRight > finalWidth) {
-      // Annotations placed at the right margin (beyond content) get full extension
-      if (ann.x >= maxContentRight) {
-        finalWidth = annRight;
-      } else {
-        finalWidth = Math.min(annRight, maxAnnotationWidth);
-      }
+      finalWidth = annRight;
     }
   }
 
@@ -663,7 +646,7 @@ function minimizeCrossings(
 
 // ─── Coordinate assignment ───────────────────────────────
 
-function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChildIds?: Set<string>): number {
+function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChildIds?: Set<string>, nodeGap = DEFAULT_NODE_GAP): number {
   // Find the max labeled edge pair count for any node in this layer
   let maxPairCount = 0;
   let maxLabelLength = 0;
@@ -681,20 +664,14 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
     }
   }
   // Boost gap when nodes have labeled multi-edge pairs (e.g. bidirectional labeled edges)
-  let gap = maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 65 : NODE_GAP;
-  // Extra vertical space when multi-pair edges have long labels
-  if (maxPairCount >= 2 && maxLabelLength > 20) {
-    gap += Math.min(maxLabelLength - 20, 20) * 2;
-  }
+  let gap = maxPairCount >= 2 ? nodeGap + (maxPairCount - 1) * 65 : nodeGap;
+  // Long label gap extension removed — labels wrap at fixed width
 
-  // Fan-out boost: when an external node fans out labeled edges to multiple nodes in
-  // this layer, the labels can collide. Two tiers:
-  // 1. Multi-edge pairs into subgraph children: aggressive boost (labels spread ~65px each)
-  // 2. Single-edge fan-out to 3+ targets: moderate boost for vertical spread
+  // Simplified fan-out boost: when an external node fans labeled edges to N targets
+  // in this layer, ensure gap >= N * 15 to prevent label pileups
   if (layerNodes.length >= 2) {
     const layerSet = new Set(layerNodes);
     const externalTargets = new Map<string, Set<string>>();
-    const externalPairCounts = new Map<string, Map<string, number>>();
     for (const id of layerNodes) {
       for (const e of allEdges) {
         if (e.from !== id && e.to !== id) continue;
@@ -703,22 +680,11 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
         if (layerSet.has(other)) continue;
         if (!externalTargets.has(other)) externalTargets.set(other, new Set());
         externalTargets.get(other)!.add(id);
-        if (!externalPairCounts.has(other)) externalPairCounts.set(other, new Map());
-        const pc = externalPairCounts.get(other)!;
-        pc.set(id, (pc.get(id) || 0) + 1);
       }
     }
-    for (const [other, targets] of externalTargets) {
-      if (targets.size < 2) continue;
-      const pc = externalPairCounts.get(other)!;
-      const hasMultiPair = [...pc.values()].some(c => c >= 2);
-      const targetsInSubgraph = subgraphChildIds && [...targets].some(id => subgraphChildIds.has(id));
-      if (hasMultiPair && targetsInSubgraph) {
-        // Tier 1: Multi-edge fan-out into subgraph — aggressive boost
-        gap = Math.max(gap, targets.size * 75);
-      } else if (targets.size >= 3) {
-        // Tier 2: Wide fan-out with labeled edges — moderate capped boost
-        gap = Math.max(gap, Math.min(targets.size * 12, 80));
+    for (const [, targets] of externalTargets) {
+      if (targets.size >= 2) {
+        gap = Math.max(gap, targets.size * 15);
       }
     }
   }
@@ -735,7 +701,12 @@ function assignCoordinates(
   annotations?: FlowAnnotation[],
   sublabelIds?: Set<string>,
   subgraphChildIds?: Set<string>,
+  spacingVals: { nodeGap: number; layerGap: number; tbLayerGap: number } = { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP },
+  wrapMode: WrapMode = 'auto',
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
+  const NODE_GAP = spacingVals.nodeGap;
+  const LAYER_GAP = spacingVals.layerGap;
+  const TB_LAYER_GAP = spacingVals.tbLayerGap;
   const positions = new Map<string, { x: number; y: number }>();
   const titleLines = title ? title.split('\n').length : 0;
   const titleOffset = title ? TITLE_HEIGHT + Math.max(0, titleLines - 1) * 21 : 0;
@@ -748,7 +719,7 @@ function assignCoordinates(
 
     for (const layer of layers) {
       let maxW = 0, totalH = 0;
-      let gap = computeLayerGap(layer, allEdges, subgraphChildIds);
+      let gap = computeLayerGap(layer, allEdges, subgraphChildIds, NODE_GAP);
 
       // Increase gap when nodes in this layer have annotations between them
       if (annotations && layer.length > 1) {
@@ -770,13 +741,7 @@ function assignCoordinates(
         }
       }
 
-      // Boost gap when layer has multiple sublabel nodes (need more vertical space)
-      if (sublabelIds) {
-        const sublabelCount = layer.filter(id => sublabelIds.has(id)).length;
-        if (sublabelCount >= 2) {
-          gap = Math.max(gap, sublabelCount * 15);
-        }
-      }
+      // Sublabel gap boost removed — node sizing already accounts for sublabel height
 
       layerGaps.push(gap);
       for (const id of layer) {
@@ -827,7 +792,7 @@ function assignCoordinates(
     const prelimTotalH = startY + maxCrossHeight + MARGIN_TOP;
     const prelimRatio = prelimTotalW / Math.max(prelimTotalH, 1);
 
-    if (prelimRatio > MAX_ASPECT_RATIO && isMostlySingleNode && layers.length >= 4) {
+    if (wrapMode !== 'none' && prelimRatio > MAX_ASPECT_RATIO && isMostlySingleNode && layers.length >= 4) {
       // ─── Serpentine chain folding ───────────────────────
       // Fold long chains into multiple rows for compact layout
       const targetRatio = 2.0;
@@ -929,61 +894,9 @@ function assignCoordinates(
     }
 
     const totalW = curX - layerHGaps[layers.length - 1] + MARGIN_X;
-    let totalH = startY + maxCrossHeight + MARGIN_TOP;
+    const totalH = startY + maxCrossHeight + MARGIN_TOP;
 
-    // For LR diagrams with dense layers: if aspect ratio is too wide, stretch vertically
-    const maxLayerSize = Math.max(...layers.map(l => l.length));
-    // Use effective width including title for ratio calculation
-    let effectiveW = totalW;
-    if (title) {
-      const titleW = measureLineWidth(title, fontSizes.title, 'sans') + 140;
-      effectiveW = Math.max(effectiveW, titleW);
-    }
-    const lrRatio = effectiveW / totalH;
-    if (lrRatio > 1.5 && maxLayerSize >= 3) {
-      const targetRatio = 1.4;
-      const scale = lrRatio / targetRatio;
-      for (let li = 0; li < layers.length; li++) {
-        const layer = layers[li];
-        if (layer.length < 2) continue;
-        const ys = layer.map(id => {
-          const p = positions.get(id)!;
-          const s = nodeSizes.get(id)!;
-          return p.y + s.h / 2;
-        });
-        const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
-        for (const id of layer) {
-          const pos = positions.get(id)!;
-          const s = nodeSizes.get(id)!;
-          const nodeCenterY = pos.y + s.h / 2;
-          const newCenterY = centerY + (nodeCenterY - centerY) * scale;
-          pos.y = newCenterY - s.h / 2;
-        }
-        // Ensure no node goes above startY after scaling
-        let minNodeY = Infinity;
-        for (const id of layer) {
-          minNodeY = Math.min(minNodeY, positions.get(id)!.y);
-        }
-        if (minNodeY < startY) {
-          const shift = startY - minNodeY;
-          for (const id of layer) {
-            positions.get(id)!.y += shift;
-          }
-        }
-      }
-      let newMaxCrossH = 0;
-      for (const layer of layers) {
-        let minY = Infinity, maxYH = -Infinity;
-        for (const id of layer) {
-          const p = positions.get(id)!;
-          const s = nodeSizes.get(id)!;
-          minY = Math.min(minY, p.y);
-          maxYH = Math.max(maxYH, p.y + s.h);
-        }
-        newMaxCrossH = Math.max(newMaxCrossH, maxYH - minY);
-      }
-      totalH = startY + newMaxCrossH + MARGIN_TOP;
-    }
+    // LR aspect ratio correction removed — use DSL `spacing` or `aspect` hints
 
     return { nodePositions: positions, width: totalW, height: totalH };
 
@@ -1021,28 +934,9 @@ function assignCoordinates(
     }
 
     const totalW = MARGIN_X * 2 + maxCrossWidth;
-    let totalH = curY - TB_LAYER_GAP + MARGIN_TOP;
+    const totalH = curY - TB_LAYER_GAP + MARGIN_TOP;
 
-    // For TB diagrams: if layout is landscape, add vertical spacing for portrait orientation
-    if (layers.length > 2) {
-      const ratio = totalW / totalH;
-      if (ratio > 1.0) {
-        const targetRatio = 0.85;
-        const targetH = totalW / targetRatio;
-        const extraH = targetH - totalH;
-        const numGaps = layers.length - 1;
-        if (numGaps > 0) {
-          const extraPerGap = extraH / numGaps;
-          for (let li = 1; li < layers.length; li++) {
-            for (const id of layers[li]) {
-              const pos = positions.get(id)!;
-              pos.y += extraPerGap * li;
-            }
-          }
-          totalH = Math.ceil(targetH);
-        }
-      }
-    }
+    // TB aspect ratio correction removed — use DSL `spacing` or `aspect` hints
 
     return { nodePositions: positions, width: totalW, height: totalH };
   }
@@ -1391,7 +1285,7 @@ function refineCoordinatesLR(
     const id = layer[0];
     const sz = nodeSizes.get(id)!;
     const nbrs = neighbors.get(id);
-    if (!nbrs || nbrs.size === 0 || nbrs.size > 2) continue;
+    if (!nbrs || nbrs.size === 0) continue;
 
     const cyValues: number[] = [];
     for (const nid of nbrs) {
