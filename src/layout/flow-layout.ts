@@ -372,6 +372,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     if (annRight > finalWidth) finalWidth = annRight;
   }
 
+  // Also ensure subgraphs don't overlap with title
+  for (const sg of posSubgraphs) {
+    minAnnY = Math.min(minAnnY, sg.y);
+  }
+
   if (minAnnY < titleAreaBottom) {
     const shift = titleAreaBottom - minAnnY;
     for (const n of posNodes) n.y += shift;
@@ -773,17 +778,29 @@ function resolveAnnotationOverlaps(
     };
   });
 
-  // Resolve annotation-subgraph overlaps: push annotations above subgraph boundary
+  // Resolve annotation-subgraph overlaps: push above or below based on position
   for (let i = 0; i < annotations.length; i++) {
     const b = boxes[i];
     for (const sg of subgraphs) {
       const hOverlap = b.x < sg.x + sg.w && sg.x < b.x + b.w;
       const vOverlap = b.y < sg.y + sg.h && sg.y < b.y + b.h;
       if (hOverlap && vOverlap) {
-        const newY = sg.y - b.h - 10;
-        if (newY < annotations[i].y) {
-          annotations[i].y = newY;
-          boxes[i].y = newY;
+        const annCenterY = b.y + b.h / 2;
+        const sgCenterY = sg.y + sg.h / 2;
+        if (annCenterY <= sgCenterY) {
+          // Push above subgraph
+          const newY = sg.y - b.h - 10;
+          if (newY < annotations[i].y) {
+            annotations[i].y = newY;
+            boxes[i].y = newY;
+          }
+        } else {
+          // Push below subgraph
+          const newY = sg.y + sg.h + 10;
+          if (newY > annotations[i].y) {
+            annotations[i].y = newY;
+            boxes[i].y = newY;
+          }
         }
       }
     }
@@ -804,10 +821,19 @@ function resolveAnnotationOverlaps(
         const vOverlap = a.y < b.y + b.h && b.y < a.y + a.h;
 
         if (hOverlap && vOverlap) {
-          // Shift the later (rightward) annotation above the earlier one
-          const newY = a.y - b.h - 16;
-          annotations[bi].y = newY;
-          boxes[bi].y = newY;
+          // Try side-by-side placement first (2-column grid layout)
+          const sideByX = a.x + a.w + 24;
+          if (sideByX + b.w < 900) {
+            annotations[bi].x = sideByX;
+            boxes[bi].x = sideByX;
+            annotations[bi].y = annotations[ai].y;
+            boxes[bi].y = boxes[ai].y;
+          } else {
+            // Fall back: place below
+            const newY = a.y + a.h + 16;
+            annotations[bi].y = newY;
+            boxes[bi].y = newY;
+          }
           changed = true;
         }
       }

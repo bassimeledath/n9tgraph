@@ -143,7 +143,7 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
-function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): { lines: string; labelBgs: string; labels: string } {
+function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string, subgraphs?: PositionedSubgraph[]): { lines: string; labelBgs: string; labels: string } {
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
@@ -190,7 +190,15 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (Math.abs(fc.x - tc.x) < 10) {
           parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
         } else {
-          const midY = (fromPt.y + toPt.y) / 2;
+          let midY = (fromPt.y + toPt.y) / 2;
+          // Avoid subgraph label areas for edges entering from outside
+          if (subgraphs) {
+            for (const sg of subgraphs) {
+              if (midY >= sg.y - 2 && midY <= sg.y + 40) {
+                midY = sg.y + 44;
+              }
+            }
+          }
           parts.push(polylineEdge({
             from: fromPt, to: toPt,
             waypoints: [{ x: fc.x, y: midY }, { x: tc.x, y: midY }],
@@ -346,9 +354,9 @@ function renderSubgraph(sg: PositionedSubgraph): string {
   // Solid border on top for clarity
   svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="${stroke.node}" opacity="0.4"/>`;
 
-  // Title — mixed case, top-left inside
+  // Title — mixed case, centered top inside
   if (label) {
-    svg += `<text x="${x + 18}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9">${escapeXml(label)}</text>`;
+    svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
   }
 
   return svg;
@@ -442,7 +450,7 @@ export function renderFlow(layout: FlowLayout): string {
   }
 
   // Edge lines and label backgrounds behind nodes, label text on top
-  const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction);
+  const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction, layout.subgraphs);
   parts.push(edgeResult.lines);
   parts.push(edgeResult.labelBgs);
 
