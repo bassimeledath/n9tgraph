@@ -20,6 +20,7 @@ end
 component CODEX {fill: dotgrid}
 component CODEBASE {fill: dotgrid}
 
+APP --> VECTOR
 VECTOR --> VICTORIA_LOGS
 VECTOR --> VICTORIA_METRICS
 VECTOR --> VICTORIA_TRACES

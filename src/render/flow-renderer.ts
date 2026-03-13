@@ -455,8 +455,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   return { lines: parts.join('\n'), labelBgs: labelBgParts.join('\n'), labels: labelParts.join('\n') };
 }
 
-function renderSubgraph(sg: PositionedSubgraph): string {
-  const { x, y, w, h, label, properties } = sg;
+function renderSubgraphBg(sg: PositionedSubgraph): string {
+  const { x, y, w, h, properties } = sg;
   const fill = fillForPattern(properties.fill);
   const rx = spacing.borderRadius;
   let svg = '';
@@ -466,10 +466,20 @@ function renderSubgraph(sg: PositionedSubgraph): string {
   // Solid border on top for clarity
   svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="1" opacity="0.5"/>`;
 
+  return svg;
+}
+
+function renderSubgraphLabel(sg: PositionedSubgraph): string {
+  const { x, y, w, label } = sg;
+  if (!label) return '';
+
+  let svg = '';
+  // Background halo behind label so edge lines don't cross through text
+  const textW = label.length * 7.5 + 20;
+  const textH = fontSizes.subtitle + 10;
+  svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
   // Title — mixed case, centered top inside
-  if (label) {
-    svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
-  }
+  svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
 
   return svg;
 }
@@ -558,13 +568,18 @@ export function renderFlow(layout: FlowLayout): string {
 
   // Subgraph backgrounds (behind everything)
   for (const sg of layout.subgraphs) {
-    parts.push(renderSubgraph(sg));
+    parts.push(renderSubgraphBg(sg));
   }
 
   // Edge lines and label backgrounds behind nodes, label text on top
   const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction, layout.subgraphs);
   parts.push(edgeResult.lines);
   parts.push(edgeResult.labelBgs);
+
+  // Subgraph labels (on top of edges, with background halos)
+  for (const sg of layout.subgraphs) {
+    parts.push(renderSubgraphLabel(sg));
+  }
 
   // Nodes
   for (const node of layout.nodes) {
