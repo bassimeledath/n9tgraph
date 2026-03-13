@@ -60,7 +60,7 @@ const MARGIN_X = 32;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const PARTICIPANT_GAP = 105;       // horizontal distance between participant centers
-const MESSAGE_STEP = 34;           // vertical step per message
+let MESSAGE_STEP = 34;             // vertical step per message (may be increased for portrait bias)
 const FRAGMENT_PAD_X = 14;         // horizontal padding inside fragment
 const FRAGMENT_PAD_TOP = 22;       // space above first child in fragment
 const FRAGMENT_PAD_BOTTOM = 12;    // space below last child in fragment
@@ -70,11 +70,26 @@ const HEADER_PAD_X = 16;
 const HEADER_PAD_Y = 10;
 const BOTTOM_HEADER_GAP = 18;     // gap between last element and bottom headers
 
+// ─── Helpers ─────────────────────────────────────────────
+
+function countMessages(elements: SequenceElement[]): number {
+  let count = 0;
+  for (const e of elements) {
+    if (e.type === 'message') count++;
+    else if (e.type === 'fragment') count += countMessages(e.children);
+  }
+  return count;
+}
+
 // ─── Layout engine ───────────────────────────────────────
 
 export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   const participants = diagram.participants;
   const elements = diagram.elements;
+
+  // Count messages for portrait bias: diagrams with many messages should be taller
+  const messageCount = countMessages(elements);
+  MESSAGE_STEP = messageCount > 5 ? 42 : 34;
 
   // Compute participant header sizes
   const headerSizes = participants.map(p => {

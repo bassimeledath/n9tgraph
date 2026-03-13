@@ -72,10 +72,22 @@ function renderNode(node: PositionedNode, theme?: string): string {
   // Pill = rectangle with rx = height/2 (fully semicircular ends), NOT an ellipse
   const rx = properties.shape === 'pill' ? h / 2 : undefined;
   let svg = rect({ x, y, w, h, label: undefined, fill, ...(rx !== undefined ? { rx } : {}) });
+  const hasPatternFill = rawFill.startsWith('url(');
   if (label) {
+    // Add solid background behind text for pattern-filled nodes to ensure readability
+    if (hasPatternFill) {
+      const textW = formatLabel(label).length * 8 + 16;
+      const textH = fontSizes.nodeLabel + 6;
+      svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + h / 2 + labelOffsetY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
+    }
     svg += `<text x="${x + w / 2}" y="${y + h / 2 + labelOffsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
   }
   if (properties.sublabel) {
+    if (hasPatternFill) {
+      const sublabelW = properties.sublabel.length * 6.5 + 12;
+      const sublabelH = fontSizes.edgeLabel + 6;
+      svg += `<rect x="${x + w / 2 - sublabelW / 2}" y="${y + h / 2 + 12 - sublabelH / 2}" width="${sublabelW}" height="${sublabelH}" fill="${colors.bg}" rx="2"/>`;
+    }
     svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
   }
   return svg;

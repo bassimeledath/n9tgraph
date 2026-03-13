@@ -340,7 +340,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds);
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds);
 
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
@@ -590,7 +590,7 @@ function minimizeCrossings(
 
 // ─── Coordinate assignment ───────────────────────────────
 
-function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
+function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChildIds?: Set<string>): number {
   // Find the max labeled edge pair count for any node in this layer
   let maxPairCount = 0;
   let maxLabelLength = 0;
@@ -613,6 +613,43 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
   if (maxPairCount >= 2 && maxLabelLength > 20) {
     gap += Math.min(maxLabelLength - 20, 20) * 2;
   }
+
+  // Fan-out boost: when an external node fans out labeled edges to multiple nodes in
+  // this layer, the labels can collide. Two tiers:
+  // 1. Multi-edge pairs into subgraph children: aggressive boost (labels spread ~65px each)
+  // 2. Single-edge fan-out to 3+ targets: moderate boost for vertical spread
+  if (layerNodes.length >= 2) {
+    const layerSet = new Set(layerNodes);
+    const externalTargets = new Map<string, Set<string>>();
+    const externalPairCounts = new Map<string, Map<string, number>>();
+    for (const id of layerNodes) {
+      for (const e of allEdges) {
+        if (e.from !== id && e.to !== id) continue;
+        if (!e.label) continue;
+        const other = e.from === id ? e.to : e.from;
+        if (layerSet.has(other)) continue;
+        if (!externalTargets.has(other)) externalTargets.set(other, new Set());
+        externalTargets.get(other)!.add(id);
+        if (!externalPairCounts.has(other)) externalPairCounts.set(other, new Map());
+        const pc = externalPairCounts.get(other)!;
+        pc.set(id, (pc.get(id) || 0) + 1);
+      }
+    }
+    for (const [other, targets] of externalTargets) {
+      if (targets.size < 2) continue;
+      const pc = externalPairCounts.get(other)!;
+      const hasMultiPair = [...pc.values()].some(c => c >= 2);
+      const targetsInSubgraph = subgraphChildIds && [...targets].some(id => subgraphChildIds.has(id));
+      if (hasMultiPair && targetsInSubgraph) {
+        // Tier 1: Multi-edge fan-out into subgraph — aggressive boost
+        gap = Math.max(gap, targets.size * 75);
+      } else if (targets.size >= 3) {
+        // Tier 2: Wide fan-out with labeled edges — moderate boost for vertical spread
+        gap = Math.max(gap, targets.size * 35);
+      }
+    }
+  }
+
   return gap;
 }
 
@@ -624,6 +661,7 @@ function assignCoordinates(
   title?: string,
   annotations?: FlowAnnotation[],
   sublabelIds?: Set<string>,
+  subgraphChildIds?: Set<string>,
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
   const titleLines = title ? title.split('\n').length : 0;
@@ -637,7 +675,7 @@ function assignCoordinates(
 
     for (const layer of layers) {
       let maxW = 0, totalH = 0;
-      let gap = computeLayerGap(layer, allEdges);
+      let gap = computeLayerGap(layer, allEdges, subgraphChildIds);
 
       // Increase gap when nodes in this layer have annotations between them
       if (annotations && layer.length > 1) {
@@ -708,7 +746,7 @@ function assignCoordinates(
       effectiveW = Math.max(effectiveW, titleW);
     }
     const lrRatio = effectiveW / totalH;
-    if (lrRatio > 1.6 && maxLayerSize >= 3) {
+    if (lrRatio > 1.5 && maxLayerSize >= 3) {
       const targetRatio = 1.4;
       const scale = lrRatio / targetRatio;
       for (let li = 0; li < layers.length; li++) {
