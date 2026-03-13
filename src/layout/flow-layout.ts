@@ -276,7 +276,10 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     if (n.kind === 'actor') {
       nodeSizes.set(n.id, { w: ACTOR_W, h: ACTOR_H });
     } else if (n.kind === 'circle') {
-      nodeSizes.set(n.id, { w: CIRCLE_R * 2, h: CIRCLE_R * 2 });
+      // Size circle to fit label text (with letter-spacing)
+      const labelW = n.label ? measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel + 16 : 0;
+      const r = Math.max(CIRCLE_R, labelW / 2);
+      nodeSizes.set(n.id, { w: r * 2, h: r * 2 });
     } else if (codeblockIds.has(n.id)) {
       // Size codeblock based on its code content
       const cb = codeblocks.find(c => c.id === n.id)!;
@@ -723,6 +726,27 @@ function assignCoordinates(
 
     const maxCrossHeight = Math.max(...layerHeights);
 
+    // Compute per-layer horizontal gaps to accommodate edge labels
+    const layerHGaps: number[] = [];
+    for (let li = 0; li < layers.length; li++) {
+      if (li === layers.length - 1) {
+        layerHGaps.push(LAYER_GAP);
+        continue;
+      }
+      const curSet = new Set(layers[li]);
+      const nextSet = new Set(layers[li + 1]);
+      let maxLabelW = 0;
+      for (const e of allEdges) {
+        if (!e.label) continue;
+        if ((curSet.has(e.from) && nextSet.has(e.to)) ||
+            (curSet.has(e.to) && nextSet.has(e.from))) {
+          const labelW = e.label.length * 6.5 + 24;
+          maxLabelW = Math.max(maxLabelW, labelW);
+        }
+      }
+      layerHGaps.push(maxLabelW > 0 ? Math.max(LAYER_GAP, maxLabelW) : LAYER_GAP);
+    }
+
     let curX = MARGIN_X;
     for (let li = 0; li < layers.length; li++) {
       const layer = layers[li];
@@ -736,10 +760,10 @@ function assignCoordinates(
         positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
         curY += sz.h + gap;
       }
-      curX += layerW + LAYER_GAP;
+      curX += layerW + layerHGaps[li];
     }
 
-    const totalW = curX - LAYER_GAP + MARGIN_X;
+    const totalW = curX - layerHGaps[layers.length - 1] + MARGIN_X;
     let totalH = startY + maxCrossHeight + MARGIN_TOP;
 
     // For LR diagrams with dense layers: if aspect ratio is too wide, stretch vertically
