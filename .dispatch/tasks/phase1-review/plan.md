@@ -1,0 +1,9 @@
+# Phase 1 Review: Theme + Shared Renderer Primitives
+
+- [x] Read ALL source files: `src/render/theme.ts`, `src/render/patterns.ts`, `src/render/shapes.ts`, `src/render/icons.ts`, `src/render/edges.ts`, `src/layout/text-measure.ts`, `src/render/primitives-test.ts`
+- [x] Open and examine EACH reference image in `examples/reference/` — compare the visual elements against the code's theme constants, pattern definitions, and shape rendering. Flag any mismatches.
+- [x] Render the primitives test SVG by running `npx tsx src/render/primitives-test.ts`, then convert it to PNG using `node -e "const { Resvg } = require('@resvg/resvg-js'); const fs = require('fs'); const svg = fs.readFileSync('examples/primitives-test.svg', 'utf8'); const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } }); fs.writeFileSync('examples/primitives-test.png', resvg.render().asPng());"`. Then view the PNG and compare against reference images.
+- [x] Check these specific issues with a skeptical eye: (a) Patterns: dotgrid/hero OK, crosshatch opacity bumped 0.15→0.20 to match references. (b) Double-border: two nested rects with correct gap calculation. (c) Actor stick figure: correct. (d) Arrow markers: filled triangles OK, BUT straightEdge/polylineEdge ignored markerStart — FIXED. (e) Text measurement: handles multi-line correctly via split('\n') and max width. (f) All 12 icons are valid SVG paths matching their descriptions.
+- [x] Fix any issues you find directly in the source files. Fixed: (1) straightEdge/polylineEdge now support markerStart, (2) return arrow in test uses correct marker, (3) crosshatch opacity 0.15→0.20
+- [x] Re-run the primitives test and verify fixes render correctly. All three fixes confirmed visually: return arrow points left, crosshatch more visible, markerStart wired up.
+- [x] Write summary of findings/changes to .dispatch/tasks/phase1-review/output.md
