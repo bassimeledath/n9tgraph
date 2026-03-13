@@ -37,7 +37,7 @@ export const fontSizes = {
   cardTitle: 13,
   cardBody: 11,
   codeBlock: 11,
-  title: 18,
+  title: 15,
   subtitle: 14,
   iconLabel: 10,
 } as const;

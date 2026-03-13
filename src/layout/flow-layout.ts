@@ -76,15 +76,15 @@ export interface FlowLayout {
 
 // ─── Constants ───────────────────────────────────────────
 
-const MARGIN_X = 35;
+const MARGIN_X = 28;
 const MARGIN_TOP = 18;
-const TITLE_HEIGHT = 40;
-const LAYER_GAP = 30;
+const TITLE_HEIGHT = 32;
+const LAYER_GAP = 24;
 const TB_LAYER_GAP = 34;
-const NODE_GAP = 22;
+const NODE_GAP = 18;
 const ACTOR_W = 42;
 const ACTOR_H = 58;
-const MIN_NODE_W = 72;
+const MIN_NODE_W = 62;
 const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
 const SUBGRAPH_PAD_TOP = 36;
@@ -354,9 +354,15 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       if (titleW > finalWidth) finalWidth = titleW;
     }
   }
+  // Compute rightmost content edge (nodes + subgraphs) to identify right-side annotations
+  let maxContentRight = 0;
+  for (const n of posNodes) maxContentRight = Math.max(maxContentRight, n.x + n.w);
+  for (const sg of posSubgraphs) maxContentRight = Math.max(maxContentRight, sg.x + sg.w);
+  const maxAnnotationWidth = Math.max(finalWidth * 1.15, finalWidth + 60);
+
   let finalHeight = positioned.height;
   const titleLinesCount = title ? title.split('\n').length : 0;
-  const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 24 + 10 : MARGIN_TOP;
+  const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 21 + 10 : MARGIN_TOP;
   let minAnnY = titleAreaBottom;
   let maxAnnY = finalHeight;
 
@@ -366,10 +372,17 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const annBottom = ann.y + lines.length * 18 + 10;
     maxAnnY = Math.max(maxAnnY, annBottom);
 
-    // Extend width for right-side annotations
+    // Extend width for annotations — cap only right-side annotations
+    // (those starting beyond rightmost content edge) to prevent excessive width
     const maxLineLen = Math.max(...lines.map(l => l.length));
-    const annRight = ann.x + maxLineLen * 8 + 20;
-    if (annRight > finalWidth) finalWidth = annRight;
+    const annRight = ann.x + maxLineLen * 7 + 12;
+    if (annRight > finalWidth) {
+      if (ann.x >= maxContentRight) {
+        finalWidth = Math.min(annRight, maxAnnotationWidth);
+      } else {
+        finalWidth = annRight;
+      }
+    }
   }
 
   // Also ensure subgraphs don't overlap with title
@@ -555,7 +568,7 @@ function assignCoordinates(
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
   const titleLines = title ? title.split('\n').length : 0;
-  const titleOffset = title ? TITLE_HEIGHT + Math.max(0, titleLines - 1) * 24 : 0;
+  const titleOffset = title ? TITLE_HEIGHT + Math.max(0, titleLines - 1) * 21 : 0;
   const startY = MARGIN_TOP + titleOffset;
 
   if (direction === 'LR') {
@@ -864,7 +877,7 @@ function positionAnnotations(
     const side = a.side || 'right';
     switch (side) {
       case 'right':
-        return { text: a.text, x: pos.x + sz.w + 20, y: pos.y + sz.h / 2 + 4, properties: a.properties };
+        return { text: a.text, x: pos.x + sz.w + 12, y: pos.y + sz.h / 2 + 4, properties: a.properties };
       case 'left':
         return { text: a.text, x: pos.x - 20, y: pos.y + sz.h / 2 + 4, properties: a.properties };
       case 'top':

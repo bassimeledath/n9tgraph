@@ -35,5 +35,5 @@ annotation "Query\nCorrelate\nReason" near CODEX side top
 annotation "Implement change (PR)\n+ Restart app" near CODEX side bottom
 annotation "UI\nJourney" near CODEX side right
 annotation "Re-run workload" near CODEBASE side top
-annotation "Feedback loop" near CODEBASE side right
+annotation "Feedback loop" near CODEBASE side bottom
 annotation "Test" near CODEBASE side bottom
