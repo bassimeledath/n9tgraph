@@ -217,7 +217,7 @@ participant "Name" {fill: dotgrid}
 
 ## Sequence Messages
 FROM -> TO : label text | annotation
-# FROM/TO are derived IDs, not labels. e.g. participant "Auth Server" → use AUTH_SERVER in messages
+# In messages, use derived IDs (uppercase, spaces→underscores), not labels. e.g. participant "Auth Server" → AUTH_SERVER
 FROM <- TO : reverse
 FROM <-> TO : bidirectional
 
@@ -267,13 +267,13 @@ AUTH_SERVICE --> USER_DB : lookup user`,
 title Request Lifecycle
 
 participant Client
-participant "API Server" {fill: dotgrid}
-participant Database {fill: crosshatch}
+participant "Auth Server" {fill: crosshatch}
+participant Database {fill: dotgrid}
 
-Client -> API_SERVER : HTTP Request
-API_SERVER -> Database : Query
-Database -> API_SERVER : Results
-API_SERVER -> Client : HTTP Response`,
+Client -> AUTH_SERVER : authenticate
+AUTH_SERVER -> Database : lookup user
+Database -> AUTH_SERVER : user record
+AUTH_SERVER -> Client : token | session ID`,
 
     `type flow
 title Layered Architecture
