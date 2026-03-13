@@ -76,6 +76,38 @@ export function edgeLabel(x: number, y: number, text: string): string {
   return svg;
 }
 
+/** Render a multiline edge label — wraps text at a max width */
+export function edgeLabelMultiline(x: number, y: number, text: string, maxCharsPerLine = 20): string {
+  // Split text into lines at word boundaries
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    if (current && (current + ' ' + word).length > maxCharsPerLine) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + ' ' + word : word;
+    }
+  }
+  if (current) lines.push(current);
+
+  const lineH = fontSizes.edgeLabel + 4;
+  const totalH = lines.length * lineH;
+  const padX = 6;
+  const padY = 3;
+  const maxLineW = Math.max(...lines.map(l => l.length)) * 6.5 + padX * 2;
+
+  // Background rect
+  let svg = `<rect x="${x - maxLineW / 2}" y="${y - totalH / 2 - padY}" width="${maxLineW}" height="${totalH + padY * 2}" rx="4" fill="${colors.bg}"/>`;
+  // Text lines
+  const startY = y - totalH / 2 + fontSizes.edgeLabel;
+  for (let i = 0; i < lines.length; i++) {
+    svg += `<text x="${x}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="${opacity.edgeLabel}" text-anchor="middle">${lines[i]}</text>`;
+  }
+  return svg;
+}
+
 /** Numbered circle marker (e.g. step indicators on edges) */
 export function numberedCircle(x: number, y: number, num: number, color = colors.accent): string {
   const r = 11;

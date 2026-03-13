@@ -54,19 +54,30 @@ export interface SequenceDiagram {
   elements: SequenceElement[];
 }
 
-// ─── Flow Diagram (placeholder for future) ───────────────
+// ─── Flow Diagram ───────────────────────────────────────
+
+export type FlowDirection = 'LR' | 'TB';
+export type FlowNodeKind = 'service' | 'component' | 'external' | 'actor' | 'datastore' | 'label';
 
 export interface FlowNode {
   id: string;
   label: string;
+  kind: FlowNodeKind;
   properties: Properties;
 }
 
 export interface FlowEdge {
   from: string;
   to: string;
+  arrow: '-->' | '<--' | '<-->';
   label?: string;
   dashed?: boolean;
+}
+
+export interface FlowAnnotation {
+  text: string;
+  near: string;
+  side?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export interface Subgraph {
@@ -79,8 +90,10 @@ export interface Subgraph {
 export interface FlowDiagram {
   type: 'flow';
   title?: string;
+  direction: FlowDirection;
   nodes: FlowNode[];
   edges: FlowEdge[];
+  annotations: FlowAnnotation[];
   subgraphs: Subgraph[];
 }
 

@@ -1,4 +1,4 @@
-// n9tgraph PEG grammar — sequence diagram subset
+// n9tgraph PEG grammar — sequence + flow diagram support
 // Parsed by peggy at runtime
 
 {
@@ -15,22 +15,24 @@
 }
 
 Diagram
-  = WS header:TypeLine WS title:TitleLine? stmts:( WS s:Statement { return s; } )* WS {
+  = WS "type" HS+ t:Identifier EOL &{ return t === 'sequence'; } rest:SequenceBody { return rest; }
+  / WS "type" HS+ t:Identifier EOL &{ return t === 'flow'; } rest:FlowBody { return rest; }
+
+// ═══════════════════════════════════════════════════════════
+// SEQUENCE DIAGRAM
+// ═══════════════════════════════════════════════════════════
+
+SequenceBody
+  = WS title:TitleLine? stmts:( WS s:SeqStatement { return s; } )* WS {
       return {
-        type: header,
+        type: 'sequence',
         title: title || undefined,
         participants: stmts.filter(s => s._kind === 'participant').map(({ _kind, ...rest }) => rest),
         elements: stmts.filter(s => s._kind !== 'participant'),
       };
     }
 
-TypeLine
-  = "type" HS+ t:Identifier EOL { return t; }
-
-TitleLine
-  = "title" HS+ text:RestOfLine EOL { return text; }
-
-Statement
+SeqStatement
   = ParticipantStmt / FragmentStmt / NoteStmt / MessageStmt
 
 // ─── Participant ─────────────────────────────────────────
@@ -50,30 +52,17 @@ ParticipantLabel
   = QuotedString
   / chars:$( [A-Za-z0-9_#\-.]+ (HS+ [A-Za-z0-9_#\-.]+ )* ) &(HS* "{" / HS* EOL) { return chars; }
 
-PropertiesBlock
-  = "{" HS* pairs:PropertyPair* HS* "}" {
-      const obj = {};
-      for (const [k, v] of pairs) obj[k] = v;
-      return obj;
-    }
-
-PropertyPair
-  = HS* key:Identifier HS* ":" HS* value:PropertyValue HS* ","? { return [key, value]; }
-
-PropertyValue
-  = QuotedString / Identifier
-
 // ─── Message ─────────────────────────────────────────────
 
 MessageStmt
-  = from:Identifier HS+ arrow:Arrow HS+ to:Identifier HS* ":" HS* label:MessageText? ann:AnnotationSuffix? EOL {
+  = from:Identifier HS+ arrow:SeqArrow HS+ to:Identifier HS* ":" HS* label:MessageText? ann:AnnotationSuffix? EOL {
       return msg(from, arrow, to, label || '', ann);
     }
-  / from:Identifier HS+ arrow:Arrow HS+ to:Identifier EOL {
+  / from:Identifier HS+ arrow:SeqArrow HS+ to:Identifier EOL {
       return msg(from, arrow, to, '', undefined);
     }
 
-Arrow
+SeqArrow
   = "<->" { return '<->'; }
   / "<-"  { return '<-'; }
   / "->"  { return '->'; }
@@ -87,7 +76,7 @@ AnnotationSuffix
 // ─── Combined Fragments ──────────────────────────────────
 
 FragmentStmt
-  = kind:FragmentKind cond:(HS+ c:RestOfLine { return c; })? EOL children:( WS s:Statement { return s; } )* WS "end" EOL {
+  = kind:FragmentKind cond:(HS+ c:RestOfLine { return c; })? EOL children:( WS s:SeqStatement { return s; } )* WS "end" EOL {
       return {
         type: 'fragment',
         kind: kind,
@@ -116,7 +105,129 @@ NoteStmt
 NoteTargets
   = first:Identifier rest:(HS* "," HS* id:Identifier { return id; })* { return [first, ...rest]; }
 
-// ─── Primitives ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// FLOW DIAGRAM
+// ═══════════════════════════════════════════════════════════
+
+FlowBody
+  = WS title:TitleLine? WS dir:DirectionLine? stmts:( WS s:FlowStatement { return s; } )* WS {
+      const nodes = stmts.filter(s => s._kind === 'node').map(({ _kind, ...rest }) => rest);
+      const edges = stmts.filter(s => s._kind === 'edge').map(({ _kind, ...rest }) => rest);
+      const annotations = stmts.filter(s => s._kind === 'annotation').map(({ _kind, ...rest }) => rest);
+      return {
+        type: 'flow',
+        title: title || undefined,
+        direction: dir || 'LR',
+        nodes: nodes,
+        edges: edges,
+        annotations: annotations,
+        subgraphs: [],
+      };
+    }
+
+DirectionLine
+  = "direction" HS+ d:$("LR" / "TB" / "RL" / "BT") EOL { return d; }
+
+FlowStatement
+  = FlowAnnotationStmt / FlowNodeStmt / FlowEdgeStmt
+
+// ─── Flow Node ───────────────────────────────────────────
+
+FlowNodeStmt
+  = kind:FlowNodeKind HS+ label:FlowNodeLabel HS* props:PropertiesBlock? EOL {
+      const id = label.replace(/\s+/g, '_').toUpperCase();
+      return {
+        _kind: 'node',
+        id,
+        label,
+        kind: kind,
+        properties: props || {},
+      };
+    }
+
+FlowNodeKind
+  = "service"   { return 'service'; }
+  / "component" { return 'component'; }
+  / "external"  { return 'external'; }
+  / "actor"     { return 'actor'; }
+  / "datastore" { return 'datastore'; }
+  / "label"     { return 'label'; }
+
+FlowNodeLabel
+  = QuotedString
+  / chars:$( [A-Za-z0-9_#\-.]+ (HS+ [A-Za-z0-9_#\-.]+ )* ) &(HS* "{" / HS* EOL) { return chars; }
+
+// ─── Flow Edge ───────────────────────────────────────────
+
+FlowEdgeStmt
+  = from:Identifier HS+ arrow:FlowArrow HS+ to:Identifier HS* ":" HS* label:RestOfLine EOL {
+      return {
+        _kind: 'edge',
+        from: from,
+        to: to,
+        arrow: arrow,
+        label: label,
+        dashed: arrow.indexOf('-.') >= 0 || arrow.indexOf('.-') >= 0,
+      };
+    }
+  / from:Identifier HS+ arrow:FlowArrow HS+ to:Identifier EOL {
+      return {
+        _kind: 'edge',
+        from: from,
+        to: to,
+        arrow: arrow,
+        label: undefined,
+        dashed: arrow.indexOf('-.') >= 0 || arrow.indexOf('.-') >= 0,
+      };
+    }
+
+FlowArrow
+  = "<-->" { return '<-->'; }
+  / "<--"  { return '<--'; }
+  / "-->"  { return '-->'; }
+  / "-.->" { return '-.->'; }
+  / "<-.-" { return '<-.-'; }
+
+// ─── Flow Annotation ────────────────────────────────────
+
+FlowAnnotationStmt
+  = "annotation" HS+ text:QuotedString HS+ props:AnnotationProps EOL {
+      return {
+        _kind: 'annotation',
+        text: text,
+        ...props,
+      };
+    }
+
+AnnotationProps
+  = pairs:AnnotationPropPair+ {
+      const obj = {};
+      for (const [k, v] of pairs) obj[k] = v;
+      return obj;
+    }
+
+AnnotationPropPair
+  = HS* key:("near" / "side") HS+ value:Identifier HS* { return [key, value]; }
+
+// ═══════════════════════════════════════════════════════════
+// SHARED PRIMITIVES
+// ═══════════════════════════════════════════════════════════
+
+TitleLine
+  = "title" HS+ text:RestOfLine EOL { return text; }
+
+PropertiesBlock
+  = "{" HS* pairs:PropertyPair* HS* "}" {
+      const obj = {};
+      for (const [k, v] of pairs) obj[k] = v;
+      return obj;
+    }
+
+PropertyPair
+  = HS* key:Identifier HS* ":" HS* value:PropertyValue HS* ","? { return [key, value]; }
+
+PropertyValue
+  = QuotedString / Identifier
 
 Identifier
   = $( [A-Za-z_] [A-Za-z0-9_]* )
