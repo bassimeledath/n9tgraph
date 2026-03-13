@@ -166,7 +166,7 @@ type sequence | flow | card
 title "My Diagram Title"
 
 ## Flow Diagram Directives
-direction LR | TB
+direction LR | TB | RL | BT
 theme default | white
 spacing compact | balanced | spacious
 aspect auto | portrait | landscape | square
@@ -175,6 +175,9 @@ wrap auto | none
 ## Sequence Diagram Directives
 message-step <number>      # vertical step between messages (default: 34)
 participant-gap <number>   # horizontal gap between participants
+
+## ID Derivation
+IDs are auto-derived from labels: uppercase, spaces→underscores, quotes stripped. e.g. 'API Gateway' → API_GATEWAY
 
 ## Node Declarations (flow)
 <kind> <label> {properties}
@@ -282,6 +285,21 @@ end
 
 REACT_APP --> API_SERVER : REST calls
 STATE_MANAGER --> API_SERVER : GraphQL`,
+
+    `type card
+title Team Dashboard
+
+container "Engineering"
+  card "Frontend" {body: "React + TypeScript", icon: "monitor"}
+  card "Backend" {body: "Node.js services", icon: "server"}
+end
+
+container "Data"
+  card "Pipeline" {body: "ETL jobs", icon: "database"}
+end
+
+edge_in PIPELINE right : feeds
+FRONTEND --> BACKEND : API calls`,
   ];
 
   const nodeKinds = ['service', 'component', 'external', 'actor', 'datastore', 'circle', 'label'];
@@ -333,9 +351,10 @@ server.tool(
       };
 
       if (format === "png") {
+        const bg = /theme\s+white/.test(source) ? "#ffffff" : "#000000";
         const resvg = new Resvg(svg, {
           fitTo: { mode: "zoom", value: scale },
-          background: "#000000",
+          background: bg,
         });
         const pngBuffer = resvg.render().asPng();
         result.png = Buffer.from(pngBuffer).toString("base64");
@@ -424,6 +443,9 @@ server.tool(
               nodeCount,
               edgeCount,
               subgraphCount,
+              ...(ast.type === 'flow' && ast.codeblocks.length > 0
+                ? { codeblockCount: ast.codeblocks.length }
+                : {}),
             },
           }, null, 2),
         }],
