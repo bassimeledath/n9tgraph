@@ -87,7 +87,7 @@ const ACTOR_H = 58;
 const MIN_NODE_W = 72;
 const CIRCLE_R = 26;
 const SUBGRAPH_PAD_X = 16;
-const SUBGRAPH_PAD_TOP = 24;
+const SUBGRAPH_PAD_TOP = 36;
 const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
@@ -307,6 +307,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
 
   // Step 8: Position annotations
   const posAnnotations = positionAnnotations(annotations, positioned.nodePositions, nodeSizes, subgraphChildIds);
+
+  // Step 8b: Resolve annotation overlaps (collision avoidance)
+  resolveAnnotationOverlaps(posAnnotations, posSubgraphs);
 
   // Step 9: Build positioned codeblocks
   const posCodeblocks: PositionedCodeBlock[] = codeblocks.map(cb => {
@@ -735,6 +738,82 @@ function computeOverflowPositions(
   }
 
   return overflows;
+}
+
+// ─── Annotation collision avoidance ──────────────────────
+
+function resolveAnnotationOverlaps(
+  annotations: PositionedAnnotation[],
+  subgraphs: PositionedSubgraph[],
+): void {
+  if (annotations.length === 0) return;
+
+  const lineH = 18;
+
+  // Compute approximate bounding boxes for each annotation
+  const boxes = annotations.map(ann => {
+    const lines = ann.text.split('\n');
+    const step = ann.properties?.step;
+    const textOffsetX = step ? 28 : 0;
+
+    let maxW = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] === '') continue;
+      const w = i === 0
+        ? measureLineWidth(lines[0], fontSizes.subtitle, 'sans')
+        : measureLineWidth(lines[i], fontSizes.codeBlock, 'mono');
+      maxW = Math.max(maxW, w);
+    }
+
+    return {
+      x: ann.x,
+      y: ann.y,
+      w: textOffsetX + maxW + 16,
+      h: lines.length * lineH + 10,
+    };
+  });
+
+  // Resolve annotation-subgraph overlaps: push annotations above subgraph boundary
+  for (let i = 0; i < annotations.length; i++) {
+    const b = boxes[i];
+    for (const sg of subgraphs) {
+      const hOverlap = b.x < sg.x + sg.w && sg.x < b.x + b.w;
+      const vOverlap = b.y < sg.y + sg.h && sg.y < b.y + b.h;
+      if (hOverlap && vOverlap) {
+        const newY = sg.y - b.h - 10;
+        if (newY < annotations[i].y) {
+          annotations[i].y = newY;
+          boxes[i].y = newY;
+        }
+      }
+    }
+  }
+
+  // Resolve annotation-annotation overlaps
+  // Sort by x position (left to right) for consistent resolution
+  const indices = annotations.map((_, i) => i).sort((a, b) => boxes[a].x - boxes[b].x);
+
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (let i = 0; i < indices.length; i++) {
+      for (let j = i + 1; j < indices.length; j++) {
+        const ai = indices[i], bi = indices[j];
+        const a = boxes[ai], b = boxes[bi];
+
+        const hOverlap = a.x < b.x + b.w && b.x < a.x + a.w;
+        const vOverlap = a.y < b.y + b.h && b.y < a.y + a.h;
+
+        if (hOverlap && vOverlap) {
+          // Shift the later (rightward) annotation above the earlier one
+          const newY = a.y - b.h - 16;
+          annotations[bi].y = newY;
+          boxes[bi].y = newY;
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
 }
 
 // ─── Annotation positioning ──────────────────────────────

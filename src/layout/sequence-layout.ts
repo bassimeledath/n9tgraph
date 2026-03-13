@@ -190,8 +190,12 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
     const lineH = 16;
     const h = lines.length > 1 ? lines.length * lineH + 20 : 32;
 
+    // Clamp x so note doesn't extend past left canvas edge
+    const rawX = centerX - w / 2;
+    const x = Math.max(8, rawX);
+
     layoutNotes.push({
-      x: centerX - w / 2,
+      x,
       y: cursorY - 10,
       w,
       h,
@@ -248,6 +252,10 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   if (diagram.title) {
     const titleW = measureLineWidth(diagram.title, fontSizes.title, 'sans') + 140;
     totalWidth = Math.max(totalWidth, titleW);
+  }
+  // Ensure width covers notes that may have been shifted right
+  for (const note of layoutNotes) {
+    totalWidth = Math.max(totalWidth, note.x + note.w + MARGIN_X);
   }
   const totalHeight = bottomHeaderY + maxHeaderH + MARGIN_TOP;
 
