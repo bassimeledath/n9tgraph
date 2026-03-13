@@ -1,5 +1,5 @@
 // Sugiyama-style layered layout for flow diagrams
-import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName, SpacingPreset, WrapMode } from '../parser/ast.js';
+import type { FlowDiagram, FlowNode, FlowEdge, FlowAnnotation, FlowDirection, Subgraph, CodeBlock, ThemeName, SpacingPreset, WrapMode, AspectHint } from '../parser/ast.js';
 import { nodeSizeForLabel, measureLineWidth, wrapLabel } from './text-measure.js';
 import { fontSizes } from '../render/theme.js';
 
@@ -357,6 +357,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 5: Coordinate assignment
   const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds, sp, diagram.wrap || 'auto');
 
+  // Step 5a: Apply aspect ratio hint — scale coordinates to hit target W/H ratio
+  applyAspectHint(diagram.aspect, positioned);
+
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
     refineCoordinatesTB(ordered, positioned.nodePositions, nodeSizes, allEdges);
@@ -509,6 +512,29 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   if (maxAnnY > finalHeight) finalHeight = maxAnnY + 20;
+
+  // Ensure canvas height encompasses all positioned elements
+  // (nodes with sublabels, subgraphs, codeblocks, edge labels)
+  let maxContentBottom = finalHeight;
+  for (const n of posNodes) {
+    let nodeBottom = n.y + n.h;
+    // Sublabels render ~12px below node center and may extend further
+    if (n.properties.sublabel) {
+      const sublabelLines = wrapLabel(n.properties.sublabel, 34);
+      nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + sublabelLines.length * fontSizes.edgeLabel * 1.4);
+    }
+    maxContentBottom = Math.max(maxContentBottom, nodeBottom);
+  }
+  for (const sg of posSubgraphs) {
+    maxContentBottom = Math.max(maxContentBottom, sg.y + sg.h);
+  }
+  for (const cb of posCodeblocks) {
+    maxContentBottom = Math.max(maxContentBottom, cb.y + cb.h);
+  }
+  // Add bottom margin
+  if (maxContentBottom + MARGIN_TOP > finalHeight) {
+    finalHeight = maxContentBottom + MARGIN_TOP;
+  }
 
   return {
     width: finalWidth,
@@ -690,6 +716,45 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
   }
 
   return gap;
+}
+
+// ─── Aspect ratio adjustment ─────────────────────────────
+// Applies a deterministic Y-coordinate scaling when the user requests
+// a specific aspect hint via the DSL `aspect` directive.
+// Portrait: target W/H ≈ 0.85 (taller than wide)
+// Landscape: no change (natural LR flow is already landscape)
+// Square: target W/H ≈ 1.0
+
+function applyAspectHint(
+  aspect: AspectHint | undefined,
+  positioned: { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number },
+): void {
+  if (!aspect || aspect === 'auto' || aspect === 'landscape') return;
+
+  const { width, height } = positioned;
+  if (width === 0 || height === 0) return;
+
+  const currentRatio = width / height;
+  const targetRatio = aspect === 'portrait' ? 0.85 : 1.0; // square = 1.0
+
+  // Only scale if the current ratio is farther from target than 10% tolerance
+  if (Math.abs(currentRatio - targetRatio) < 0.1) return;
+
+  // Scale Y coordinates to achieve target ratio: newHeight = width / targetRatio
+  const newHeight = width / targetRatio;
+  const scaleY = newHeight / height;
+
+  // Find the minimum Y so we scale relative to the top of the content
+  let minY = Infinity;
+  for (const pos of positioned.nodePositions.values()) {
+    minY = Math.min(minY, pos.y);
+  }
+
+  for (const pos of positioned.nodePositions.values()) {
+    pos.y = minY + (pos.y - minY) * scaleY;
+  }
+
+  positioned.height = newHeight;
 }
 
 function assignCoordinates(
