@@ -1,0 +1,24 @@
+type flow
+title Language models use tools
+direction LR
+
+component MODEL {fill: dotgrid}
+
+subgraph Tools {fill: crosshatch}
+  component SHELL {border: double}
+  overflow
+  component FUNCTION {border: double}
+  component "COMPUTER USE" {border: double}
+end
+
+codeblock COMMAND {code: 'ls -l /home/user'}
+codeblock JSON {code: '{"name":"get_weather",\n"description":"..."}'}
+codeblock ACTION {code: 'click("left", 100, 200)'}
+
+MODEL --> SHELL
+MODEL --> FUNCTION
+MODEL --> COMPUTER_USE
+
+SHELL --> COMMAND
+FUNCTION --> JSON
+COMPUTER_USE --> ACTION

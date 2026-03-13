@@ -3,11 +3,15 @@
 // ─── Common ──────────────────────────────────────────────
 
 export type FillPattern = 'dotgrid' | 'crosshatch' | 'hero' | 'none';
-export type ShapeType = 'rect' | 'pill' | 'cylinder' | 'doubleBorder' | 'actor';
+export type ShapeType = 'rect' | 'pill' | 'cylinder' | 'doubleBorder' | 'actor' | 'circle';
 
 export interface Properties {
   fill?: FillPattern;
   shape?: ShapeType;
+  border?: string;
+  sublabel?: string;
+  code?: string;
+  step?: string;
   [key: string]: string | undefined;
 }
 
@@ -57,7 +61,7 @@ export interface SequenceDiagram {
 // ─── Flow Diagram ───────────────────────────────────────
 
 export type FlowDirection = 'LR' | 'TB';
-export type FlowNodeKind = 'service' | 'component' | 'external' | 'actor' | 'datastore' | 'label';
+export type FlowNodeKind = 'service' | 'component' | 'external' | 'actor' | 'datastore' | 'label' | 'circle';
 
 export interface FlowNode {
   id: string;
@@ -69,22 +73,37 @@ export interface FlowNode {
 export interface FlowEdge {
   from: string;
   to: string;
-  arrow: '-->' | '<--' | '<-->';
+  arrow: '-->' | '<--' | '<-->' | '-.->' | '<-.-';
   label?: string;
   dashed?: boolean;
+  properties?: Properties;
 }
 
 export interface FlowAnnotation {
   text: string;
   near: string;
   side?: 'top' | 'bottom' | 'left' | 'right';
+  properties?: Properties;
+}
+
+export interface SubgraphChildOrder {
+  kind: 'node' | 'overflow';
+  id?: string; // only for 'node'
 }
 
 export interface Subgraph {
   id: string;
   label: string;
+  properties: Properties;
   nodes: FlowNode[];
   edges: FlowEdge[];
+  childOrder: SubgraphChildOrder[];
+}
+
+export interface CodeBlock {
+  id: string;
+  label: string;
+  properties: Properties;
 }
 
 export interface FlowDiagram {
@@ -95,6 +114,7 @@ export interface FlowDiagram {
   edges: FlowEdge[];
   annotations: FlowAnnotation[];
   subgraphs: Subgraph[];
+  codeblocks: CodeBlock[];
 }
 
 // ─── Card Diagram (placeholder for future) ───────────────

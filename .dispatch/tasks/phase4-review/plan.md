@@ -1,0 +1,22 @@
+# Phase 4 Review: Flow with Subgraphs + Advanced Features
+
+- [x] Read all Phase 4 source: extended grammar, flow-layout.ts (subgraph support), flow-renderer.ts (new rendering), all 4 new .n9 example files
+- [x] Run `npx tsx src/render-examples.ts` and view all 4 new PNGs
+- [x] Compare all 4 diagrams against references. Issues identified:
+  - Session multiplexer: edges cross diagonally (should be horizontal parallel pairs) — caused by per-edge perpendicular calculation
+  - Tools overview: NODE_GAP=180 and LAYER_GAP=340 make diagram far too spread out
+  - Container egress: missing large annotation text blocks with step descriptions
+  - Skill loading: edges fan out too widely, but structure is OK
+- [x] Fix ALL issues found. Changes made:
+  - Edge routing: Rewrote multi-edge pair routing to use overlap-based horizontal parallel edges
+  - Layout spacing: NODE_GAP 180→40, LAYER_GAP 340→140, TITLE_HEIGHT 40→55
+  - Service node height: min 120px for service nodes with sublabels
+  - Sublabel rendering: Removed forced toUpperCase()
+  - Grammar: Added \\n escape to QuotedString; added properties block to annotations
+  - AST: Added properties to FlowAnnotation
+  - Annotation rendering: Multi-line support with step numbers, subgraph-aware positioning
+  - Container egress: Added 3 annotation text blocks with step descriptions
+  - Edge labels: maxCharsPerLine 18→30; code splits updated for \\n grammar change
+- [x] Re-render and verify improvements — all 7 diagrams render successfully
+- [x] Verify all previous diagrams (sequence, simple flow) still work
+- [x] Write summary to .dispatch/tasks/phase4-review/output.md

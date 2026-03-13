@@ -1,0 +1,15 @@
+type flow
+title The Responses API uses skills: Registry > Bundle > Runtime
+direction LR
+
+component MODELS {fill: dotgrid}
+service "RESPONSES API" {fill: hero, sublabel: "System prompt: name, description, path"}
+component "SKILL REGISTRY" {fill: dotgrid}
+component "SKILL BUNDLE STORAGE" {fill: dotgrid}
+component "CONTAINER RUNTIME" {fill: dotgrid}
+
+MODELS --> RESPONSES_API : COMMAND/OUTPUT
+
+RESPONSES_API --> SKILL_REGISTRY : SKILL ID {step: 1}
+RESPONSES_API --> SKILL_BUNDLE_STORAGE : EXECUTE/OUTPUT {step: 2}
+RESPONSES_API --> CONTAINER_RUNTIME : COMMAND/OUTPUT {step: 3}
