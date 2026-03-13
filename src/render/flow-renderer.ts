@@ -355,7 +355,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const maxLineLen = Math.max(...wrapLines.map(l => l.length));
       const labelHalfW = (maxLineLen * 6.5 + 12) / 2;
       const labelHalfH = (wrapLines.length * 15 + 6) / 2;
-      const clearance = 6;
+      // Increase clearance when edge endpoints have sublabels
+      const hasSublabelEndpoint =
+        ('properties' in fromNode && (fromNode as PositionedNode).properties?.sublabel) ||
+        ('properties' in toNode && (toNode as PositionedNode).properties?.sublabel);
+      const clearance = hasSublabelEndpoint ? 18 : 6;
 
       // Clamp label horizontally to stay clear of edge endpoints
       const leftX = Math.min(fromPt.x, toPt.x);
@@ -366,9 +370,25 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      // Check label against non-endpoint node bounding boxes and shift if overlapping
+      // Check label against node bounding boxes and shift if overlapping
       for (const [nodeId, node] of nodeById) {
-        if (nodeId === edge.from || nodeId === edge.to) continue;
+        const isEndpoint = nodeId === edge.from || nodeId === edge.to;
+        if (isEndpoint) {
+          // Only check endpoint collision for nodes with sublabels (avoids regressing other diagrams)
+          if (!('properties' in node && (node as PositionedNode).properties?.sublabel)) continue;
+          const margin = clearance;
+          const hOverlap = lx - labelHalfW < node.x + node.w + margin && lx + labelHalfW > node.x - margin;
+          const vOverlap = ly - labelHalfH < node.y + node.h + margin && ly + labelHalfH > node.y - margin;
+          if (hOverlap && vOverlap) {
+            const nc = nodeCenter(node);
+            if (ly <= nc.y) {
+              ly = node.y - labelHalfH - clearance;
+            } else {
+              ly = node.y + node.h + labelHalfH + clearance;
+            }
+          }
+          continue;
+        }
         const hOverlap = lx - labelHalfW < node.x + node.w && lx + labelHalfW > node.x;
         const vOverlap = ly - labelHalfH < node.y + node.h && ly + labelHalfH > node.y;
         if (hOverlap && vOverlap) {

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 492 337" width="492" height="337">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Responses API orchestrates agent loop</text>
+<line x1="63" y1="178.30327868852459" x2="94" y2="180.08196721311475" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="248" y1="139.5" x2="328.5" y2="103" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="328.5" y1="119" x2="248" y2="168" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="248" y1="201" x2="272" y2="250" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="272" y1="266" x2="248" y2="229.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="53" y="168.69262295081967" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="220.64999999999998" y="93.42500000000001" width="103" height="51" rx="4" fill="#000000"/>
+<rect x="220.64999999999998" y="152.425" width="103" height="21" rx="4" fill="#000000"/>
+<rect x="223.2" y="191.825" width="64" height="36" rx="4" fill="#000000"/>
+<rect x="206.95" y="235.825" width="96.5" height="21" rx="4" fill="#000000"/>
+<circle cx="49" cy="162.5" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="49" y1="169.5" x2="49" y2="191.5" stroke="#b4f079" stroke-width="1.5"/><line x1="35" y1="175.5" x2="63" y2="175.5" stroke="#b4f079" stroke-width="1.5"/><line x1="49" y1="191.5" x2="39" y2="207.5" stroke="#b4f079" stroke-width="1.5"/><line x1="49" y1="191.5" x2="59" y2="207.5" stroke="#b4f079" stroke-width="1.5"/><text x="49" y="221.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" letter-spacing="0.12em">USER</text>
+<rect x="94" y="135.5" width="154" height="98" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="99" y="140.5" width="144" height="88" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="171" y="184.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RESPONSES API</text>
+<rect x="328.5" y="50" width="79" height="73" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="340" y="77" width="56" height="19" fill="#000000" rx="2"/><text x="368" y="86.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">MODEL</text>
+<rect x="272" y="246" width="192" height="73" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="292" y="273" width="152" height="19" fill="#000000" rx="2"/><text x="368" y="282.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RUNTIME CONTAINER</text>
+<text x="78.5" y="182.69262295081967" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">PROMPT</text>
+<text x="272.15" y="107.42500000000001" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">PROMPT + SHELL</text><text x="272.15" y="122.42500000000001" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">INSTRUCTION +</text><text x="272.15" y="137.425" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">STDOUT/STDERR</text>
+<text x="272.15" y="166.425" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">SHELL COMMANDS</text>
+<text x="255.2" y="205.825" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">EXECUTE</text><text x="255.2" y="220.825" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">COMMANDS</text>
+<text x="255.2" y="249.825" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">STDOUT/STDERR</text>
+<text x="260" y="188.5" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#b4f079" opacity="0.6" font-style="italic">Feedback loop (until complete)</text>
+</g>
+</svg>

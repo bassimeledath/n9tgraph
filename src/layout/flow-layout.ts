@@ -298,6 +298,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       let h = Math.max(size.h, isPill ? 34 : 36);
       if (sublabel) {
         h += 18; // extra space for sublabel
+        // Widen node to contain sublabel text
+        const sublabelW = measureLineWidth(sublabel, fontSizes.edgeLabel, 'mono') + padX * 2;
+        if (sublabelW > size.w) {
+          size.w = sublabelW;
+        }
       }
       // Service nodes get taller to span connected neighbors
       if (n.kind === 'service') {
@@ -1109,7 +1114,10 @@ function refineCoordinatesTB(
 
     // Use median — robust against outliers pulling center away
     cxValues.sort((a, b) => a - b);
-    const medianCx = cxValues[Math.floor(cxValues.length / 2)];
+    const midTB = Math.floor(cxValues.length / 2);
+    const medianCx = cxValues.length % 2 === 1
+      ? cxValues[midTB]
+      : (cxValues[midTB - 1] + cxValues[midTB]) / 2;
     const pos = positions.get(id)!;
     positions.set(id, { x: medianCx - sz.w / 2, y: pos.y });
   }
@@ -1153,7 +1161,10 @@ function refineCoordinatesLR(
     if (cyValues.length === 0) continue;
 
     cyValues.sort((a, b) => a - b);
-    const medianCy = cyValues[Math.floor(cyValues.length / 2)];
+    const midLR = Math.floor(cyValues.length / 2);
+    const medianCy = cyValues.length % 2 === 1
+      ? cyValues[midLR]
+      : (cyValues[midLR - 1] + cyValues[midLR]) / 2;
     const pos = positions.get(id)!;
     positions.set(id, { x: pos.x, y: medianCy - sz.h / 2 });
   }

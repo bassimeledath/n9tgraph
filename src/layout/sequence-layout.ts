@@ -232,8 +232,8 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   layoutElements(elements);
 
   // Bottom headers
-  const lifelineBottom = cursorY + BOTTOM_HEADER_GAP;
-  const bottomHeaderY = lifelineBottom;
+  let lifelineBottom = cursorY + BOTTOM_HEADER_GAP;
+  let bottomHeaderY = lifelineBottom;
 
   // Build layout participants
   const layoutParticipants: LayoutParticipant[] = participants.map((p, i) => {
@@ -281,7 +281,39 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   for (const note of layoutNotes) {
     totalWidth = Math.max(totalWidth, note.x + note.w + MARGIN_X);
   }
-  const totalHeight = bottomHeaderY + maxHeaderH + MARGIN_TOP;
+  let totalHeight = bottomHeaderY + maxHeaderH + MARGIN_TOP;
+
+  // Portrait bias: stretch vertically when wide title makes diagram landscape
+  if (messageCount > 5 && totalWidth / totalHeight > 1.0) {
+    const targetRatio = 0.85;
+    const targetTotalH = totalWidth / targetRatio;
+    const fixedH = lifelineTop + BOTTOM_HEADER_GAP + maxHeaderH + MARGIN_TOP;
+    const contentSpan = cursorY - lifelineTop;
+    if (contentSpan > 0) {
+      const targetSpan = targetTotalH - fixedH;
+      const scale = targetSpan / contentSpan;
+
+      for (const msg of layoutMessages) {
+        msg.y = lifelineTop + (msg.y - lifelineTop) * scale;
+      }
+      for (const frag of layoutFragments) {
+        frag.y = lifelineTop + (frag.y - lifelineTop) * scale;
+        frag.h *= scale;
+      }
+      for (const note of layoutNotes) {
+        note.y = lifelineTop + (note.y - lifelineTop) * scale;
+      }
+
+      lifelineBottom = lifelineTop + contentSpan * scale + BOTTOM_HEADER_GAP;
+      bottomHeaderY = lifelineBottom;
+
+      for (const p of layoutParticipants) {
+        p.bottomBox.y = bottomHeaderY;
+      }
+
+      totalHeight = bottomHeaderY + maxHeaderH + MARGIN_TOP;
+    }
+  }
 
   return {
     width: totalWidth,
