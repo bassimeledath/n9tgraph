@@ -165,7 +165,8 @@ type sequence | flow | card
 ## Common Directives
 title "My Diagram Title"
 
-## Flow Diagram Directives
+## Flow Diagram Directives (must appear in this order, all optional)
+# Order: title → theme → direction → spacing → aspect → wrap
 direction LR | TB | RL | BT
 theme default | white
 spacing compact | balanced | spacious
@@ -200,17 +201,23 @@ subgraph "Group Name" {fill: dotgrid}
   component A
   component B
   A --> B
-  overflow
+  overflow                    # adds "..." indicator showing the group has more items
 end
 
 ## Annotations (flow)
 annotation "text" near NODE_ID side top|bottom|left|right
+# Default side is 'right'. For nodes at the right edge, use side left or top.
 
 ## Code Blocks (flow)
 codeblock "Title" {code: "line1\\nline2"}
 
+## Sequence Participants
+participant "Name" {fill: dotgrid}
+# Participants must be declared before use in messages. Declaration order = left-to-right display order.
+
 ## Sequence Messages
 FROM -> TO : label text | annotation
+# FROM/TO are derived IDs, not labels. e.g. participant "Auth Server" → use AUTH_SERVER in messages
 FROM <- TO : reverse
 FROM <-> TO : bidirectional
 
@@ -226,13 +233,13 @@ note over PARTICIPANT : note text
 {key: value, key2: "quoted value"}
 
 ## Available Properties
-fill: dotgrid | crosshatch | hero | none
-shape: rect | pill | cylinder | doubleBorder | actor | circle
-border: double
-sublabel: "secondary text"
-step: <number>
-min-height: <number>
-min-width: <number>
+fill: dotgrid | crosshatch | hero | none         # flow nodes, sequence participants, subgraphs
+shape: rect | pill | cylinder | doubleBorder | actor | circle   # flow nodes only
+border: double                                     # flow nodes only
+sublabel: "secondary text"                         # flow nodes only
+step: <number>                                     # annotations only
+min-height: <number>                               # flow nodes only
+min-width: <number>                                # flow nodes only
 
 ## Card Diagram
 node "Label" {properties}
@@ -241,13 +248,13 @@ container "Group" {properties}
   overflow
 end
 edge_in TARGET side : label
-hanging TARGET side : label
+hanging TARGET side : label     # dangling edge stub pointing into a card container
 FROM --> TO : label`;
 
   const examples = [
     `type flow
-direction LR
 title Simple API Flow
+direction LR
 
 service "API Gateway" {fill: hero}
 component "Auth Service"
@@ -260,17 +267,17 @@ AUTH_SERVICE --> USER_DB : lookup user`,
 title Request Lifecycle
 
 participant Client
-participant Server {fill: dotgrid}
+participant "API Server" {fill: dotgrid}
 participant Database {fill: crosshatch}
 
-Client -> Server : HTTP Request
-Server -> Database : Query
-Database -> Server : Results
-Server -> Client : HTTP Response`,
+Client -> API_SERVER : HTTP Request
+API_SERVER -> Database : Query
+Database -> API_SERVER : Results
+API_SERVER -> Client : HTTP Response`,
 
     `type flow
-direction TB
 title Layered Architecture
+direction TB
 spacing spacious
 
 subgraph "Frontend" {fill: dotgrid}
