@@ -56,11 +56,11 @@ export interface SequenceLayout {
 
 // ─── Layout constants ────────────────────────────────────
 
-const MARGIN_X = 60;
-const MARGIN_TOP = 30;
+const MARGIN_X = 50;
+const MARGIN_TOP = 25;
 const TITLE_HEIGHT = 40;
-const PARTICIPANT_GAP = 220;       // horizontal distance between participant centers
-const MESSAGE_STEP = 44;           // vertical step per message
+const PARTICIPANT_GAP = 180;       // horizontal distance between participant centers
+const MESSAGE_STEP = 38;           // vertical step per message
 const FRAGMENT_PAD_X = 20;         // horizontal padding inside fragment
 const FRAGMENT_PAD_TOP = 30;       // space above first child in fragment
 const FRAGMENT_PAD_BOTTOM = 16;    // space below last child in fragment

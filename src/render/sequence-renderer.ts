@@ -224,13 +224,16 @@ function renderNoteTextLine(x: number, y: number, text: string, anchor: string):
 function renderNotes(notes: LayoutNote[]): string {
   let svg = '';
   for (const note of notes) {
-    svg += `<rect x="${note.x}" y="${note.y}" width="${note.w}" height="${note.h}" rx="4" fill="${colors.cardBg}" stroke="${colors.cardBorder}" stroke-width="1"/>`;
-
     // Split on literal \n for multi-line notes
     const lines = note.text.split('\\n');
-    if (lines.length === 1) {
-      svg += renderNoteTextLine(note.x + note.w / 2, note.y + note.h / 2, note.text, 'middle');
+    const isSingleLine = lines.length === 1;
+
+    // Single-line notes render as bare text (no box) — matches reference style
+    // for numbered step items like "**2**  Planning and setup"
+    if (isSingleLine) {
+      svg += renderNoteTextLine(note.x + 12, note.y + note.h / 2, note.text, 'start');
     } else {
+      svg += `<rect x="${note.x}" y="${note.y}" width="${note.w}" height="${note.h}" rx="4" fill="${colors.cardBg}" stroke="${colors.cardBorder}" stroke-width="1"/>`;
       const lineH = 16;
       const totalH = lines.length * lineH;
       const startY = note.y + (note.h - totalH) / 2 + lineH * 0.6;
