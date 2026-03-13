@@ -242,6 +242,34 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 3: Crossing minimization
   const ordered = minimizeCrossings(layers, dagAdj, dagInAdj);
 
+  // Step 3b: Terminal-first sorting for LR 2D grid preservation
+  // In LR mode, put terminal nodes (no forward edges) before flow-through nodes
+  // in each layer. This creates a 2D grid effect where the "continuing" flow
+  // goes to the bottom and terminal branches stay at the top.
+  if (direction === 'LR') {
+    for (let li = 0; li < ordered.length; li++) {
+      const layer = ordered[li];
+      if (layer.length < 3) continue; // Only for layers with 3+ nodes
+      const isTerminal = (id: string) => {
+        const fwd = dagAdj.get(id) || [];
+        return !fwd.some(child => {
+          for (let lj = li + 1; lj < ordered.length; lj++) {
+            if (ordered[lj].includes(child)) return true;
+          }
+          return false;
+        });
+      };
+      // Stable sort: terminals first, flow-through last
+      const origOrder = [...layer];
+      ordered[li] = [...layer].sort((a, b) => {
+        const aT = isTerminal(a) ? 0 : 1;
+        const bT = isTerminal(b) ? 0 : 1;
+        if (aT !== bT) return aT - bT;
+        return origOrder.indexOf(a) - origOrder.indexOf(b);
+      });
+    }
+  }
+
   // Step 4: Compute node sizes
   const nodeSizes = new Map<string, { w: number; h: number }>();
   for (const n of allNodes) {
@@ -291,12 +319,21 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     }
   }
 
+  // Collect nodes with sublabels for gap computation
+  const sublabelIds = new Set<string>();
+  for (const n of allNodes) {
+    if (n.properties.sublabel) sublabelIds.add(n.id);
+  }
+
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations);
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds);
 
   // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
   if (direction === 'TB') {
     refineCoordinatesTB(ordered, positioned.nodePositions, nodeSizes, allEdges);
+  }
+  if (direction === 'LR') {
+    refineCoordinatesLR(ordered, positioned.nodePositions, nodeSizes, allEdges);
   }
 
   // Step 6: Compute subgraph bounding boxes
@@ -542,6 +579,7 @@ function minimizeCrossings(
 function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
   // Find the max labeled edge pair count for any node in this layer
   let maxPairCount = 0;
+  let maxLabelLength = 0;
   for (const id of layerNodes) {
     const pairCounts = new Map<string, number>();
     for (const e of allEdges) {
@@ -549,13 +587,19 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
       if (!e.label) continue;
       const other = e.from === id ? e.to : e.from;
       pairCounts.set(other, (pairCounts.get(other) || 0) + 1);
+      maxLabelLength = Math.max(maxLabelLength, e.label.length);
     }
     for (const count of pairCounts.values()) {
       maxPairCount = Math.max(maxPairCount, count);
     }
   }
   // Boost gap when nodes have labeled multi-edge pairs (e.g. bidirectional labeled edges)
-  return maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 65 : NODE_GAP;
+  let gap = maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 65 : NODE_GAP;
+  // Extra vertical space when multi-pair edges have long labels
+  if (maxPairCount >= 2 && maxLabelLength > 20) {
+    gap += Math.min(maxLabelLength - 20, 20) * 2;
+  }
+  return gap;
 }
 
 function assignCoordinates(
@@ -565,6 +609,7 @@ function assignCoordinates(
   allEdges: FlowEdge[],
   title?: string,
   annotations?: FlowAnnotation[],
+  sublabelIds?: Set<string>,
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
   const positions = new Map<string, { x: number; y: number }>();
   const titleLines = title ? title.split('\n').length : 0;
@@ -597,6 +642,14 @@ function assignCoordinates(
             }
           }
           gap = Math.max(gap, neededGap);
+        }
+      }
+
+      // Boost gap when layer has multiple sublabel nodes (need more vertical space)
+      if (sublabelIds) {
+        const sublabelCount = layer.filter(id => sublabelIds.has(id)).length;
+        if (sublabelCount >= 2) {
+          gap = Math.max(gap, sublabelCount * 15);
         }
       }
 
@@ -667,7 +720,29 @@ function assignCoordinates(
     }
 
     const totalW = MARGIN_X * 2 + maxCrossWidth;
-    const totalH = curY - TB_LAYER_GAP + MARGIN_TOP;
+    let totalH = curY - TB_LAYER_GAP + MARGIN_TOP;
+
+    // For TB diagrams: if layout is landscape, add vertical spacing for portrait orientation
+    if (layers.length > 2) {
+      const ratio = totalW / totalH;
+      if (ratio > 1.0) {
+        const targetRatio = 0.85;
+        const targetH = totalW / targetRatio;
+        const extraH = targetH - totalH;
+        const numGaps = layers.length - 1;
+        if (numGaps > 0) {
+          const extraPerGap = extraH / numGaps;
+          for (let li = 1; li < layers.length; li++) {
+            for (const id of layers[li]) {
+              const pos = positions.get(id)!;
+              pos.y += extraPerGap * li;
+            }
+          }
+          totalH = Math.ceil(targetH);
+        }
+      }
+    }
+
     return { nodePositions: positions, width: totalW, height: totalH };
   }
 }
@@ -930,5 +1005,49 @@ function refineCoordinatesTB(
     const medianCx = cxValues[Math.floor(cxValues.length / 2)];
     const pos = positions.get(id)!;
     positions.set(id, { x: medianCx - sz.w / 2, y: pos.y });
+  }
+}
+
+// ─── LR coordinate refinement ────────────────────────────
+
+function refineCoordinatesLR(
+  layers: string[][],
+  positions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+  allEdges: FlowEdge[],
+): void {
+  // Build bidirectional adjacency from ALL edges
+  const neighbors = new Map<string, Set<string>>();
+  for (const [id] of positions) neighbors.set(id, new Set());
+  for (const e of allEdges) {
+    if (neighbors.has(e.from) && neighbors.has(e.to)) {
+      neighbors.get(e.from)!.add(e.to);
+      neighbors.get(e.to)!.add(e.from);
+    }
+  }
+
+  // For single-node layers in LR, align vertically (y-axis) with median of connected nodes
+  // Only for nodes with 1-2 neighbors — centering is better for nodes with many connections
+  for (const layer of layers) {
+    if (layer.length !== 1) continue;
+    const id = layer[0];
+    const sz = nodeSizes.get(id)!;
+    const nbrs = neighbors.get(id);
+    if (!nbrs || nbrs.size === 0 || nbrs.size > 2) continue;
+
+    const cyValues: number[] = [];
+    for (const nid of nbrs) {
+      const p = positions.get(nid);
+      const s = nodeSizes.get(nid);
+      if (p && s) {
+        cyValues.push(p.y + s.h / 2);
+      }
+    }
+    if (cyValues.length === 0) continue;
+
+    cyValues.sort((a, b) => a - b);
+    const medianCy = cyValues[Math.floor(cyValues.length / 2)];
+    const pos = positions.get(id)!;
+    positions.set(id, { x: pos.x, y: medianCy - sz.h / 2 });
   }
 }

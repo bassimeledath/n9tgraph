@@ -315,12 +315,55 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       parts.push(straightEdge(opts));
     }
 
-    // Edge label
+    // Edge label with collision avoidance
     if (edge.label) {
       const t = 0.5;
-      const lx = fromPt.x + (toPt.x - fromPt.x) * t;
-      const ly = fromPt.y + (toPt.y - fromPt.y) * t;
-      { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+      let lx = fromPt.x + (toPt.x - fromPt.x) * t;
+      let ly = fromPt.y + (toPt.y - fromPt.y) * t;
+
+      // Compute available gap and use adaptive wrapping
+      const gapX = Math.abs(toPt.x - fromPt.x);
+      const maxChars = gapX > 150 ? 30 : Math.max(15, Math.floor((gapX * 0.85) / 6.5));
+
+      // Estimate label dimensions for collision check
+      const eLabel = escapeXml(edge.label);
+      const words = eLabel.split(/\s+/);
+      const wrapLines: string[] = [];
+      let cur = '';
+      for (const w of words) {
+        if (cur && (cur + ' ' + w).length > maxChars) { wrapLines.push(cur); cur = w; }
+        else cur = cur ? cur + ' ' + w : w;
+      }
+      if (cur) wrapLines.push(cur);
+      const maxLineLen = Math.max(...wrapLines.map(l => l.length));
+      const labelHalfW = (maxLineLen * 6.5 + 12) / 2;
+      const labelHalfH = (wrapLines.length * 15 + 6) / 2;
+      const clearance = 6;
+
+      // Clamp label horizontally to stay clear of edge endpoints
+      const leftX = Math.min(fromPt.x, toPt.x);
+      const rightX = Math.max(fromPt.x, toPt.x);
+      const minLx = leftX + labelHalfW + clearance;
+      const maxLx = rightX - labelHalfW - clearance;
+      if (minLx <= maxLx) {
+        lx = Math.max(minLx, Math.min(maxLx, lx));
+      }
+
+      // Check label against all node bounding boxes and shift if overlapping
+      for (const [, node] of nodeById) {
+        const hOverlap = lx - labelHalfW < node.x + node.w && lx + labelHalfW > node.x;
+        const vOverlap = ly - labelHalfH < node.y + node.h && ly + labelHalfH > node.y;
+        if (hOverlap && vOverlap) {
+          const nc = nodeCenter(node);
+          if (ly <= nc.y) {
+            ly = node.y - labelHalfH - clearance;
+          } else {
+            ly = node.y + node.h + labelHalfH + clearance;
+          }
+        }
+      }
+
+      { const p = edgeLabelParts(lx, ly, eLabel, maxChars); labelBgParts.push(p.bg); labelParts.push(p.fg); }
     }
 
     // Numbered step circle on edge
