@@ -79,13 +79,13 @@ export interface FlowLayout {
 const MARGIN_X = 35;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 40;
-const LAYER_GAP = 42;
-const TB_LAYER_GAP = 38;
-const NODE_GAP = 16;
+const LAYER_GAP = 30;
+const TB_LAYER_GAP = 34;
+const NODE_GAP = 22;
 const ACTOR_W = 42;
 const ACTOR_H = 58;
 const MIN_NODE_W = 72;
-const CIRCLE_R = 26;
+const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
 const SUBGRAPH_PAD_TOP = 36;
 const SUBGRAPH_PAD_BOTTOM = 16;

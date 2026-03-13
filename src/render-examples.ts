@@ -29,7 +29,7 @@ for (const file of files) {
 
     // Convert to PNG
     const resvg = new Resvg(svg, {
-      fitTo: { mode: 'width', value: 1200 },
+      fitTo: { mode: 'width', value: 800 },
       background: '#000000',
     });
     const pngData = resvg.render();

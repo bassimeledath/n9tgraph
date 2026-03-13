@@ -24,7 +24,9 @@ function renderSublabel(cx: number, y: number, text: string): string {
 
 function renderNode(node: PositionedNode, theme?: string): string {
   const { x, y, w, h, label, kind, properties } = node;
-  const fill = fillForPattern(properties.fill);
+  const rawFill = fillForPattern(properties.fill);
+  // Make nodes opaque so subgraph patterns don't bleed through
+  const fill = rawFill === 'transparent' ? colors.bg : rawFill;
   const hasSublabel = !!properties.sublabel;
   const labelOffsetY = hasSublabel ? -8 : 0;
   const formatLabel = (l: string) => theme === 'white' ? l : l.toUpperCase();
@@ -187,7 +189,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         // Forward edge: exit bottom center, enter top center
         fromPt = { x: fc.x, y: fromNode.y + fromNode.h };
         toPt = { x: tc.x, y: toNode.y };
-        if (Math.abs(fc.x - tc.x) < 10) {
+        if (Math.abs(fc.x - tc.x) < 80) {
+          // Use direct straight arrow for close-enough horizontal alignment
           parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
         } else {
           let midY = (fromPt.y + toPt.y) / 2;
@@ -240,7 +243,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       if (step) {
         const stepNum = parseInt(step, 10);
         if (!isNaN(stepNum)) {
-          parts.push(numberedCircle((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, stepNum));
+          const st = 0.3;
+          parts.push(numberedCircle(fromPt.x + (toPt.x - fromPt.x) * st, fromPt.y + (toPt.y - fromPt.y) * st, stepNum));
         }
       }
       continue;
@@ -324,7 +328,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     if (step) {
       const stepNum = parseInt(step, 10);
       if (!isNaN(stepNum)) {
-        const st = 0.5;
+        const st = 0.3;
         const sx = fromPt.x + (toPt.x - fromPt.x) * st;
         const sy = fromPt.y + (toPt.y - fromPt.y) * st;
         // Offset the circle slightly perpendicular to the edge
@@ -349,10 +353,10 @@ function renderSubgraph(sg: PositionedSubgraph): string {
   const rx = spacing.borderRadius;
   let svg = '';
 
-  // Background with pattern fill and green border at reduced opacity
-  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" stroke="${colors.accent}" stroke-width="${stroke.node}" opacity="0.5"/>`;
+  // Background with pattern fill and border at reduced opacity
+  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" stroke="${colors.accent}" stroke-width="1" opacity="0.35"/>`;
   // Solid border on top for clarity
-  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="${stroke.node}" opacity="0.4"/>`;
+  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="1" opacity="0.5"/>`;
 
   // Title — mixed case, centered top inside
   if (label) {

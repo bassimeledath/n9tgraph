@@ -59,8 +59,8 @@ export interface SequenceLayout {
 const MARGIN_X = 32;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
-const PARTICIPANT_GAP = 125;       // horizontal distance between participant centers
-const MESSAGE_STEP = 28;           // vertical step per message
+const PARTICIPANT_GAP = 105;       // horizontal distance between participant centers
+const MESSAGE_STEP = 34;           // vertical step per message
 const FRAGMENT_PAD_X = 14;         // horizontal padding inside fragment
 const FRAGMENT_PAD_TOP = 22;       // space above first child in fragment
 const FRAGMENT_PAD_BOTTOM = 12;    // space below last child in fragment
