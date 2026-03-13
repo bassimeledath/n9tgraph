@@ -2,7 +2,7 @@
 import type { FlowLayout, PositionedNode, PositionedEdge, PositionedAnnotation, PositionedSubgraph, PositionedOverflow, PositionedCodeBlock } from '../layout/flow-layout.js';
 import { colors, fonts, fontSizes, spacing, opacity, stroke } from './theme.js';
 import { rect, cylinder, doubleBorder, actor, annotation } from './shapes.js';
-import { straightEdge, biEdge, polylineEdge, edgeLabelMultiline, numberedCircle } from './edges.js';
+import { straightEdge, biEdge, polylineEdge, edgeLabelMultiline, edgeLabelParts, numberedCircle } from './edges.js';
 import type { EdgeOpts } from './edges.js';
 
 function escapeXml(s: string): string {
@@ -143,11 +143,12 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
-function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): { lines: string; labels: string } {
+function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string): { lines: string; labelBgs: string; labels: string } {
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
   const parts: string[] = [];
+  const labelBgParts: string[] = [];
   const labelParts: string[] = [];
 
   // Group edges by node pair
@@ -199,7 +200,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (edge.label) {
           const lx = (fc.x + tc.x) / 2;
           const ly = (fromPt.y + toPt.y) / 2;
-          labelParts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
+          { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       } else if (isBackward) {
         // Route along left side of diagram, entering target from below
@@ -214,7 +215,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           dashed: edge.dashed, color: colors.accent,
         }));
         if (edge.label) {
-          labelParts.push(edgeLabelMultiline(leftX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30));
+          { const p = edgeLabelParts(leftX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       } else {
         // Same row: standard routing
@@ -223,7 +224,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
         parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
         if (edge.label) {
-          labelParts.push(edgeLabelMultiline((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30));
+          { const p = edgeLabelParts((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       }
 
@@ -241,7 +242,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       // Multi-edge pair: create truly horizontal (or vertical) parallel edges
       // Use wider spread when edges have labels to prevent label overlap
       const hasLabels = siblings.some(s => s.label && s.label.length > 0);
-      const spread = hasLabels ? 80 : 35;
+      const spread = hasLabels ? 65 : 28;
       const shift = (idx - (siblings.length - 1) / 2) * spread;
       const fc = nodeCenter(fromNode);
       const tc = nodeCenter(toNode);
@@ -307,7 +308,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const t = 0.5;
       const lx = fromPt.x + (toPt.x - fromPt.x) * t;
       const ly = fromPt.y + (toPt.y - fromPt.y) * t;
-      labelParts.push(edgeLabelMultiline(lx, ly, escapeXml(edge.label), 30));
+      { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
     }
 
     // Numbered step circle on edge
@@ -331,7 +332,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  return { lines: parts.join('\n'), labels: labelParts.join('\n') };
+  return { lines: parts.join('\n'), labelBgs: labelBgParts.join('\n'), labels: labelParts.join('\n') };
 }
 
 function renderSubgraph(sg: PositionedSubgraph): string {
@@ -440,16 +441,17 @@ export function renderFlow(layout: FlowLayout): string {
     parts.push(renderSubgraph(sg));
   }
 
-  // Edge lines behind nodes, labels on top
+  // Edge lines and label backgrounds behind nodes, label text on top
   const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction);
   parts.push(edgeResult.lines);
+  parts.push(edgeResult.labelBgs);
 
   // Nodes
   for (const node of layout.nodes) {
     parts.push(renderNode(node, layout.theme));
   }
 
-  // Edge labels on top of nodes so they're never clipped
+  // Edge label text on top of nodes so they're never clipped
   parts.push(edgeResult.labels);
 
   // Code blocks

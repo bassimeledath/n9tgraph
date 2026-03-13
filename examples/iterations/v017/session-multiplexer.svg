@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 539.5999999999997 272" width="539.5999999999997" height="272">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">The Responses API executes commands asynchronous</text>
+<rect x="253" y="35" width="233" height="237" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5" opacity="0.5"/><rect x="253" y="35" width="233" height="237" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5" opacity="0.4"/><text x="271" y="61" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9">Runtime container</text>
+<line x1="215" y1="82.5" x2="275" y2="71" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="275" y1="111" x2="215" y2="129.25" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="215" y1="187.75" x2="275" y2="206" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="275" y1="246" x2="215" y2="234.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="164.25" y="66.25" width="161.5" height="21" rx="4" fill="#000000"/>
+<rect x="213" y="109.625" width="64" height="21" rx="4" fill="#000000"/>
+<rect x="154.5" y="186.375" width="181" height="21" rx="4" fill="#000000"/>
+<rect x="213" y="229.75" width="64" height="21" rx="4" fill="#000000"/>
+<rect x="45" y="78.5" width="170" height="160" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="50" y="83.5" width="160" height="150" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="130" y="150.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RESPONSES API</text><text x="130" y="170.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SESSION MULTIPLEXER</text>
+<rect x="275" y="67" width="189" height="48" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="280" y="72" width="179" height="38" rx="8" fill="transparent" stroke="#b4f079" stroke-width="1"/><text x="369.5" y="91" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SESSION ID: 101</text>
+<rect x="275" y="202" width="189" height="48" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="280" y="207" width="179" height="38" rx="8" fill="transparent" stroke="#b4f079" stroke-width="1"/><text x="369.5" y="226" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SESSION ID: 102</text>
+<text x="245" y="80.25" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">&quot;python a.py&quot;</text>
+<text x="245" y="123.625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">OUTPUT 1</text>
+<text x="245" y="200.375" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">&quot;go run test.go&quot;</text>
+<text x="245" y="243.75" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">OUTPUT 2</text>
+</g>
+</svg>

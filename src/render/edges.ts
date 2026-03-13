@@ -78,6 +78,12 @@ export function edgeLabel(x: number, y: number, text: string): string {
 
 /** Render a multiline edge label — wraps text at a max width */
 export function edgeLabelMultiline(x: number, y: number, text: string, maxCharsPerLine = 20): string {
+  const { bg, fg } = edgeLabelParts(x, y, text, maxCharsPerLine);
+  return bg + fg;
+}
+
+/** Split edge label into background and foreground parts for z-order control */
+export function edgeLabelParts(x: number, y: number, text: string, maxCharsPerLine = 20): { bg: string; fg: string } {
   // Split text into lines at word boundaries
   const words = text.split(/\s+/);
   const lines: string[] = [];
@@ -99,13 +105,14 @@ export function edgeLabelMultiline(x: number, y: number, text: string, maxCharsP
   const maxLineW = Math.max(...lines.map(l => l.length)) * 6.5 + padX * 2;
 
   // Background rect
-  let svg = `<rect x="${x - maxLineW / 2}" y="${y - totalH / 2 - padY}" width="${maxLineW}" height="${totalH + padY * 2}" rx="4" fill="${colors.bg}"/>`;
+  const bg = `<rect x="${x - maxLineW / 2}" y="${y - totalH / 2 - padY}" width="${maxLineW}" height="${totalH + padY * 2}" rx="4" fill="${colors.bg}"/>`;
   // Text lines
+  let fg = '';
   const startY = y - totalH / 2 + fontSizes.edgeLabel;
   for (let i = 0; i < lines.length; i++) {
-    svg += `<text x="${x}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="${opacity.edgeLabel}" text-anchor="middle">${lines[i]}</text>`;
+    fg += `<text x="${x}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="${opacity.edgeLabel}" text-anchor="middle">${lines[i]}</text>`;
   }
-  return svg;
+  return { bg, fg };
 }
 
 /** Numbered circle marker (e.g. step indicators on edges) */

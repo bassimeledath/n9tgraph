@@ -8,8 +8,8 @@ component "SKILL REGISTRY" {fill: dotgrid, sublabel: "name, description, object_
 component "SKILL BUNDLE STORAGE" {fill: dotgrid, sublabel: "object_id, zip"}
 component "CONTAINER RUNTIME" {fill: dotgrid, sublabel: "/home/oai/skills/..."}
 
-MODELS --> RESPONSES_API : COMMAND/OUTPUT
+RESPONSES_API --> MODELS : COMMAND/OUTPUT
 
 RESPONSES_API --> SKILL_REGISTRY : SKILL ID {step: 1}
 RESPONSES_API --> SKILL_BUNDLE_STORAGE : EXECUTE/OUTPUT {step: 2}
-RESPONSES_API --> CONTAINER_RUNTIME : COMMAND/OUTPUT {step: 3}
+MODELS --> CONTAINER_RUNTIME : COMMAND/OUTPUT {step: 3}

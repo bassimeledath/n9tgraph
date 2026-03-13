@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 548 494" width="548" height="494">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 466 414" width="466" height="414">
 <defs>
   <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
     <rect width="8" height="8" fill="#000000"/>
@@ -22,30 +22,31 @@
 <rect width="100%" height="100%" fill="#000000"/>
 <g class="diagram">
 <text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">Layered domain architecture with</text><text x="30" y="58" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">explicit cross-cutting boundaries</text>
-<rect x="30" y="169" width="488" height="330" rx="12" fill="url(#dotgrid)" stroke="#ffffff" stroke-width="1.5" opacity="0.5"/><rect x="30" y="169" width="488" height="330" rx="12" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/><text x="48" y="195" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9">Business logic domain</text>
-<line x1="154.5" y1="139" x2="154.5" y2="209" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="154.5,139 154.5,174 365.5,174 365.5,209" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="231" y1="229" x2="261" y2="229" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="154.5,249 154.5,284 127,284 127,319" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="154.5,249 154.5,284 291,284 291,319" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="365.5,249 365.5,284 438,284 438,319" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="194" y1="339" x2="224" y2="339" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="358" y1="339" x2="388" y2="339" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="127" y1="359" x2="128.5" y2="429" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="291,359 291,394 278.5,394 278.5,429" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="438,359 438,394 424,394 424,429" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="186" y1="449" x2="216" y2="449" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="341" y1="449" x2="371" y2="449" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<polyline points="71,449 30,449 30,154 154.5,154 154.5,139" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="97" y="99" width="115" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="154.5" y="119" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Utils</text>
-<rect x="78" y="209" width="153" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="154.5" y="229" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Providers</text>
-<rect x="261" y="209" width="209" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="365.5" y="229" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">App Wiring + UI</text>
-<rect x="60" y="319" width="134" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="127" y="339" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Service</text>
-<rect x="224" y="319" width="134" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="291" y="339" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Runtime</text>
-<rect x="388" y="319" width="100" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="438" y="339" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">UI</text>
-<rect x="71" y="429" width="115" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="128.5" y="449" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Types</text>
-<rect x="216" y="429" width="125" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="278.5" y="449" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Config</text>
-<rect x="371" y="429" width="106" height="40" rx="20" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="424" y="449" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Repo</text>
+<rect x="23" y="148" width="398" height="266" rx="12" fill="url(#dotgrid)" stroke="#ffffff" stroke-width="1.5" opacity="0.5"/><rect x="23" y="148" width="398" height="266" rx="12" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/><text x="41" y="174" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9">Business logic domain</text>
+<line x1="118.5" y1="125" x2="118.5" y2="180" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="118.5,125 118.5,152.5 297.5,152.5 297.5,180" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="183" y1="197" x2="205" y2="197" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="118.5,214 118.5,241.5 100,241.5 100,269" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="118.5,214 118.5,241.5 232,241.5 232,269" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="297.5,214 297.5,241.5 354,241.5 354,269" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="155" y1="286" x2="177" y2="286" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="287" y1="286" x2="309" y2="286" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="100" y1="303" x2="104.5" y2="358" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="232" y1="303" x2="222.5" y2="358" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="354,303 354,330.5 340,330.5 340,358" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="150" y1="375" x2="172" y2="375" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="273" y1="375" x2="295" y2="375" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="59,375 15,375 15,140 118.5,140 118.5,125" fill="none" stroke="#ffffff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+<rect x="73" y="91" width="91" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="118.5" y="108" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Utils</text>
+<rect x="54" y="180" width="129" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="118.5" y="197" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Providers</text>
+<rect x="205" y="180" width="185" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="297.5" y="197" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">App Wiring + UI</text>
+<rect x="45" y="269" width="110" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="100" y="286" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Service</text>
+<rect x="177" y="269" width="110" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="232" y="286" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Runtime</text>
+<rect x="309" y="269" width="90" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="354" y="286" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">UI</text>
+<rect x="59" y="358" width="91" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="104.5" y="375" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Types</text>
+<rect x="172" y="358" width="101" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="222.5" y="375" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Config</text>
+<rect x="295" y="358" width="90" height="34" rx="17" fill="transparent" stroke="#ffffff" stroke-width="1.5"/><text x="340" y="375" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Repo</text>
 
 </g>
 </svg>

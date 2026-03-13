@@ -76,19 +76,19 @@ export interface FlowLayout {
 
 // ─── Constants ───────────────────────────────────────────
 
-const MARGIN_X = 60;
-const MARGIN_TOP = 25;
-const TITLE_HEIGHT = 50;
-const LAYER_GAP = 70;
-const TB_LAYER_GAP = 70;
-const NODE_GAP = 30;
+const MARGIN_X = 45;
+const MARGIN_TOP = 22;
+const TITLE_HEIGHT = 45;
+const LAYER_GAP = 60;
+const TB_LAYER_GAP = 55;
+const NODE_GAP = 22;
 const ACTOR_W = 50;
 const ACTOR_H = 70;
-const MIN_NODE_W = 100;
-const CIRCLE_R = 40;
-const SUBGRAPH_PAD_X = 30;
-const SUBGRAPH_PAD_TOP = 40;
-const SUBGRAPH_PAD_BOTTOM = 30;
+const MIN_NODE_W = 90;
+const CIRCLE_R = 34;
+const SUBGRAPH_PAD_X = 22;
+const SUBGRAPH_PAD_TOP = 32;
+const SUBGRAPH_PAD_BOTTOM = 22;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
 
@@ -264,12 +264,12 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       const sublabel = n.properties.sublabel;
       // Pills need wider padding and less height for proper capsule shape
       const isPill = n.properties.shape === 'pill';
-      const padX = isPill ? 34 : 28;
-      const padY = isPill ? 10 : 18;
+      const padX = isPill ? 22 : 16;
+      const padY = isPill ? 6 : 10;
       const size = nodeSizeForLabel(n.label, fontSizes.nodeLabel, 'mono', padX, padY);
-      let h = Math.max(size.h, isPill ? 40 : 44);
+      let h = Math.max(size.h, isPill ? 34 : 36);
       if (sublabel) {
-        h += 20; // extra space for sublabel
+        h += 18; // extra space for sublabel
       }
       // Service nodes get taller to span connected neighbors
       if (n.kind === 'service') {
@@ -282,9 +282,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         }
         const multiPairGroups = [...pairCounts.values()].filter(c => c >= 2).length;
         if (multiPairGroups >= 2) {
-          h = Math.max(h, multiPairGroups * 80 + (multiPairGroups - 1) * 40);
+          h = Math.max(h, multiPairGroups * 40 + (multiPairGroups - 1) * 18);
         } else {
-          h = Math.max(h, 120);
+          h = Math.max(h, 65);
         }
       }
       nodeSizes.set(n.id, { w: Math.max(size.w, MIN_NODE_W), h });
@@ -330,8 +330,27 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     return { ...n, x: pos.x, y: pos.y, w: sz.w, h: sz.h };
   });
 
-  // Adjust diagram bounds to include multi-line annotations
+  // Adjust diagram bounds to include all elements
   let finalWidth = positioned.width;
+
+  // Ensure width covers all positioned nodes with margin
+  for (const n of posNodes) {
+    const nodeRight = n.x + n.w + MARGIN_X;
+    if (nodeRight > finalWidth) finalWidth = nodeRight;
+  }
+  for (const sg of posSubgraphs) {
+    const sgRight = sg.x + sg.w + MARGIN_X;
+    if (sgRight > finalWidth) finalWidth = sgRight;
+  }
+
+  // Ensure width covers title text
+  if (title) {
+    const titleLines = title.split('\n');
+    for (const line of titleLines) {
+      const titleW = measureLineWidth(line, fontSizes.title, 'sans') + 140;
+      if (titleW > finalWidth) finalWidth = titleW;
+    }
+  }
   let finalHeight = positioned.height;
   const titleLinesCount = title ? title.split('\n').length : 0;
   const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 24 + 10 : MARGIN_TOP;
@@ -515,7 +534,7 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[]): number {
     }
   }
   // Boost gap when nodes have labeled multi-edge pairs (e.g. bidirectional labeled edges)
-  return maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 80 : NODE_GAP;
+  return maxPairCount >= 2 ? NODE_GAP + (maxPairCount - 1) * 65 : NODE_GAP;
 }
 
 function assignCoordinates(

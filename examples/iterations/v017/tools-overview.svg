@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 641.8 316" width="641.8" height="316">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">Language models use tools</text>
+<rect x="178" y="54.5" width="205" height="242" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5" opacity="0.5"/><rect x="178" y="54.5" width="205" height="242" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5" opacity="0.4"/><text x="196" y="80.5" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9">Tools</text>
+<line x1="140" y1="162.81382978723406" x2="233" y2="128.18617021276594" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="140" y1="180.5" x2="219" y2="180.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="140" y1="198.18617021276594" x2="216.04285714285714" y2="226.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="328" y1="107.17250437828372" x2="444.1" y2="99.03940455341507" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="342" y1="180.5" x2="424.29999999999995" y2="180.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="361" y1="256.13922942206653" x2="421" y2="260.34238178633973" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+<rect x="45" y="156.5" width="95" height="48" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><text x="92.5" y="180.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">MODEL</text>
+<rect x="233" y="86.5" width="95" height="48" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="238" y="91.5" width="85" height="38" rx="8" fill="transparent" stroke="#b4f079" stroke-width="1"/><text x="280.5" y="110.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SHELL</text>
+<rect x="219" y="156.5" width="123" height="48" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="224" y="161.5" width="113" height="38" rx="8" fill="transparent" stroke="#b4f079" stroke-width="1"/><text x="280.5" y="180.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">FUNCTION</text>
+<rect x="200" y="226.5" width="161" height="48" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="205" y="231.5" width="151" height="38" rx="8" fill="transparent" stroke="#b4f079" stroke-width="1"/><text x="280.5" y="250.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">COMPUTER USE</text>
+
+<text x="444.1" y="80" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" font-weight="700" letter-spacing="0.12em">COMMAND</text><text x="448.1" y="96" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">ls -l /home/user</text>
+<text x="424.3" y="157" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" font-weight="700" letter-spacing="0.12em">JSON</text><text x="428.3" y="173" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">{&quot;name&quot;:&quot;get_weather&quot;,</text><text x="428.3" y="191" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">&quot;description&quot;:&quot;...&quot;}</text>
+<text x="421" y="252" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" font-weight="700" letter-spacing="0.12em">ACTION</text><text x="425" y="268" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">click(&quot;left&quot;, 100, 200)</text>
+<circle cx="268.5" cy="145.5" r="3" fill="#b4f079"/><circle cx="280.5" cy="145.5" r="3" fill="#b4f079"/><circle cx="292.5" cy="145.5" r="3" fill="#b4f079"/>
+</g>
+</svg>

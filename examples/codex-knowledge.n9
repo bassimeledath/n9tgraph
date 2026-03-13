@@ -1,7 +1,7 @@
 type card
 title "The limits of agent knowledge:\nWhat Codex can't see doesn't exist"
 
-node "Codex's Knowledge" {shape: pill, fill: dotgrid}
+node "Codex's Knowledge" {fill: dotgrid}
 
 edge_in CODEX_S_KNOWLEDGE right : Encode into codebase as markdown
 

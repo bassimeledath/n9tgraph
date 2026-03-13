@@ -56,19 +56,19 @@ export interface SequenceLayout {
 
 // ─── Layout constants ────────────────────────────────────
 
-const MARGIN_X = 50;
-const MARGIN_TOP = 25;
-const TITLE_HEIGHT = 40;
-const PARTICIPANT_GAP = 180;       // horizontal distance between participant centers
-const MESSAGE_STEP = 38;           // vertical step per message
-const FRAGMENT_PAD_X = 20;         // horizontal padding inside fragment
-const FRAGMENT_PAD_TOP = 30;       // space above first child in fragment
-const FRAGMENT_PAD_BOTTOM = 16;    // space below last child in fragment
-const SELF_MESSAGE_WIDTH = 40;     // width of self-message loop
-const ANNOTATION_OFFSET = 10;     // vertical offset for annotation below message
-const HEADER_PAD_X = 24;
-const HEADER_PAD_Y = 14;
-const BOTTOM_HEADER_GAP = 30;     // gap between last element and bottom headers
+const MARGIN_X = 32;
+const MARGIN_TOP = 18;
+const TITLE_HEIGHT = 32;
+const PARTICIPANT_GAP = 125;       // horizontal distance between participant centers
+const MESSAGE_STEP = 28;           // vertical step per message
+const FRAGMENT_PAD_X = 14;         // horizontal padding inside fragment
+const FRAGMENT_PAD_TOP = 22;       // space above first child in fragment
+const FRAGMENT_PAD_BOTTOM = 12;    // space below last child in fragment
+const SELF_MESSAGE_WIDTH = 32;     // width of self-message loop
+const ANNOTATION_OFFSET = 6;      // vertical offset for annotation below message
+const HEADER_PAD_X = 16;
+const HEADER_PAD_Y = 10;
+const BOTTOM_HEADER_GAP = 18;     // gap between last element and bottom headers
 
 // ─── Layout engine ───────────────────────────────────────
 
@@ -243,7 +243,12 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   const rightEdge = Math.max(
     ...participantXs.map((x, i) => x + headerSizes[i].w / 2)
   );
-  const totalWidth = rightEdge + Math.max(MARGIN_X, maxAnnotationWidth + 30);
+  let totalWidth = rightEdge + Math.max(MARGIN_X, maxAnnotationWidth + 30);
+  // Ensure width covers title text (bold font needs extra margin)
+  if (diagram.title) {
+    const titleW = measureLineWidth(diagram.title, fontSizes.title, 'sans') + 140;
+    totalWidth = Math.max(totalWidth, titleW);
+  }
   const totalHeight = bottomHeaderY + maxHeaderH + MARGIN_TOP;
 
   return {
