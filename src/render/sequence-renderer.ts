@@ -187,11 +187,57 @@ function renderFragment(frag: LayoutFragment): string {
 
 // ─── Notes ───────────────────────────────────────────────
 
+/** Render a single line of note text with **bold** support */
+function renderNoteTextLine(x: number, y: number, text: string, anchor: string): string {
+  // Parse **bold** segments
+  const parts: { text: string; bold: boolean }[] = [];
+  const re = /\*\*(.+?)\*\*/g;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push({ text: text.slice(lastIdx, match.index), bold: false });
+    }
+    parts.push({ text: match[1], bold: true });
+    lastIdx = match.index + match[0].length;
+  }
+  if (lastIdx < text.length) {
+    parts.push({ text: text.slice(lastIdx), bold: false });
+  }
+
+  if (parts.length === 1 && !parts[0].bold) {
+    return `<text x="${x}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.white}" text-anchor="${anchor}" dominant-baseline="central">${escapeXml(text)}</text>`;
+  }
+
+  let svg = `<text x="${x}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.white}" text-anchor="${anchor}" dominant-baseline="central">`;
+  for (const part of parts) {
+    if (part.bold) {
+      svg += `<tspan font-weight="700">${escapeXml(part.text)}</tspan>`;
+    } else {
+      svg += `<tspan>${escapeXml(part.text)}</tspan>`;
+    }
+  }
+  svg += '</text>';
+  return svg;
+}
+
 function renderNotes(notes: LayoutNote[]): string {
   let svg = '';
   for (const note of notes) {
     svg += `<rect x="${note.x}" y="${note.y}" width="${note.w}" height="${note.h}" rx="4" fill="${colors.cardBg}" stroke="${colors.cardBorder}" stroke-width="1"/>`;
-    svg += `<text x="${note.x + note.w / 2}" y="${note.y + note.h / 2}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.white}" text-anchor="middle" dominant-baseline="central">${escapeXml(note.text)}</text>`;
+
+    // Split on literal \n for multi-line notes
+    const lines = note.text.split('\\n');
+    if (lines.length === 1) {
+      svg += renderNoteTextLine(note.x + note.w / 2, note.y + note.h / 2, note.text, 'middle');
+    } else {
+      const lineH = 16;
+      const totalH = lines.length * lineH;
+      const startY = note.y + (note.h - totalH) / 2 + lineH * 0.6;
+      for (let i = 0; i < lines.length; i++) {
+        svg += renderNoteTextLine(note.x + 12, startY + i * lineH, lines[i].trim(), 'start');
+      }
+    }
   }
   return svg;
 }

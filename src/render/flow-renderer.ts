@@ -174,7 +174,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
 
     if (siblings.length > 1) {
       // Multi-edge pair: create truly horizontal (or vertical) parallel edges
-      const spread = 35;
+      // Use wider spread when edges have labels to prevent label overlap
+      const hasLabels = siblings.some(s => s.label && s.label.length > 0);
+      const spread = hasLabels ? 65 : 35;
       const shift = (idx - (siblings.length - 1) / 2) * spread;
       const fc = nodeCenter(fromNode);
       const tc = nodeCenter(toNode);

@@ -177,9 +177,18 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
   function layoutNoteElem(note: Note): void {
     const xs = note.over.map(id => idToX.get(id) ?? participantXs[0]);
     const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const textW = measureLineWidth(note.text, fontSizes.edgeLabel, 'mono');
-    const w = textW + 24;
-    const h = 32;
+
+    // Split on literal \n for multi-line notes, strip **bold** for measurement
+    const lines = note.text.split('\\n');
+    let maxLineW = 0;
+    for (const line of lines) {
+      const stripped = line.replace(/\*\*(.+?)\*\*/g, '$1').trim();
+      maxLineW = Math.max(maxLineW, measureLineWidth(stripped, fontSizes.edgeLabel, 'mono'));
+    }
+
+    const w = maxLineW + 24;
+    const lineH = 16;
+    const h = lines.length > 1 ? lines.length * lineH + 20 : 32;
 
     layoutNotes.push({
       x: centerX - w / 2,
@@ -189,7 +198,7 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
       text: note.text,
     });
 
-    cursorY += MESSAGE_STEP;
+    cursorY += h + 12;
   }
 
   layoutElements(elements);

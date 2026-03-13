@@ -78,7 +78,8 @@ const MARGIN_X = 80;
 const MARGIN_TOP = 30;
 const TITLE_HEIGHT = 55;
 const LAYER_GAP = 140;
-const NODE_GAP = 40;
+const TB_LAYER_GAP = 100;
+const NODE_GAP = 80;
 const ACTOR_W = 50;
 const ACTOR_H = 70;
 const MIN_NODE_W = 100;
@@ -221,6 +222,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
 
   // Step 5: Coordinate assignment
   const positioned = assignCoordinates(ordered, nodeSizes, direction, title);
+
+  // Step 5b: Coordinate refinement — reduce crossings by aligning nodes with neighbors
+  if (direction === 'TB') {
+    refineCoordinatesTB(ordered, positioned.nodePositions, nodeSizes, allEdges);
+  }
 
   // Step 6: Compute subgraph bounding boxes
   const posSubgraphs = computeSubgraphBounds(subgraphs, positioned.nodePositions, nodeSizes);
@@ -450,11 +456,11 @@ function assignCoordinates(
         positions.set(id, { x: curX, y: curY + (layerH - sz.h) / 2 });
         curX += sz.w + NODE_GAP;
       }
-      curY += layerH + LAYER_GAP;
+      curY += layerH + TB_LAYER_GAP;
     }
 
     const totalW = MARGIN_X * 2 + maxCrossWidth;
-    const totalH = curY - LAYER_GAP + MARGIN_TOP;
+    const totalH = curY - TB_LAYER_GAP + MARGIN_TOP;
     return { nodePositions: positions, width: totalW, height: totalH };
   }
 }
@@ -576,4 +582,49 @@ function positionAnnotations(
         return { text: a.text, x: isMultiline ? pos.x : pos.x + sz.w / 2, y: pos.y + sz.h + 24 + sgExtra, properties: a.properties };
     }
   });
+}
+
+// ─── TB coordinate refinement ────────────────────────────
+
+function refineCoordinatesTB(
+  layers: string[][],
+  positions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+  allEdges: FlowEdge[],
+): void {
+  // Build bidirectional adjacency from ALL edges (including back edges)
+  const neighbors = new Map<string, Set<string>>();
+  for (const [id] of positions) neighbors.set(id, new Set());
+  for (const e of allEdges) {
+    if (neighbors.has(e.from) && neighbors.has(e.to)) {
+      neighbors.get(e.from)!.add(e.to);
+      neighbors.get(e.to)!.add(e.from);
+    }
+  }
+
+  // For single-node layers, align with the barycenter of connected nodes
+  // This reduces edge crossings (e.g., UTILS aligns above its children)
+  for (const layer of layers) {
+    if (layer.length !== 1) continue;
+    const id = layer[0];
+    const sz = nodeSizes.get(id)!;
+    const nbrs = neighbors.get(id);
+    if (!nbrs || nbrs.size === 0) continue;
+
+    const cxValues: number[] = [];
+    for (const nid of nbrs) {
+      const p = positions.get(nid);
+      const s = nodeSizes.get(nid);
+      if (p && s) {
+        cxValues.push(p.x + s.w / 2);
+      }
+    }
+    if (cxValues.length === 0) continue;
+
+    // Use median — robust against outliers pulling center away
+    cxValues.sort((a, b) => a - b);
+    const medianCx = cxValues[Math.floor(cxValues.length / 2)];
+    const pos = positions.get(id)!;
+    positions.set(id, { x: medianCx - sz.w / 2, y: pos.y });
+  }
 }

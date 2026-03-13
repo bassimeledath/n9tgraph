@@ -33,6 +33,6 @@ CODEBASE --> CODEX : Re-run workload
 annotation "LOGS (HTTP)\nOTLP METRICS\nOTLP TRACES" near APP side bottom
 annotation "Fan out\n(local)" near VECTOR side bottom
 annotation "Query\nCorrelate\nReason" near CODEX side top
-annotation "UI\nJourney" near CODEX side right
-annotation "Test" near CODEBASE side right
+annotation "UI\nJourney" near CODEX side bottom
+annotation "Test" near CODEBASE side bottom
 annotation "Feedback loop" near CODEBASE side top
