@@ -94,7 +94,7 @@ function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: nu
 }
 const ACTOR_W = 42;
 const ACTOR_H = 72;
-const MIN_NODE_W = 62;
+const MIN_NODE_W = 72;
 const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
 const SUBGRAPH_PAD_TOP = 56;
@@ -321,9 +321,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     } else {
       // Account for sublabel in height
       const sublabel = n.properties.sublabel;
-      // Pills need wider padding and less height for proper capsule shape
+      // Pills need wider padding — semicircular ends eat into text area
       const isPill = n.properties.shape === 'pill';
-      const padX = isPill ? 22 : 20;
+      const padX = isPill ? 32 : 20;
       const padY = isPill ? 6 : 10;
       // Wrap long labels into multiple lines for compact node sizing
       const wrappedLines = wrapLabel(n.label, MAX_NODE_LABEL_CHARS);
@@ -670,6 +670,17 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     // Actor labels are centered and may overhang
     if (n.kind === 'actor' && n.label) {
       const labelW = measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel;
+      const cx = n.x + n.w / 2;
+      nodeRight = Math.max(nodeRight, cx + labelW / 2 + 4);
+      nodeLeft = Math.min(nodeLeft, cx - labelW / 2 - 4);
+    }
+    // All node labels with text-anchor="middle" may extend beyond the node boundary
+    // (especially for circle/pill nodes where visual shape is smaller than bounding box)
+    if (n.label && n.kind !== 'actor') {
+      const wrappedLines = wrapLabel(n.label, 28);
+      const maxLine = wrappedLines.reduce((a, b) => a.length > b.length ? a : b, '');
+      const labelW = measureLineWidth(maxLine.toUpperCase(), fontSizes.nodeLabel, 'mono')
+        + maxLine.length * 0.12 * fontSizes.nodeLabel;
       const cx = n.x + n.w / 2;
       nodeRight = Math.max(nodeRight, cx + labelW / 2 + 4);
       nodeLeft = Math.min(nodeLeft, cx - labelW / 2 - 4);

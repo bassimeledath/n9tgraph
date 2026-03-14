@@ -113,11 +113,22 @@ function renderContainer(container: PositionedCardContainer): string {
 // ─── Edges ─────────────────────────────────────────────────
 
 function renderEdge(edge: PositionedCardEdge): string {
-  return straightEdge({
+  let svg = straightEdge({
     from: edge.fromPt,
     to: edge.toPt,
     color: colors.accent,
   });
+  // Render edge label at midpoint if present
+  if (edge.label) {
+    const mx = (edge.fromPt.x + edge.toPt.x) / 2;
+    const my = (edge.fromPt.y + edge.toPt.y) / 2;
+    const padX = 6;
+    const padY = 3;
+    const estW = edge.label.length * 7.0 + padX * 2;
+    svg += `<rect x="${mx - estW / 2}" y="${my - fontSizes.edgeLabel - padY}" width="${estW}" height="${fontSizes.edgeLabel + padY * 2 + 2}" rx="4" fill="${colors.bg}" opacity="0.9"/>`;
+    svg += `<text x="${mx}" y="${my}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.85" text-anchor="middle">${escapeXml(edge.label)}</text>`;
+  }
+  return svg;
 }
 
 // ─── Edge-In ───────────────────────────────────────────────
@@ -183,6 +194,33 @@ function renderHanging(hanging: PositionedHanging): string {
 
 // ─── Main render ───────────────────────────────────────────
 
+/** Resolve label collisions by nudging overlapping labels apart */
+function resolveCardLabelCollisions(
+  labels: { x: number; y: number; halfW: number; halfH: number }[],
+): void {
+  const MIN_GAP = 8;
+  for (let pass = 0; pass < 10; pass++) {
+    let changed = false;
+    for (let i = 0; i < labels.length; i++) {
+      for (let j = i + 1; j < labels.length; j++) {
+        const a = labels[i], b = labels[j];
+        const dx = Math.abs(a.x - b.x);
+        const dy = Math.abs(a.y - b.y);
+        const requiredDx = a.halfW + b.halfW + MIN_GAP;
+        const requiredDy = a.halfH + b.halfH + MIN_GAP;
+        if (dx < requiredDx && dy < requiredDy) {
+          const overlapY = requiredDy - dy;
+          const shift = overlapY / 2 + 2;
+          if (a.y <= b.y) { a.y -= shift; b.y += shift; }
+          else { a.y += shift; b.y -= shift; }
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+}
+
 export function renderCardDiagram(layout: CardLayout): string {
   const parts: string[] = [];
 
@@ -194,6 +232,50 @@ export function renderCardDiagram(layout: CardLayout): string {
   // Edges (behind everything)
   for (const edge of layout.edges) {
     parts.push(renderEdge(edge));
+  }
+
+  // Collect all label positions for collision detection
+  const labelPositions: { x: number; y: number; halfW: number; halfH: number; ref: { x: number; y: number } }[] = [];
+
+  // Edge-in labels
+  for (const edgeIn of layout.edgesIn) {
+    if (edgeIn.label) {
+      const labelW = edgeIn.label.length * 7.0 + 12;
+      labelPositions.push({
+        x: edgeIn.labelX, y: edgeIn.labelY,
+        halfW: labelW / 2, halfH: 10,
+        ref: { x: edgeIn.labelX, y: edgeIn.labelY },
+      });
+    }
+  }
+
+  // Hanging labels
+  for (const hanging of layout.hangingLabels) {
+    const labelW = hanging.label.length * 7.5 + 12;
+    labelPositions.push({
+      x: hanging.textX + labelW / 2, y: hanging.textY,
+      halfW: labelW / 2, halfH: 10,
+      ref: { x: hanging.textX, y: hanging.textY },
+    });
+  }
+
+  // Resolve collisions
+  resolveCardLabelCollisions(labelPositions);
+
+  // Apply resolved positions back to edge-in labels
+  let labelIdx = 0;
+  for (const edgeIn of layout.edgesIn) {
+    if (edgeIn.label) {
+      const pos = labelPositions[labelIdx++];
+      edgeIn.labelX = pos.x;
+      edgeIn.labelY = pos.y;
+    }
+  }
+
+  // Apply resolved positions back to hanging labels
+  for (const hanging of layout.hangingLabels) {
+    const pos = labelPositions[labelIdx++];
+    hanging.textY = pos.y;
   }
 
   // Edge-in arrows

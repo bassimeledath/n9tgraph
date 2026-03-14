@@ -93,19 +93,24 @@ const MIN_NODE_W = 120;
 // ─── Helpers ────────────────────────────────────────────
 
 function wrapText(text: string, maxWidth: number, fontSize: number, font: FontFamily): string[] {
-  const words = text.split(/\s+/);
+  // Split on explicit newlines first, then wrap each segment independently
+  const segments = text.split('\n');
   const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const test = current ? current + ' ' + word : word;
-    if (measureLineWidth(test, fontSize, font) > maxWidth) {
-      if (current) lines.push(current);
-      current = word;
-    } else {
-      current = test;
+  for (const segment of segments) {
+    const words = segment.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) { lines.push(''); continue; }
+    let current = '';
+    for (const word of words) {
+      const test = current ? current + ' ' + word : word;
+      if (measureLineWidth(test, fontSize, font) > maxWidth) {
+        if (current) lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
     }
+    if (current) lines.push(current);
   }
-  if (current) lines.push(current);
   return lines;
 }
 

@@ -822,23 +822,26 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
 
   // Resolve label-label collisions (multi-pass for dense convergence zones)
-  for (let pass = 0; pass < 7; pass++) {
+  const MIN_LABEL_GAP = 10; // minimum pixel gap between any two labels
+  for (let pass = 0; pass < 12; pass++) {
     let changed = false;
     for (let i = 0; i < pendingLabels.length; i++) {
       for (let j = i + 1; j < pendingLabels.length; j++) {
         const a = pendingLabels[i], b = pendingLabels[j];
         const dx = Math.abs(a.x - b.x);
         const dy = Math.abs(a.y - b.y);
-        if (dx < a.halfW + b.halfW && dy < a.halfH + b.halfH) {
-          const overlapX = (a.halfW + b.halfW) - dx;
-          const overlapY = (a.halfH + b.halfH) - dy;
+        const requiredDx = a.halfW + b.halfW + MIN_LABEL_GAP;
+        const requiredDy = a.halfH + b.halfH + MIN_LABEL_GAP;
+        if (dx < requiredDx && dy < requiredDy) {
+          const overlapX = requiredDx - dx;
+          const overlapY = requiredDy - dy;
           // Resolve along the axis with smaller overlap (less disruptive)
           if (overlapY <= overlapX) {
-            const shift = overlapY / 2 + 4;
+            const shift = overlapY / 2 + 2;
             if (a.y <= b.y) { a.y -= shift; b.y += shift; }
             else { a.y += shift; b.y -= shift; }
           } else {
-            const shift = overlapX / 2 + 4;
+            const shift = overlapX / 2 + 2;
             if (a.x <= b.x) { a.x -= shift; b.x += shift; }
             else { a.x += shift; b.x -= shift; }
           }
