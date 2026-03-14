@@ -140,16 +140,22 @@ export function layoutCard(diagram: CardDiagram): CardLayout {
   for (const container of diagram.containers) {
     const cardLayouts: CardSizeInfo[] = container.cards.map(card => {
       const iconW = card.icon ? spacing.iconSize + 8 : 0;
-      const textMaxW = CARD_WIDTH - 2 * CARD_PAD - iconW;
+      // Size card width from max(CARD_WIDTH, title width) to prevent title truncation
+      const titleW = measureLineWidth(card.title, fontSizes.cardTitle, 'sans')
+        + card.title.length * 0.12 * fontSizes.cardTitle; // letter-spacing
+      const neededTitleW = titleW + iconW + 2 * CARD_PAD;
+      const cardW = Math.max(CARD_WIDTH, Math.ceil(neededTitleW));
+      const textMaxW = cardW - 2 * CARD_PAD - iconW;
       const bodyLines = card.body ? wrapText(card.body, textMaxW, fontSizes.cardBody, 'sans') : [];
       const h = CARD_PAD + 30 + bodyLines.length * BODY_LINE_H + CARD_PAD;
-      return { card, bodyLines, w: CARD_WIDTH, h };
+      return { card, bodyLines, w: cardW, h };
     });
 
     const maxCardH = cardLayouts.length > 0 ? Math.max(...cardLayouts.map(c => c.h)) : 80;
+    const maxCardW = cardLayouts.length > 0 ? Math.max(...cardLayouts.map(c => c.w)) : CARD_WIDTH;
     const numCards = cardLayouts.length;
     const overflowW = container.hasOverflow ? OVERFLOW_W : 0;
-    const contentW = numCards * CARD_WIDTH + Math.max(0, numCards - 1) * CARD_GAP + overflowW;
+    const contentW = numCards * maxCardW + Math.max(0, numCards - 1) * CARD_GAP + overflowW;
     const containerW = contentW + CONTAINER_PAD_X * 2;
     const containerH = maxCardH + CONTAINER_PAD_Y * 2;
 

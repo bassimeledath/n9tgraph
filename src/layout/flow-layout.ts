@@ -338,7 +338,14 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         // Wrap sublabel too to prevent nodes from becoming excessively wide
         const sublabelWrapped = wrapLabel(sublabel, MAX_NODE_LABEL_CHARS + 6);
         const maxSubLine = sublabelWrapped.reduce((a, b) => a.length > b.length ? a : b, '');
-        h += 18 * sublabelWrapped.length; // extra space for sublabel lines
+        // Sublabel renders at y + h/2 + 12, each line at edgeLabel*1.4 = 15.4px
+        // Ensure node height accommodates all sublabel lines without clipping:
+        // h/2 >= 12 + sublabelLines * ceil(edgeLabel * 1.4) + 4px margin
+        const sublabelLineH = Math.ceil(fontSizes.edgeLabel * 1.4);
+        const sublabelExtent = 12 + sublabelWrapped.length * sublabelLineH + 4;
+        // Also need space above center for main label (offset -8 when sublabel present)
+        const neededH = Math.max(h + 18 * sublabelWrapped.length, sublabelExtent * 2 + 16);
+        h = neededH;
         const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + padX * 2;
         if (sublabelW > size.w) {
           size.w = sublabelW;
@@ -561,26 +568,38 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   if (title) {
     titleMaxWidth = Math.max(finalWidth - 60, 300);
     const rawLines = title.split('\n');
+    let widestWrappedLine = 0;
     for (const line of rawLines) {
       const lineW = measureLineWidth(line, fontSizes.title, 'sans');
       if (lineW <= titleMaxWidth) {
         wrappedTitleLineCount++;
+        widestWrappedLine = Math.max(widestWrappedLine, lineW);
       } else {
         const words = line.split(/\s+/);
         let cur = '';
         for (const word of words) {
           const test = cur ? cur + ' ' + word : word;
           if (measureLineWidth(test, fontSizes.title, 'sans') > titleMaxWidth && cur) {
+            widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans'));
             wrappedTitleLineCount++;
             cur = word;
           } else {
             cur = test;
           }
         }
-        if (cur) wrappedTitleLineCount++;
+        if (cur) {
+          widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans'));
+          wrappedTitleLineCount++;
+        }
       }
     }
-    // Don't extend finalWidth for the title — it wraps to fit
+    // Ensure canvas is wide enough for the widest wrapped title line (+ margins)
+    const titleNeededWidth = widestWrappedLine + 60; // 30px left margin + 30px right margin
+    if (titleNeededWidth > finalWidth) {
+      finalWidth = titleNeededWidth;
+      // Recompute titleMaxWidth with the expanded width
+      titleMaxWidth = Math.max(finalWidth - 60, 300);
+    }
   }
   let finalHeight = positioned.height;
   const titleLinesCount = wrappedTitleLineCount || (title ? title.split('\n').length : 0);

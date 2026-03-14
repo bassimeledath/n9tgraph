@@ -45,9 +45,14 @@ program
       const svg = render(ast);
 
       if (format === 'png') {
+        // Dynamic fitTo: ensure text stays readable at any SVG width
+        const viewBoxMatch = svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+        const svgWidth = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 800;
+        const isWhiteTheme = /^theme\s+white/m.test(source);
+        const pngWidth = Math.max(800, Math.round(svgWidth * 0.75)) * scale;
         const resvg = new Resvg(svg, {
-          fitTo: { mode: 'zoom', value: scale },
-          background: '#000000',
+          fitTo: { mode: 'width', value: pngWidth },
+          background: isWhiteTheme ? '#ffffff' : '#000000',
         });
         const pngData = resvg.render().asPng();
 

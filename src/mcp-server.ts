@@ -359,8 +359,11 @@ server.tool(
 
       if (format === "png") {
         const bg = /theme\s+white/.test(source) ? "#ffffff" : "#000000";
+        // Dynamic fitTo: ensure text stays readable at any SVG width
+        // Base: max(800, svgWidth * 0.75), then multiply by user scale
+        const pngWidth = Math.max(800, Math.round(width * 0.75)) * scale;
         const resvg = new Resvg(svg, {
-          fitTo: { mode: "zoom", value: scale },
+          fitTo: { mode: "width", value: pngWidth },
           background: bg,
         });
         const pngBuffer = resvg.render().asPng();

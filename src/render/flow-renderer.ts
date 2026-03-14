@@ -263,8 +263,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   const parts: string[] = [];
   const labelBgParts: string[] = [];
   const labelParts: string[] = [];
-  // Collect label positions for collision resolution (non-TB edges)
-  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number }[] = [];
+  // Collect label positions for collision resolution
+  // targetId tracks which node the edge points to, for convergence fan-out
+  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number; targetId?: string }[] = [];
 
   // Group edges by node pair
   const pairEdges = new Map<string, PositionedEdge[]>();
@@ -382,7 +383,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
               }
             }
           }
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
         }
       } else if (isBackward) {
         // Route along left (or right) side of diagram, entering target from below
@@ -433,7 +434,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           dashed: edge.dashed, color: colors.accent,
         }));
         if (edge.label) {
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
         }
       } else {
         // Same row: standard routing
@@ -442,7 +443,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
         parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
         if (edge.label) {
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
         }
       }
 
@@ -601,7 +602,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH });
+      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH, targetId: visualTo });
     }
 
     // Numbered step circle on edge
@@ -625,6 +626,37 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
+  // Convergence fan-out: when multiple labeled edges target the same node,
+  // pre-stagger their labels so they don't pile up at the same midpoint
+  {
+    const byTarget = new Map<string, number[]>();
+    for (let i = 0; i < pendingLabels.length; i++) {
+      const tid = pendingLabels[i].targetId;
+      if (!tid) continue;
+      if (!byTarget.has(tid)) byTarget.set(tid, []);
+      byTarget.get(tid)!.push(i);
+    }
+    for (const [tid, indices] of byTarget) {
+      if (indices.length < 2) continue;
+      const targetNode = nodeById.get(tid);
+      if (!targetNode) continue;
+      // Determine fan direction based on layout direction
+      const isVerticalLayout = direction === 'TB' || direction === 'BT';
+      const fanSpacing = 24; // px between staggered labels
+      const totalSpan = (indices.length - 1) * fanSpacing;
+      for (let k = 0; k < indices.length; k++) {
+        const offset = -totalSpan / 2 + k * fanSpacing;
+        if (isVerticalLayout) {
+          // TB/BT: fan horizontally
+          pendingLabels[indices[k]].x += offset;
+        } else {
+          // LR/RL: fan vertically
+          pendingLabels[indices[k]].y += offset;
+        }
+      }
+    }
+  }
+
   // Node-overlap resolution for all pending labels
   const labelClearance = 8;
   for (const label of pendingLabels) {
@@ -642,8 +674,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  // Resolve label-label collisions (multi-pass)
-  for (let pass = 0; pass < 3; pass++) {
+  // Resolve label-label collisions (multi-pass, 5 passes for dense convergence zones)
+  for (let pass = 0; pass < 5; pass++) {
     let changed = false;
     for (let i = 0; i < pendingLabels.length; i++) {
       for (let j = i + 1; j < pendingLabels.length; j++) {
