@@ -81,23 +81,23 @@ const MARGIN_X = 28;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const DEFAULT_LAYER_GAP = 24;
-const DEFAULT_TB_LAYER_GAP = 34;
-const DEFAULT_NODE_GAP = 18;
+const DEFAULT_TB_LAYER_GAP = 38;
+const DEFAULT_NODE_GAP = 20;
 
 // Spacing presets: compact, balanced (default), spacious
 function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: number; tbLayerGap: number } {
   switch (preset) {
-    case 'compact':  return { nodeGap: 12, layerGap: 18, tbLayerGap: 24 };
+    case 'compact':  return { nodeGap: 12, layerGap: 18, tbLayerGap: 28 };
     case 'spacious': return { nodeGap: 30, layerGap: 50, tbLayerGap: 60 };
     default:         return { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP };
   }
 }
 const ACTOR_W = 42;
-const ACTOR_H = 58;
+const ACTOR_H = 72;
 const MIN_NODE_W = 62;
 const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
-const SUBGRAPH_PAD_TOP = 46;
+const SUBGRAPH_PAD_TOP = 50;
 const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
@@ -407,6 +407,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 6: Compute subgraph bounding boxes
   const posSubgraphs = computeSubgraphBounds(subgraphs, positioned.nodePositions, nodeSizes);
 
+  // Step 6a: Resolve subgraph header-to-header text collisions
+  resolveSubgraphHeaderOverlaps(posSubgraphs, positioned.nodePositions, nodeSizes);
+
   // Step 6b: Push non-subgraph nodes away from subgraph bounding boxes
   separateNodesFromSubgraphs(allNodes, positioned.nodePositions, nodeSizes, posSubgraphs, subgraphChildIds, direction, NODE_GAP);
 
@@ -602,9 +605,12 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     }
   }
 
-  // Also ensure subgraphs don't overlap with title
+  // Also ensure subgraphs and nodes don't overlap with title
   for (const sg of posSubgraphs) {
     minAnnY = Math.min(minAnnY, sg.y);
+  }
+  for (const n of posNodes) {
+    minAnnY = Math.min(minAnnY, n.y);
   }
 
   if (minAnnY < titleAreaBottom) {
@@ -1211,6 +1217,68 @@ function computeSubgraphBounds(
       childIds,
     };
   });
+}
+
+// ─── Subgraph header overlap resolution ─────────────────
+
+function resolveSubgraphHeaderOverlaps(
+  posSubgraphs: PositionedSubgraph[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+): void {
+  const textH = fontSizes.subtitle + 10;
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (let i = 0; i < posSubgraphs.length; i++) {
+      const a = posSubgraphs[i];
+      if (!a.label) continue;
+      const aTextW = a.label.length * 7.5 + 20;
+      const aHdrY = a.y + 26;
+
+      for (let j = i + 1; j < posSubgraphs.length; j++) {
+        const b = posSubgraphs[j];
+        if (!b.label) continue;
+        const bTextW = b.label.length * 7.5 + 20;
+        const bHdrY = b.y + 26;
+
+        // Check if header text bounding boxes overlap
+        const aCx = a.x + a.w / 2;
+        const bCx = b.x + b.w / 2;
+        const xOverlap = Math.abs(aCx - bCx) < (aTextW + bTextW) / 2 + 8;
+        const yOverlap = Math.abs(aHdrY - bHdrY) < textH + 4;
+
+        if (xOverlap && yOverlap) {
+          // Shift the lower subgraph's children down to clear the header
+          const [, lower] = aHdrY <= bHdrY ? [a, b] : [b, a];
+          const upperHdrBottom = Math.min(aHdrY, bHdrY) + textH / 2 + 4;
+          const lowerHdrTop = Math.max(aHdrY, bHdrY) - textH / 2;
+          const shift = upperHdrBottom - lowerHdrTop;
+
+          if (shift > 0) {
+            for (const childId of lower.childIds) {
+              const pos = nodePositions.get(childId);
+              if (pos) pos.y += shift;
+            }
+            // Recompute this subgraph's vertical bounds
+            let minY = Infinity, maxY = -Infinity;
+            for (const childId of lower.childIds) {
+              const pos = nodePositions.get(childId);
+              const sz = nodeSizes.get(childId);
+              if (!pos || !sz) continue;
+              minY = Math.min(minY, pos.y);
+              maxY = Math.max(maxY, pos.y + sz.h);
+            }
+            if (minY !== Infinity) {
+              lower.y = minY - SUBGRAPH_PAD_TOP;
+              lower.h = (maxY - minY) + SUBGRAPH_PAD_TOP + SUBGRAPH_PAD_BOTTOM;
+            }
+            changed = true;
+          }
+        }
+      }
+    }
+    if (!changed) break;
+  }
 }
 
 // ─── Overflow position computation ──────────────────────

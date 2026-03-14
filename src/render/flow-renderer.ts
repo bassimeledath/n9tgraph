@@ -344,7 +344,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           let midY = (fromPt.y + toPt.y) / 2;
           // Avoid subgraph label areas — compute zone from font metrics
           if (subgraphs) {
-            const labelZoneH = fontSizes.subtitle + 20; // label height + padding
+            const labelZoneH = fontSizes.subtitle + 24; // label height + padding
             for (const sg of subgraphs) {
               if (midY >= sg.y - 2 && midY <= sg.y + labelZoneH) {
                 midY = sg.y + labelZoneH + 4;
@@ -375,7 +375,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           let ly = (fromPt.y + toPt.y) / 2;
           // Avoid subgraph label areas for edge labels — compute zone from font metrics
           if (subgraphs) {
-            const labelZoneH = fontSizes.subtitle + 20;
+            const labelZoneH = fontSizes.subtitle + 24;
             for (const sg of subgraphs) {
               if (ly >= sg.y - 2 && ly <= sg.y + labelZoneH) {
                 ly = sg.y + labelZoneH + 4;
