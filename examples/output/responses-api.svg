@@ -27,20 +27,20 @@
 <line x1="514.94" y1="129" x2="298.44" y2="162.25" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="298.44" y1="188.75" x2="458.44" y2="222" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <line x1="458.44" y1="253.75" x2="298.44" y2="220.5" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="75.08" y="219.5" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="75.08" y="110.5" width="51" height="21" rx="4" fill="#000000"/>
 <rect x="306.44" y="102.525" width="194" height="36" rx="4" fill="#000000"/>
 <rect x="311.89" y="141.775" width="103" height="21" rx="4" fill="#000000"/>
 <rect x="306.44" y="188.225" width="116" height="21" rx="4" fill="#000000"/>
-<rect x="306.44" y="219.975" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="306.44" y="243.975" width="96.5" height="21" rx="4" fill="#000000"/>
 <circle cx="50.72" cy="146.5" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="50.72" y1="153.5" x2="50.72" y2="175.5" stroke="#b4f079" stroke-width="1.5"/><line x1="36.72" y1="159.5" x2="64.72" y2="159.5" stroke="#b4f079" stroke-width="1.5"/><line x1="50.72" y1="175.5" x2="40.72" y2="191.5" stroke="#b4f079" stroke-width="1.5"/><line x1="50.72" y1="175.5" x2="60.72" y2="191.5" stroke="#b4f079" stroke-width="1.5"/><text x="50.72" y="205.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" letter-spacing="0.12em">USER</text>
-<rect x="136.44" y="126.5" width="162" height="98" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="141.44" y="131.5" width="152" height="88" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="217.44" y="175.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RESPONSES API</text>
+<rect x="136.44" y="126.5" width="162" height="98" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="141.44" y="131.5" width="152" height="88" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><rect x="157.44" y="164.4" width="120" height="22.2" fill="#000000" rx="2"/><text x="217.44" y="175.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RESPONSES API</text>
 <rect x="514.94" y="60" width="87" height="73" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="530.44" y="85.4" width="56" height="22.2" fill="#000000" rx="2"/><text x="558.44" y="96.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">MODEL</text>
 <rect x="458.44" y="218" width="200" height="73" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="482.44000000000005" y="243.4" width="152" height="22.2" fill="#000000" rx="2"/><text x="558.44" y="254.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RUNTIME CONTAINER</text>
-<text x="100.58" y="233.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">PROMPT</text>
+<text x="100.58" y="124.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">PROMPT</text>
 <text x="403.44" y="116.525" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">PROMPT + SHELL INSTRUCTION +</text><text x="403.44" y="131.525" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">STDOUT/STDERR</text>
 <text x="363.39" y="155.775" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">SHELL COMMANDS</text>
 <text x="364.44" y="202.225" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">EXECUTE COMMANDS</text>
-<text x="354.69" y="233.975" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">STDOUT/STDERR</text>
+<text x="354.69" y="257.975" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">STDOUT/STDERR</text>
 <text x="674.44" y="240.5" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#b4f079" opacity="0.6" font-style="italic">Feedback loop (until complete)</text>
 </g>
 </svg>

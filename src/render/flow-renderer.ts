@@ -63,6 +63,18 @@ function wrappedLabelBg(cx: number, cy: number, label: string, formatLabel: (l: 
   return `<rect x="${cx - textW / 2}" y="${cy + offsetY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
 }
 
+/** Compute background rect SVG for sublabel text, handling multi-line wrapping */
+function sublabelBgRect(cx: number, y: number, text: string): string {
+  const MAX_SUBLABEL_CHARS = 34;
+  const lines = wrapLabel(text, MAX_SUBLABEL_CHARS);
+  const maxLineLen = Math.max(...lines.map(l => l.length));
+  const textW = maxLineLen * 8 + 16;
+  const lineH = fontSizes.edgeLabel * 1.4;
+  const textH = lines.length * lineH + 6;
+  const centerY = y + (lines.length - 1) * lineH / 2;
+  return `<rect x="${cx - textW / 2}" y="${centerY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
+}
+
 function renderNode(node: PositionedNode, theme?: string): string {
   const { x, y, w, h, label, kind, properties } = node;
   const rawFill = fillForPattern(properties.fill);
@@ -95,17 +107,38 @@ function renderNode(node: PositionedNode, theme?: string): string {
   if (useDoubleBorder) {
     const dbFill = kind === 'service' && !properties.fill ? 'url(#hero)' : fill;
     let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill });
+    const dbHasPattern = dbFill.startsWith('url(');
     if (label) {
+      if (dbHasPattern) {
+        svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+      }
       svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
     }
     if (properties.sublabel) {
+      if (dbHasPattern) {
+        svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
+      }
       svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
     }
     return svg;
   }
 
   if (kind === 'datastore') {
-    return cylinder({ x, y, w, h, label, fill });
+    let svg = cylinder({ x, y, w, h, label: undefined, fill });
+    const dsHasPattern = rawFill.startsWith('url(');
+    if (label) {
+      if (dsHasPattern) {
+        svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+      }
+      svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+    }
+    if (properties.sublabel) {
+      if (dsHasPattern) {
+        svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
+      }
+      svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
+    }
+    return svg;
   }
 
   // component, external, label, default — standard rect (or pill if shape: pill)
@@ -121,9 +154,7 @@ function renderNode(node: PositionedNode, theme?: string): string {
   }
   if (properties.sublabel) {
     if (hasPatternFill) {
-      const sublabelW = properties.sublabel.length * 8 + 16;
-      const sublabelH = fontSizes.edgeLabel + 6;
-      svg += `<rect x="${x + w / 2 - sublabelW / 2}" y="${y + h / 2 + 12 - sublabelH / 2}" width="${sublabelW}" height="${sublabelH}" fill="${colors.bg}" rx="2"/>`;
+      svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
     }
     svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
   }
@@ -256,7 +287,70 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
-function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string, subgraphs?: PositionedSubgraph[]): { lines: string; labelBgs: string; labels: string } {
+/** Compute bounding box of a subgraph header label (mirrors renderSubgraphLabel positioning) */
+function subgraphHeaderBBox(sg: PositionedSubgraph, allSubgraphs: PositionedSubgraph[]): { x: number; y: number; w: number; h: number } | null {
+  if (!sg.label) return null;
+  const textW = sg.label.length * 7.5 + 20;
+  const textH = fontSizes.subtitle + 10;
+  let useLeftAlign = false;
+  const myCenterX = sg.x + sg.w / 2;
+  for (const other of allSubgraphs) {
+    if (other === sg || !other.label) continue;
+    if (Math.abs(other.y - sg.y) < 50) {
+      const otherCenterX = other.x + other.w / 2;
+      const otherTextW = other.label.length * 7.5 + 20;
+      if (Math.abs(myCenterX - otherCenterX) < (textW + otherTextW) / 2 + 8) {
+        useLeftAlign = true;
+        break;
+      }
+    }
+  }
+  if (useLeftAlign) {
+    return { x: sg.x + 8, y: sg.y + 26 - textH / 2 - 1, w: textW, h: textH };
+  }
+  return { x: sg.x + sg.w / 2 - textW / 2, y: sg.y + 26 - textH / 2 - 1, w: textW, h: textH };
+}
+
+/** Compute bounding box of an annotation */
+function annotationBBox(ann: PositionedAnnotation): { x: number; y: number; w: number; h: number } {
+  const lines = ann.text.split('\n');
+  const maxLineLen = Math.max(...lines.map(l => l.length));
+  const cappedLen = Math.min(maxLineLen, 50);
+  const lineH = 18;
+  let startX = ann.x;
+  if (ann.properties?.step) startX -= 6;
+  if (lines.length === 1 && !ann.properties?.step) {
+    const w = cappedLen * 7;
+    const h = fontSizes.annotation + 4;
+    return { x: ann.x, y: ann.y - h / 2, w, h };
+  }
+  const w = cappedLen * 7 + (ann.properties?.step ? 28 : 0);
+  const h = lines.length * lineH;
+  return { x: startX, y: ann.y, w, h };
+}
+
+/** Nudge an annotation to avoid overlapping with occupied text rects */
+function nudgeAnnotation(ann: PositionedAnnotation, obstacles: { x: number; y: number; w: number; h: number }[]): void {
+  const bbox = annotationBBox(ann);
+  const clearance = 8;
+  for (const obs of obstacles) {
+    if (bbox.x < obs.x + obs.w + clearance && bbox.x + bbox.w > obs.x - clearance &&
+        bbox.y < obs.y + obs.h + clearance && bbox.y + bbox.h > obs.y - clearance) {
+      const obsCenterY = obs.y + obs.h / 2;
+      const annCenterY = bbox.y + bbox.h / 2;
+      let shift: number;
+      if (annCenterY <= obsCenterY) {
+        shift = (obs.y - clearance) - (bbox.y + bbox.h);
+      } else {
+        shift = (obs.y + obs.h + clearance) - bbox.y;
+      }
+      ann.y += shift;
+      bbox.y += shift;
+    }
+  }
+}
+
+function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string, subgraphs?: PositionedSubgraph[], occupiedRects?: { x: number; y: number; w: number; h: number }[]): { lines: string; labelBgs: string; labels: string; labelBoxes: { x: number; y: number; w: number; h: number }[] } {
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
@@ -674,6 +768,24 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
+  // Push edge labels away from occupied rects (subgraph headers, annotations)
+  if (occupiedRects) {
+    for (const label of pendingLabels) {
+      for (const occ of occupiedRects) {
+        const hOverlap = label.x - label.halfW < occ.x + occ.w + labelClearance && label.x + label.halfW > occ.x - labelClearance;
+        const vOverlap = label.y - label.halfH < occ.y + occ.h + labelClearance && label.y + label.halfH > occ.y - labelClearance;
+        if (hOverlap && vOverlap) {
+          const occCenterY = occ.y + occ.h / 2;
+          if (label.y <= occCenterY) {
+            label.y = occ.y - label.halfH - labelClearance;
+          } else {
+            label.y = occ.y + occ.h + label.halfH + labelClearance;
+          }
+        }
+      }
+    }
+  }
+
   // Resolve label-label collisions (multi-pass, 5 passes for dense convergence zones)
   for (let pass = 0; pass < 5; pass++) {
     let changed = false;
@@ -701,7 +813,15 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     labelParts.push(p.fg);
   }
 
-  return { lines: parts.join('\n'), labelBgs: labelBgParts.join('\n'), labels: labelParts.join('\n') };
+  // Compute label bounding boxes for cross-element collision detection
+  const labelBoxes = pendingLabels.map(l => ({
+    x: l.x - l.halfW,
+    y: l.y - l.halfH,
+    w: l.halfW * 2,
+    h: l.halfH * 2,
+  }));
+
+  return { lines: parts.join('\n'), labelBgs: labelBgParts.join('\n'), labels: labelParts.join('\n'), labelBoxes };
 }
 
 function renderSubgraphBg(sg: PositionedSubgraph): string {
@@ -820,17 +940,19 @@ function renderAnnotation(ann: PositionedAnnotation): string {
 }
 
 function renderTitle(title: string, maxWidth?: number): string {
+  // Bold text (font-weight:700) renders ~5% wider than regular measurement
+  const BOLD_CORRECTION = 1.05;
   const rawLines = title.split('\n');
   const lines: string[] = [];
   for (const line of rawLines) {
-    if (!maxWidth || measureLineWidth(line, fontSizes.title, 'sans') <= maxWidth) {
+    if (!maxWidth || measureLineWidth(line, fontSizes.title, 'sans') * BOLD_CORRECTION <= maxWidth) {
       lines.push(line);
     } else {
       const words = line.split(/\s+/);
       let cur = '';
       for (const word of words) {
         const test = cur ? cur + ' ' + word : word;
-        if (measureLineWidth(test, fontSizes.title, 'sans') > maxWidth && cur) {
+        if (measureLineWidth(test, fontSizes.title, 'sans') * BOLD_CORRECTION > maxWidth && cur) {
           lines.push(cur);
           cur = word;
         } else {
@@ -864,8 +986,20 @@ export function renderFlow(layout: FlowLayout): string {
     parts.push(renderSubgraphBg(sg));
   }
 
+  // Pre-compute text element bounding boxes for cross-element collision detection
+  const sgHeaderBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  for (const sg of layout.subgraphs) {
+    const bbox = subgraphHeaderBBox(sg, layout.subgraphs);
+    if (bbox) sgHeaderBoxes.push(bbox);
+  }
+  const annBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  for (const ann of layout.annotations) {
+    annBoxes.push(annotationBBox(ann));
+  }
+  const occupiedRects = [...sgHeaderBoxes, ...annBoxes];
+
   // Edge lines and label backgrounds behind nodes, label text on top
-  const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction, layout.subgraphs);
+  const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction, layout.subgraphs, occupiedRects);
   parts.push(edgeResult.lines);
   parts.push(edgeResult.labelBgs);
 
@@ -890,6 +1024,12 @@ export function renderFlow(layout: FlowLayout): string {
   // Overflows
   for (const ov of layout.overflows) {
     parts.push(renderOverflow(ov));
+  }
+
+  // Nudge annotations away from edge labels and subgraph headers
+  const textObstacles = [...sgHeaderBoxes, ...edgeResult.labelBoxes];
+  for (const ann of layout.annotations) {
+    nudgeAnnotation(ann, textObstacles);
   }
 
   // Annotations

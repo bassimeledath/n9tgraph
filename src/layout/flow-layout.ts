@@ -566,11 +566,13 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   let titleMaxWidth: number | undefined;
   let wrappedTitleLineCount = 0;
   if (title) {
+    // Bold text (font-weight:700) renders ~5% wider than regular measurement
+    const BOLD_CORRECTION = 1.05;
     titleMaxWidth = Math.max(finalWidth - 60, 300);
     const rawLines = title.split('\n');
     let widestWrappedLine = 0;
     for (const line of rawLines) {
-      const lineW = measureLineWidth(line, fontSizes.title, 'sans');
+      const lineW = measureLineWidth(line, fontSizes.title, 'sans') * BOLD_CORRECTION;
       if (lineW <= titleMaxWidth) {
         wrappedTitleLineCount++;
         widestWrappedLine = Math.max(widestWrappedLine, lineW);
@@ -579,8 +581,8 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         let cur = '';
         for (const word of words) {
           const test = cur ? cur + ' ' + word : word;
-          if (measureLineWidth(test, fontSizes.title, 'sans') > titleMaxWidth && cur) {
-            widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans'));
+          if (measureLineWidth(test, fontSizes.title, 'sans') * BOLD_CORRECTION > titleMaxWidth && cur) {
+            widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans') * BOLD_CORRECTION);
             wrappedTitleLineCount++;
             cur = word;
           } else {
@@ -588,7 +590,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
           }
         }
         if (cur) {
-          widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans'));
+          widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans') * BOLD_CORRECTION);
           wrappedTitleLineCount++;
         }
       }
