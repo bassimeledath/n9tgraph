@@ -12,6 +12,10 @@ export interface Properties {
   sublabel?: string;
   code?: string;
   step?: string;
+  emphasis?: 'primary' | 'secondary' | 'muted';
+  color?: string;
+  badge?: string;
+  'border-style'?: 'solid' | 'dashed' | 'none';
   [key: string]: string | undefined;
 }
 

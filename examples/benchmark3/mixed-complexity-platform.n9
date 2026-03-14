@@ -1,0 +1,81 @@
+type flow
+title "ML platform: data ingestion hub, training pipeline layers, and serving mesh with step annotations"
+direction LR
+spacing balanced
+
+# Central hub — data ingestion (hub-spoke pattern)
+service "Data Hub" {fill: hero, emphasis: primary, sublabel: "Apache Kafka\nSchema Registry\nExactly-once semantics"}
+
+component "Web Events" {fill: dotgrid, sublabel: "Clickstream\n50k events/sec"}
+component "Mobile Events" {fill: dotgrid, sublabel: "App telemetry\n30k events/sec"}
+component "IoT Sensors" {fill: dotgrid, sublabel: "MQTT bridge\n100k msg/sec"}
+component "Partner API" {fill: dotgrid, sublabel: "REST ingest\nBatch + streaming"}
+component "DB CDC" {fill: dotgrid, emphasis: muted, sublabel: "Debezium\nPostgreSQL WAL"}
+component "Log Collector" {fill: dotgrid, emphasis: muted, sublabel: "Fluentd\nAll microservices"}
+
+# Hub-spoke: 6 sources feed central hub
+WEB_EVENTS --> DATA_HUB : Avro encoded
+MOBILE_EVENTS --> DATA_HUB : Protobuf encoded
+IOT_SENSORS --> DATA_HUB : JSON compressed
+PARTNER_API --> DATA_HUB : REST POST /ingest
+DB_CDC --> DATA_HUB : WAL events {color: dim}
+LOG_COLLECTOR --> DATA_HUB : Structured logs {color: dim}
+
+# Layered pipeline section (layered dependency pattern)
+subgraph "Feature Engineering Pipeline" {fill: dotgrid, badge: "FEATURES"}
+  component "Stream Processor" {fill: dotgrid, sublabel: "Flink\nWindowed aggregations"}
+  component "Feature Store" {fill: crosshatch, emphasis: secondary, sublabel: "Feast\nOnline + offline"}
+  component "Data Validator" {fill: dotgrid, sublabel: "Great Expectations\nSchema enforcement"}
+  STREAM_PROCESSOR --> DATA_VALIDATOR
+  DATA_VALIDATOR --> FEATURE_STORE
+end
+
+subgraph "Training Cluster" {fill: crosshatch, badge: "TRAIN"}
+  component "Experiment Tracker" {fill: dotgrid, sublabel: "MLflow\nHyperparameter logs"}
+  component "GPU Pool" {fill: dotgrid, emphasis: primary, sublabel: "8x A100 80GB\nDistributed training"}
+  component "Model Registry" {fill: dotgrid, emphasis: secondary, sublabel: "Versioned artifacts\nStage: dev/staging/prod"}
+  EXPERIMENT_TRACKER --> GPU_POOL : Launch training job
+  GPU_POOL --> MODEL_REGISTRY : Register trained model
+end
+
+subgraph "Serving Infrastructure" {fill: dotgrid, badge: "SERVE"}
+  service "Model Server" {fill: hero, emphasis: primary, sublabel: "Triton Inference\nDynamic batching"}
+  component "A/B Router" {fill: dotgrid, sublabel: "Traffic splitting\nShadow mode"}
+  component "Response Cache" {fill: crosshatch, emphasis: muted, sublabel: "Redis\nTTL per model"}
+  A_B_ROUTER --> MODEL_SERVER
+  MODEL_SERVER --> RESPONSE_CACHE {color: dim}
+end
+
+datastore "Data Lake" {fill: crosshatch, emphasis: secondary, sublabel: "S3 + Iceberg\nPartitioned by date\n500TB"}
+external "Client Apps" {fill: none}
+external "Monitoring" {fill: none, emphasis: muted}
+
+# Hub to pipeline (cross-section flow)
+DATA_HUB --> STREAM_PROCESSOR : Raw events {step: 1}
+DATA_HUB --> DATA_LAKE : Archive raw data {step: 1}
+
+# Pipeline layers connect
+FEATURE_STORE --> EXPERIMENT_TRACKER : Training features {step: 2}
+FEATURE_STORE --> MODEL_SERVER : Online features {step: 4}
+DATA_LAKE --> GPU_POOL : Historical data {step: 2}
+
+# Training to serving
+MODEL_REGISTRY --> A_B_ROUTER : Deploy model version {step: 3}
+
+# Serving to clients
+A_B_ROUTER --> CLIENT_APPS : Predictions API {step: 5}
+
+# Feedback loops (reverse edges)
+MODEL_SERVER -.-> DATA_HUB : Prediction logs
+CLIENT_APPS -.-> DATA_HUB : Feedback events
+RESPONSE_CACHE -.-> MONITORING : Cache hit rate {color: dim}
+
+# Cross-section monitoring
+GPU_POOL -.-> MONITORING : Training metrics {color: dim}
+A_B_ROUTER -.-> MONITORING : A/B test results {color: dim}
+
+annotation "6-source hub:\nall data enters through\nKafka with schema validation" near DATA_HUB side top {step: 1}
+annotation "Feature pipeline:\nstream processing with\nquality gates at each stage" near FEATURE_STORE side bottom {step: 2}
+annotation "Model promotion:\ncanary → shadow → full\nwith automated rollback" near MODEL_REGISTRY side right {step: 3}
+annotation "Online serving:\nP99 < 50ms required\ndynamic batching optimizes GPU" near MODEL_SERVER side bottom {step: 4}
+annotation "End-to-end:\nraw event to prediction\nin < 100ms for online path" near CLIENT_APPS side right {step: 5}

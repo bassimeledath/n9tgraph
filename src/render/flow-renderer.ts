@@ -21,12 +21,12 @@ function fillForPattern(fill?: string): string {
   }
 }
 
-function renderSublabel(cx: number, y: number, text: string): string {
+function renderSublabel(cx: number, y: number, text: string, color: string = colors.accent, textOpacity = 0.6): string {
   // Wrap sublabel, preserving explicit newlines
   const MAX_SUBLABEL_CHARS = 34;
   const lines = wrapLabel(text, MAX_SUBLABEL_CHARS);
   if (lines.length === 1) {
-    return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
+    return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${color}" opacity="${textOpacity}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
   }
   const lineH = fontSizes.edgeLabel * 1.4;
   // Center the block vertically around the anchor point
@@ -34,23 +34,24 @@ function renderSublabel(cx: number, y: number, text: string): string {
   const startY = y - totalH / 2;
   let svg = '';
   for (let i = 0; i < lines.length; i++) {
-    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(lines[i])}</text>`;
+    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${color}" opacity="${textOpacity}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(lines[i])}</text>`;
   }
   return svg;
 }
 
 /** Render a (possibly multi-line wrapped) label inside a node */
-function renderWrappedLabel(cx: number, cy: number, label: string, formatLabel: (l: string) => string, offsetY: number): string {
+function renderWrappedLabel(cx: number, cy: number, label: string, formatLabel: (l: string) => string, offsetY: number, color: string = colors.accent, textOpacity = 1): string {
   const lines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+  const opacityAttr = textOpacity < 1 ? ` opacity="${textOpacity}"` : '';
   if (lines.length === 1) {
-    return `<text x="${cx}" y="${cy + offsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+    return `<text x="${cx}" y="${cy + offsetY}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${color}"${opacityAttr} text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
   }
   const lineH = fontSizes.nodeLabel * 1.4;
   const totalH = lines.length * lineH;
   const startY = cy + offsetY - totalH / 2 + lineH / 2;
   let svg = '';
   for (let i = 0; i < lines.length; i++) {
-    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(lines[i]))}</text>`;
+    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${color}"${opacityAttr} text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(lines[i]))}</text>`;
   }
   return svg;
 }
@@ -78,6 +79,72 @@ function sublabelBgRect(cx: number, y: number, text: string): string {
   return `<rect x="${cx - textW / 2}" y="${centerY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
 }
 
+function resolveThemeColor(color?: string): string {
+  switch (color) {
+    case undefined:
+    case '':
+    case 'accent':
+      return colors.accent;
+    case 'dim':
+      return colors.edgeDim;
+    case 'muted':
+    case 'gray':
+      return colors.edgeMuted;
+    case 'white':
+      return colors.white;
+    default:
+      return color;
+  }
+}
+
+function resolveNodeEmphasis(emphasis?: string): {
+  borderColor: string;
+  textColor: string;
+  sublabelColor: string;
+  strokeWidth: number;
+  textOpacity: number;
+  sublabelOpacity: number;
+} {
+  switch (emphasis) {
+    case 'primary':
+      return {
+        borderColor: colors.accent,
+        textColor: colors.accent,
+        sublabelColor: colors.accent,
+        strokeWidth: stroke.nodeDouble,
+        textOpacity: 1,
+        sublabelOpacity: 0.7,
+      };
+    case 'secondary':
+      return {
+        borderColor: colors.accentDim,
+        textColor: colors.accentDim,
+        sublabelColor: colors.accentDim,
+        strokeWidth: stroke.node,
+        textOpacity: 0.85,
+        sublabelOpacity: 0.55,
+      };
+    case 'muted':
+      return {
+        borderColor: colors.dimGray,
+        textColor: colors.gray,
+        sublabelColor: colors.gray,
+        strokeWidth: 1,
+        textOpacity: 0.65,
+        sublabelOpacity: 0.45,
+      };
+    default:
+      return {
+        borderColor: colors.nodeBorder,
+        textColor: colors.accent,
+        sublabelColor: colors.accent,
+        strokeWidth: stroke.node,
+        textOpacity: 1,
+        sublabelOpacity: 0.6,
+      };
+  }
+}
+
 function renderNode(node: PositionedNode, theme?: string): string {
   const { x, y, w, h, label, kind, properties } = node;
   const rawFill = fillForPattern(properties.fill);
@@ -86,20 +153,21 @@ function renderNode(node: PositionedNode, theme?: string): string {
   const hasSublabel = !!properties.sublabel;
   const labelOffsetY = hasSublabel ? -8 : 0;
   const formatLabel = (l: string) => theme === 'white' ? l : l.toUpperCase();
+  const nodeStyle = resolveNodeEmphasis(properties.emphasis);
 
   if (kind === 'actor') {
     const cx = x + w / 2;
     const cy = y + 7;
-    return actor({ x: cx, y: cy, label, color: colors.accent });
+    return actor({ x: cx, y: cy, label, color: nodeStyle.textColor });
   }
 
   if (kind === 'circle') {
     const cx = x + w / 2;
     const cy = y + h / 2;
     const r = Math.min(w, h) / 2;
-    let svg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${colors.nodeBorder}" stroke-width="${stroke.node}"/>`;
+    let svg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${nodeStyle.borderColor}" stroke-width="${nodeStyle.strokeWidth}"/>`;
     if (label) {
-      svg += `<text x="${cx}" y="${cy}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+      svg += `<text x="${cx}" y="${cy}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${nodeStyle.textColor}" opacity="${nodeStyle.textOpacity}" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
     }
     return svg;
   }
@@ -109,25 +177,25 @@ function renderNode(node: PositionedNode, theme?: string): string {
 
   if (useDoubleBorder) {
     const dbFill = kind === 'service' && !properties.fill ? 'url(#hero)' : fill;
-    let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill });
+    let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth });
     const dbHasPattern = dbFill.startsWith('url(');
     if (label) {
       if (dbHasPattern) {
         svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
       }
-      svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+      svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
     }
     if (properties.sublabel) {
       if (dbHasPattern) {
         svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
       }
-      svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
+      svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
     }
     return svg;
   }
 
   if (kind === 'datastore') {
-    let svg = cylinder({ x, y, w, h, label: undefined, fill });
+    let svg = cylinder({ x, y, w, h, label: undefined, fill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth });
     const dsHasPattern = rawFill.startsWith('url(');
     const rimY = 10; // must match shapes.ts cylinder ry
     const bodyCenterY = y + rimY + (h - rimY * 2) / 2;
@@ -135,13 +203,13 @@ function renderNode(node: PositionedNode, theme?: string): string {
       if (dsHasPattern) {
         svg += wrappedLabelBg(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);
       }
-      svg += renderWrappedLabel(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);
+      svg += renderWrappedLabel(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
     }
     if (properties.sublabel) {
       if (dsHasPattern) {
         svg += sublabelBgRect(x + w / 2, bodyCenterY + 12, properties.sublabel);
       }
-      svg += renderSublabel(x + w / 2, bodyCenterY + 12, properties.sublabel);
+      svg += renderSublabel(x + w / 2, bodyCenterY + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
     }
     return svg;
   }
@@ -149,19 +217,19 @@ function renderNode(node: PositionedNode, theme?: string): string {
   // component, external, label, default — standard rect (or pill if shape: pill)
   // Pill = rectangle with rx = height/2 (fully semicircular ends), NOT an ellipse
   const rx = properties.shape === 'pill' ? h / 2 : undefined;
-  let svg = rect({ x, y, w, h, label: undefined, fill, ...(rx !== undefined ? { rx } : {}) });
+  let svg = rect({ x, y, w, h, label: undefined, fill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth, ...(rx !== undefined ? { rx } : {}) });
   const hasPatternFill = rawFill.startsWith('url(');
   if (label) {
     if (hasPatternFill) {
       svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
     }
-    svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+    svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
   }
   if (properties.sublabel) {
     if (hasPatternFill) {
       svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
     }
-    svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
+    svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
   }
   return svg;
 }
@@ -292,11 +360,98 @@ function edgePairKey(e: PositionedEdge): string {
   return `${a}--${b}`;
 }
 
+type NodeSide = 'left' | 'right' | 'top' | 'bottom';
+
+function targetSideForEdge(
+  fromNode: PositionedNode | PositionedCodeBlock,
+  toNode: PositionedNode | PositionedCodeBlock,
+): NodeSide {
+  const fromC = nodeCenter(fromNode);
+  const toC = nodeCenter(toNode);
+  const dx = fromC.x - toC.x;
+  const dy = fromC.y - toC.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? 'left' : 'right';
+  return dy < 0 ? 'top' : 'bottom';
+}
+
+function buildTargetPortSlots(
+  edges: PositionedEdge[],
+  nodeById: Map<string, PositionedNode | PositionedCodeBlock>,
+): Map<number, { x: number; y: number }> {
+  const PORT_INSET = 8;
+  const groups = new Map<string, {
+    edgeIndex: number;
+    side: NodeSide;
+    sourceAxis: number;
+    targetNode: PositionedNode | PositionedCodeBlock;
+  }[]>();
+
+  for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
+    const edge = edges[edgeIndex];
+    const visualFrom = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.to : edge.from;
+    const visualTo = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.from : edge.to;
+    const fromNode = nodeById.get(visualFrom);
+    const toNode = nodeById.get(visualTo);
+    if (!fromNode || !toNode) continue;
+
+    const side = targetSideForEdge(fromNode, toNode);
+    const fromC = nodeCenter(fromNode);
+    const sourceAxis = (side === 'left' || side === 'right') ? fromC.y : fromC.x;
+    const key = `${visualTo}|${side}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push({ edgeIndex, side, sourceAxis, targetNode: toNode });
+  }
+
+  const slots = new Map<number, { x: number; y: number }>();
+
+  for (const [, group] of groups) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => a.sourceAxis - b.sourceAxis || a.edgeIndex - b.edgeIndex);
+
+    const side = group[0].side;
+    const node = group[0].targetNode;
+
+    if (side === 'left' || side === 'right') {
+      const minY = node.y + PORT_INSET;
+      const maxY = node.y + node.h - PORT_INSET;
+      const span = Math.max(0, maxY - minY);
+      const step = span / (group.length + 1);
+      const x = side === 'left' ? node.x : node.x + node.w;
+      for (let i = 0; i < group.length; i++) {
+        slots.set(group[i].edgeIndex, { x, y: minY + step * (i + 1) });
+      }
+    } else {
+      const minX = node.x + PORT_INSET;
+      const maxX = node.x + node.w - PORT_INSET;
+      const span = Math.max(0, maxX - minX);
+      const step = span / (group.length + 1);
+      const y = side === 'top' ? node.y : node.y + node.h;
+      for (let i = 0; i < group.length; i++) {
+        slots.set(group[i].edgeIndex, { x: minX + step * (i + 1), y });
+      }
+    }
+  }
+
+  return slots;
+}
+
 /** Compute bounding box of a subgraph header label (mirrors renderSubgraphLabel positioning) */
 function subgraphHeaderBBox(sg: PositionedSubgraph, allSubgraphs: PositionedSubgraph[]): { x: number; y: number; w: number; h: number } | null {
   if (!sg.label) return null;
-  const textW = sg.label.length * 7.5 + 20;
+
+  const badgeText = sg.properties.badge?.trim().toUpperCase();
+  const badgeW = badgeText ? badgeText.length * 8 + 16 : 0;
+  const badgeH = badgeText ? 22 : 0;
+  const labelTextW = sg.label.length * 7.5 + 20;
+  const headerGap = badgeText ? 8 : 0;
+  const totalW = badgeW + headerGap + labelTextW;
   const textH = fontSizes.subtitle + 10;
+
+  // Badge-bearing subgraphs always left-align
+  if (badgeText) {
+    return { x: sg.x + 8, y: sg.y + 26 - Math.max(textH, badgeH) / 2 - 1, w: totalW, h: Math.max(textH, badgeH) };
+  }
+
   let useLeftAlign = false;
   const myCenterX = sg.x + sg.w / 2;
   for (const other of allSubgraphs) {
@@ -304,16 +459,16 @@ function subgraphHeaderBBox(sg: PositionedSubgraph, allSubgraphs: PositionedSubg
     if (Math.abs(other.y - sg.y) < 50) {
       const otherCenterX = other.x + other.w / 2;
       const otherTextW = other.label.length * 7.5 + 20;
-      if (Math.abs(myCenterX - otherCenterX) < (textW + otherTextW) / 2 + 8) {
+      if (Math.abs(myCenterX - otherCenterX) < (labelTextW + otherTextW) / 2 + 8) {
         useLeftAlign = true;
         break;
       }
     }
   }
   if (useLeftAlign) {
-    return { x: sg.x + 8, y: sg.y + 26 - textH / 2 - 1, w: textW, h: textH };
+    return { x: sg.x + 8, y: sg.y + 26 - textH / 2 - 1, w: labelTextW, h: textH };
   }
-  return { x: sg.x + sg.w / 2 - textW / 2, y: sg.y + 26 - textH / 2 - 1, w: textW, h: textH };
+  return { x: sg.x + sg.w / 2 - labelTextW / 2, y: sg.y + 26 - textH / 2 - 1, w: labelTextW, h: textH };
 }
 
 /** Compute bounding box of an annotation */
@@ -363,8 +518,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   const labelBgParts: string[] = [];
   const labelParts: string[] = [];
   // Collect label positions for collision resolution
-  // targetId tracks which node the edge points to, for convergence fan-out
-  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number; targetId?: string }[] = [];
+  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number; color: string; targetId?: string }[] = [];
 
   // Group edges by node pair
   const pairEdges = new Map<string, PositionedEdge[]>();
@@ -378,7 +532,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   // Lazy-initialized backward edge index for TB mode offset stacking
   let backwardEdgeIndex: Map<string, number> | undefined;
 
-  for (const edge of edges) {
+  // C: Compute target port distribution slots
+  const targetPortSlots = buildTargetPortSlots(edges, nodeById);
+
+  for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
+    const edge = edges[edgeIndex];
     const visualFrom = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.to : edge.from;
     const visualTo = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.from : edge.to;
 
@@ -391,8 +549,12 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     const idx = pairIndex.get(key) || 0;
     pairIndex.set(key, idx + 1);
 
+    // B: Resolve edge color
+    const edgeColor = resolveThemeColor(edge.properties?.color);
+
     let fromPt: { x: number; y: number };
     let toPt: { x: number; y: number };
+    let waypoints: { x: number; y: number }[] = [];
 
     // TB mode: orthogonal routing for single edges
     if (direction === 'TB' && siblings.length === 1) {
@@ -405,9 +567,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         // Forward edge: exit bottom center, enter top center
         fromPt = { x: fc.x, y: fromNode.y + fromNode.h };
         toPt = { x: tc.x, y: toNode.y };
+        // C: Apply distributed target port
+        const distributedTo = targetPortSlots.get(edgeIndex);
+        if (distributedTo) toPt = distributedTo;
         const EDGE_CLEARANCE = 12;
         if (Math.abs(fc.x - tc.x) < 80) {
-          // Check for intermediate nodes blocking the straight path
           let blocked = false;
           for (const [, node] of nodeById) {
             if (node === fromNode || node === toNode) continue;
@@ -419,10 +583,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
             }
           }
           if (!blocked) {
-            // Use direct straight arrow for close-enough horizontal alignment
-            parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
+            parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: edgeColor }));
           } else {
-            // Route around blocking node with a polyline
             let midY = (fromPt.y + toPt.y) / 2;
             for (const [, node] of nodeById) {
               if (node === fromNode || node === toNode) continue;
@@ -434,24 +596,22 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
                 midY = Math.abs(midY - aboveMid) < Math.abs(midY - belowMid) ? aboveMid : belowMid;
               }
             }
+            waypoints = [{ x: fc.x, y: midY }, { x: tc.x, y: midY }];
             parts.push(polylineEdge({
-              from: fromPt, to: toPt,
-              waypoints: [{ x: fc.x, y: midY }, { x: tc.x, y: midY }],
-              dashed: edge.dashed, color: colors.accent,
+              from: fromPt, to: toPt, waypoints,
+              dashed: edge.dashed, color: edgeColor,
             }));
           }
         } else {
           let midY = (fromPt.y + toPt.y) / 2;
-          // Avoid subgraph label areas — compute zone from font metrics
           if (subgraphs) {
-            const labelZoneH = fontSizes.subtitle + 24; // label height + padding
+            const labelZoneH = fontSizes.subtitle + 24;
             for (const sg of subgraphs) {
               if (midY >= sg.y - 2 && midY <= sg.y + labelZoneH) {
                 midY = sg.y + labelZoneH + 4;
               }
             }
           }
-          // Clear intermediate nodes from polyline horizontal segment
           const segMinX = Math.min(fc.x, tc.x);
           const segMaxX = Math.max(fc.x, tc.x);
           for (const [, node] of nodeById) {
@@ -464,16 +624,16 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
               midY = Math.abs(midY - aboveMid) < Math.abs(midY - belowMid) ? aboveMid : belowMid;
             }
           }
+          waypoints = [{ x: fc.x, y: midY }, { x: tc.x, y: midY }];
           parts.push(polylineEdge({
-            from: fromPt, to: toPt,
-            waypoints: [{ x: fc.x, y: midY }, { x: tc.x, y: midY }],
-            dashed: edge.dashed, color: colors.accent,
+            from: fromPt, to: toPt, waypoints,
+            dashed: edge.dashed, color: edgeColor,
           }));
         }
         if (edge.label) {
           const lx = (fc.x + tc.x) / 2;
           let ly = (fromPt.y + toPt.y) / 2;
-          // Avoid subgraph label areas for edge labels — compute zone from font metrics
+          // Avoid subgraph label areas for edge labels
           if (subgraphs) {
             const labelZoneH = fontSizes.subtitle + 24;
             for (const sg of subgraphs) {
@@ -482,10 +642,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
               }
             }
           }
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
+          const eLabel = escapeXml(edge.label);
+          const dims = labelDims(eLabel, 30);
+          pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
         }
       } else if (isBackward) {
-        // Route along left (or right) side of diagram, entering target from below
         const minNodeX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
         const maxNodeX = Math.max(...nodes.map(n => n.x + n.w), ...codeblocks.map(c => c.x + c.w));
         const minSgX = subgraphs && subgraphs.length > 0
@@ -495,10 +656,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           ? Math.max(...subgraphs.map(sg => sg.x + sg.w))
           : maxNodeX;
 
-        // Count backward edges for offset stacking
         if (!backwardEdgeIndex) {
           backwardEdgeIndex = new Map();
-          let idx = 0;
+          let bIdx = 0;
           for (const e2 of edges) {
             const vFrom = (e2.arrow === '<--' || e2.arrow === '<-.-') ? e2.to : e2.from;
             const vTo = (e2.arrow === '<--' || e2.arrow === '<-.-') ? e2.from : e2.to;
@@ -506,43 +666,52 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
             const tn = nodeById.get(vTo);
             if (!fn || !tn) continue;
             if (tn.y + tn.h <= fn.y + 5) {
-              backwardEdgeIndex.set(`${vFrom}->${vTo}`, idx++);
+              backwardEdgeIndex.set(`${vFrom}->${vTo}`, bIdx++);
             }
           }
         }
 
-        const edgeIdx = backwardEdgeIndex.get(`${visualFrom}->${visualTo}`) || 0;
+        const bwIdx = backwardEdgeIndex.get(`${visualFrom}->${visualTo}`) || 0;
         const BASE_CLEARANCE = 40;
         const PER_EDGE_OFFSET = 20;
 
-        // Route right-side when source is to the right of target
         const routeRight = fc.x > tc.x;
         let routeX: number;
         if (routeRight) {
-          routeX = Math.max(maxNodeX, maxSgX) + BASE_CLEARANCE + edgeIdx * PER_EDGE_OFFSET;
+          routeX = Math.max(maxNodeX, maxSgX) + BASE_CLEARANCE + bwIdx * PER_EDGE_OFFSET;
           fromPt = { x: fromNode.x + fromNode.w, y: fc.y };
         } else {
-          routeX = Math.min(minNodeX, minSgX) - BASE_CLEARANCE - edgeIdx * PER_EDGE_OFFSET;
+          routeX = Math.min(minNodeX, minSgX) - BASE_CLEARANCE - bwIdx * PER_EDGE_OFFSET;
           fromPt = { x: fromNode.x, y: fc.y };
         }
         toPt = { x: tc.x, y: toNode.y + toNode.h };
+        // C: Apply distributed target port
+        const distributedTo = targetPortSlots.get(edgeIndex);
+        if (distributedTo) toPt = distributedTo;
         const belowTarget = toNode.y + toNode.h + 15;
+        waypoints = [{ x: routeX, y: fc.y }, { x: routeX, y: belowTarget }, { x: tc.x, y: belowTarget }];
         parts.push(polylineEdge({
-          from: fromPt, to: toPt,
-          waypoints: [{ x: routeX, y: fc.y }, { x: routeX, y: belowTarget }, { x: tc.x, y: belowTarget }],
-          dashed: edge.dashed, color: colors.accent,
+          from: fromPt, to: toPt, waypoints,
+          dashed: edge.dashed, color: edgeColor,
         }));
         if (edge.label) {
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
+          const eLabel = escapeXml(edge.label);
+          const dims = labelDims(eLabel, 30);
+          pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
         }
       } else {
         // Same row: standard routing
         fromPt = connectionPoint(fromNode, tc.x, tc.y);
         toPt = connectionPoint(toNode, fc.x, fc.y);
-        const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
+        // C: Apply distributed target port
+        const distributedTo = targetPortSlots.get(edgeIndex);
+        if (distributedTo) toPt = distributedTo;
+        const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: edgeColor };
         parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
         if (edge.label) {
-          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, targetId: visualTo }); }
+          const eLabel = escapeXml(edge.label);
+          const dims = labelDims(eLabel, 30);
+          pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
         }
       }
 
@@ -551,15 +720,13 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const stepNum = parseInt(step, 10);
         if (!isNaN(stepNum)) {
           const st = 0.3;
-          parts.push(numberedCircle(fromPt.x + (toPt.x - fromPt.x) * st, fromPt.y + (toPt.y - fromPt.y) * st, stepNum));
+          parts.push(numberedCircle(fromPt.x + (toPt.x - fromPt.x) * st, fromPt.y + (toPt.y - fromPt.y) * st, stepNum, edgeColor));
         }
       }
       continue;
     }
 
     if (siblings.length > 1) {
-      // Multi-edge pair: create truly horizontal (or vertical) parallel edges
-      // Use wider spread when edges have labels to prevent label overlap
       const hasLabels = siblings.some(s => s.label && s.label.length > 0);
       const spread = hasLabels ? 65 : 28;
       const shift = (idx - (siblings.length - 1) / 2) * spread;
@@ -573,12 +740,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         Math.max(n.x + 4, Math.min(n.x + n.w - 4, x));
 
       if (isHorizontal) {
-        // Find vertical overlap between nodes for optimal routing
         const overlapTop = Math.max(fromNode.y, toNode.y);
         const overlapBot = Math.min(fromNode.y + fromNode.h, toNode.y + toNode.h);
         const baseY = overlapTop < overlapBot
-          ? (overlapTop + overlapBot) / 2  // Use overlap center
-          : (fc.y + tc.y) / 2;            // Fallback to midpoint
+          ? (overlapTop + overlapBot) / 2
+          : (fc.y + tc.y) / 2;
         const edgeY = baseY + shift;
 
         if (fc.x < tc.x) {
@@ -609,6 +775,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       toPt = connectionPoint(toNode, nodeCenter(fromNode).x, nodeCenter(fromNode).y);
     }
 
+    // C: Apply distributed target port for non-TB edges
+    const distributedTo = targetPortSlots.get(edgeIndex);
+    if (distributedTo) toPt = distributedTo;
+
     // Check for obstacle nodes blocking straight non-TB edges
     let obstacleRouted = false;
     if (siblings.length === 1) {
@@ -628,20 +798,20 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           const midY = fromPt.y < nc.y
             ? blockingNode.y - EDGE_CLEARANCE
             : blockingNode.y + blockingNode.h + EDGE_CLEARANCE;
+          waypoints = [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }];
           parts.push(polylineEdge({
-            from: fromPt, to: toPt,
-            waypoints: [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }],
-            dashed: edge.dashed, color: colors.accent,
+            from: fromPt, to: toPt, waypoints,
+            dashed: edge.dashed, color: edgeColor,
             ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
           }));
         } else {
           const midX = fromPt.x < nc.x
             ? blockingNode.x - EDGE_CLEARANCE
             : blockingNode.x + blockingNode.w + EDGE_CLEARANCE;
+          waypoints = [{ x: midX, y: fromPt.y }, { x: midX, y: toPt.y }];
           parts.push(polylineEdge({
-            from: fromPt, to: toPt,
-            waypoints: [{ x: midX, y: fromPt.y }, { x: midX, y: toPt.y }],
-            dashed: edge.dashed, color: colors.accent,
+            from: fromPt, to: toPt, waypoints,
+            dashed: edge.dashed, color: edgeColor,
             ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
           }));
         }
@@ -654,7 +824,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         from: fromPt,
         to: toPt,
         dashed: edge.dashed,
-        color: colors.accent,
+        color: edgeColor,
       };
 
       if (edge.arrow === '<-->') {
@@ -666,17 +836,14 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
 
     // Edge label with collision avoidance
     if (edge.label) {
-      // Stagger label position along edge for multi-edge siblings
       const t = siblings.length > 1
         ? 0.3 + (idx / Math.max(1, siblings.length - 1)) * 0.4
         : 0.5;
       let lx = fromPt.x + (toPt.x - fromPt.x) * t;
       let ly = fromPt.y + (toPt.y - fromPt.y) * t;
 
-      // Fixed wrap width for edge labels (adaptive wrapping removed)
       const maxChars = 30;
 
-      // Estimate label dimensions for collision check
       const eLabel = escapeXml(edge.label);
       const words = eLabel.split(/\s+/);
       const wrapLines: string[] = [];
@@ -689,7 +856,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const maxLineLen = Math.max(...wrapLines.map(l => l.length));
       const labelHalfW = (maxLineLen * 7.0 + 12) / 2;
       const labelHalfH = (wrapLines.length * 16 + 6) / 2;
-      // Fixed clearance for edge labels (sublabel-specific logic removed)
       const clearance = 8;
 
       // Clamp label horizontally to stay clear of edge endpoints
@@ -701,7 +867,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH, targetId: visualTo });
+      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH, color: edgeColor, targetId: visualTo });
     }
 
     // Numbered step circle on edge
@@ -712,15 +878,13 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const st = 0.3;
         const sx = fromPt.x + (toPt.x - fromPt.x) * st;
         const sy = fromPt.y + (toPt.y - fromPt.y) * st;
-        // Offset the circle slightly perpendicular to the edge
         const edgeDx = toPt.x - fromPt.x;
         const edgeDy = toPt.y - fromPt.y;
         const edgeLen = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy) || 1;
-        // Place circle at midpoint, shifted above edge if label present
         const offset = edge.label ? -20 : 0;
         const nx = -edgeDy / edgeLen;
         const ny = edgeDx / edgeLen;
-        parts.push(numberedCircle(sx + nx * offset, sy + ny * offset, stepNum));
+        parts.push(numberedCircle(sx + nx * offset, sy + ny * offset, stepNum, edgeColor));
       }
     }
   }
@@ -729,7 +893,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   // or source node, pre-stagger their labels to prevent pile-up
   {
     const isVerticalLayout = direction === 'TB' || direction === 'BT';
-    const fanSpacing = 30; // px between staggered labels
+    const fanSpacing = 30;
 
     // Group by target node (convergence)
     const byTarget = new Map<string, number[]>();
@@ -761,8 +925,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     for (const e of edges) {
       const visualFrom = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
       if (!e.label) continue;
-      // Find the pending label index for this edge's label
-      // Match by targetId since we stored the visual target
       const visualTo = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
       for (let i = 0; i < pendingLabels.length; i++) {
         if (alreadyStaggered.has(i)) continue;
@@ -824,7 +986,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
 
   // Resolve label-label collisions (multi-pass for dense convergence zones)
-  const MIN_LABEL_GAP = 10; // minimum pixel gap between any two labels
+  const MIN_LABEL_GAP = 10;
   for (let pass = 0; pass < 12; pass++) {
     let changed = false;
     for (let i = 0; i < pendingLabels.length; i++) {
@@ -837,7 +999,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (dx < requiredDx && dy < requiredDy) {
           const overlapX = requiredDx - dx;
           const overlapY = requiredDy - dy;
-          // Resolve along the axis with smaller overlap (less disruptive)
           if (overlapY <= overlapX) {
             const shift = overlapY / 2 + 2;
             if (a.y <= b.y) { a.y -= shift; b.y += shift; }
@@ -854,9 +1015,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     if (!changed) break;
   }
 
-  // Generate SVG for collision-resolved labels
+  // Generate SVG for collision-resolved labels (B: pass color)
   for (const label of pendingLabels) {
-    const p = edgeLabelParts(label.x, label.y, label.text, label.maxChars);
+    const p = edgeLabelParts(label.x, label.y, label.text, label.maxChars, label.color);
     labelBgParts.push(p.bg);
     labelParts.push(p.fg);
   }
@@ -878,10 +1039,16 @@ function renderSubgraphBg(sg: PositionedSubgraph): string {
   const rx = spacing.borderRadius;
   let svg = '';
 
+  const borderStyle = properties['border-style'] || 'solid';
+  const borderDash = borderStyle === 'dashed' ? ` stroke-dasharray="${stroke.edgeDash}"` : '';
+  const showBorder = borderStyle !== 'none';
+
   // Background with pattern fill and border at reduced opacity
-  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" stroke="${colors.accent}" stroke-width="1" opacity="0.35"/>`;
-  // Solid border on top for clarity
-  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="1" opacity="0.5"/>`;
+  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" stroke="${showBorder ? colors.accent : 'none'}" stroke-width="1"${borderDash} opacity="0.35"/>`;
+  if (showBorder) {
+    // Solid/dashed border on top for clarity
+    svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${colors.accent}" stroke-width="1"${borderDash} opacity="0.5"/>`;
+  }
 
   return svg;
 }
@@ -894,13 +1061,29 @@ function renderSubgraphLabel(sg: PositionedSubgraph, allSubgraphs?: PositionedSu
   const textW = label.length * 7.5 + 20;
   const textH = fontSizes.subtitle + 10;
 
+  // B9c: Badge rendering — always left-aligned
+  const badgeText = sg.properties.badge?.trim().toUpperCase();
+  if (badgeText) {
+    const badgeW = badgeText.length * 8 + 16;
+    const badgeH = 22;
+    const badgeX = x + 8;
+    const badgeY = y + 26 - badgeH / 2 - 1;
+    const labelTextW = label.length * 7.5 + 20;
+    const labelX = badgeX + badgeW + 8;
+
+    svg += `<rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" fill="${colors.subgraphBadgeFill}" rx="2"/>`;
+    svg += `<text x="${badgeX + 8}" y="${badgeY + badgeH / 2}" font-family="${fonts.mono}" font-size="10" fill="${colors.subgraphBadgeText}" dominant-baseline="central" font-weight="700" letter-spacing="0.08em">${escapeXml(badgeText)}</text>`;
+    svg += `<rect x="${labelX}" y="${y + 26 - textH / 2 - 1}" width="${labelTextW}" height="${textH}" fill="${colors.subgraphLabelBg}" rx="3"/>`;
+    svg += `<text x="${labelX + 10}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.subgraphLabelText}" opacity="0.9" text-anchor="start">${escapeXml(label)}</text>`;
+    return svg;
+  }
+
   // Check if centering would overlap with another subgraph label
   let useLeftAlign = false;
   if (allSubgraphs) {
     const myCenterX = x + w / 2;
     for (const other of allSubgraphs) {
       if (other === sg || !other.label) continue;
-      // Check if other subgraph label area overlaps at the same y
       if (Math.abs(other.y - y) < 50) {
         const otherCenterX = other.x + other.w / 2;
         const otherTextW = other.label.length * 7.5 + 20;
@@ -913,11 +1096,9 @@ function renderSubgraphLabel(sg: PositionedSubgraph, allSubgraphs?: PositionedSu
   }
 
   if (useLeftAlign) {
-    // Left-align to avoid collision with neighboring subgraph labels
     svg += `<rect x="${x + 8}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
     svg += `<text x="${x + 18}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="start">${escapeXml(label)}</text>`;
   } else {
-    // Default: centered
     svg += `<rect x="${x + w / 2 - textW / 2}" y="${y + 26 - textH / 2 - 1}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="3"/>`;
     svg += `<text x="${x + w / 2}" y="${y + 26}" font-family="${fonts.sans}" font-size="${fontSizes.subtitle}" fill="${colors.white}" opacity="0.9" text-anchor="middle">${escapeXml(label)}</text>`;
   }

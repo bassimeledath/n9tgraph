@@ -1,0 +1,53 @@
+type flow
+title "Microservices API gateway: central hub with 8 peripheral services and bidirectional health checks"
+direction LR
+spacing balanced
+
+service "API Gateway" {fill: hero, emphasis: primary, sublabel: "Kong / Envoy\nRate limiting + auth\nCircuit breaker"}
+
+component "User Service" {fill: dotgrid, sublabel: "CRUD operations\nProfile management"}
+component "Auth Service" {fill: dotgrid, sublabel: "OAuth 2.0 + SAML\nToken issuance"}
+component "Order Service" {fill: dotgrid, sublabel: "Cart + checkout\nIdempotency keys"}
+component "Payment Service" {fill: dotgrid, emphasis: secondary, sublabel: "Stripe integration\nPCI-DSS scoped"}
+component "Notification Service" {fill: dotgrid, sublabel: "Email + SMS + push\nTemplate engine"}
+component "Search Service" {fill: dotgrid, sublabel: "Elasticsearch 8\nFull-text + vector"}
+component "Analytics Service" {fill: dotgrid, emphasis: muted, sublabel: "Event ingestion\nReal-time aggregation"}
+component "File Service" {fill: dotgrid, emphasis: muted, sublabel: "S3 presigned URLs\nCDN integration"}
+
+datastore "Config Store" {fill: crosshatch, sublabel: "etcd cluster\nRoute definitions\nService registry"}
+datastore "Redis Cache" {fill: crosshatch, sublabel: "Rate limit counters\nSession cache\nPub/sub events"}
+external "Prometheus" {fill: none, emphasis: muted}
+external "Jaeger Tracing" {fill: none, emphasis: muted}
+
+# All 8 services connect through the gateway — creates hub congestion
+API_GATEWAY --> USER_SERVICE : /api/users/*
+API_GATEWAY --> AUTH_SERVICE : /api/auth/*
+API_GATEWAY --> ORDER_SERVICE : /api/orders/*
+API_GATEWAY --> PAYMENT_SERVICE : /api/payments/*
+API_GATEWAY --> NOTIFICATION_SERVICE : /api/notify/*
+API_GATEWAY --> SEARCH_SERVICE : /api/search/*
+API_GATEWAY --> ANALYTICS_SERVICE : /api/analytics/* {color: dim}
+API_GATEWAY --> FILE_SERVICE : /api/files/* {color: dim}
+
+# Reverse health check responses — bidirectional edges at hub
+USER_SERVICE --> API_GATEWAY : health OK {color: dim}
+AUTH_SERVICE --> API_GATEWAY : health OK {color: dim}
+ORDER_SERVICE --> API_GATEWAY : health OK {color: dim}
+PAYMENT_SERVICE --> API_GATEWAY : health OK {color: dim}
+
+# Inter-service calls that bypass gateway
+ORDER_SERVICE --> PAYMENT_SERVICE : Process payment
+ORDER_SERVICE --> NOTIFICATION_SERVICE : Send confirmation
+AUTH_SERVICE --> USER_SERVICE : Verify identity
+SEARCH_SERVICE --> ANALYTICS_SERVICE : Log query metrics {color: dim}
+
+# Infrastructure connections
+API_GATEWAY <--> REDIS_CACHE : Rate limit check
+API_GATEWAY <--> CONFIG_STORE : Route lookup
+API_GATEWAY -.-> PROMETHEUS : Request metrics {color: dim}
+API_GATEWAY -.-> JAEGER_TRACING : Distributed traces {color: dim}
+
+annotation "16 edges converge here:\nroute fan-out + health fan-in\ncreates dense connector hub" near API_GATEWAY side top
+annotation "PCI-DSS boundary:\npayment data encrypted in transit\ntokenized at rest" near PAYMENT_SERVICE side bottom
+annotation "Inter-service mesh:\n4 direct calls bypass gateway\nservice mesh sidecar handles mTLS" near ORDER_SERVICE side right
+annotation "Observability sidecar:\nevery service emits metrics\nand propagates trace context" near PROMETHEUS side bottom

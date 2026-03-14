@@ -1,0 +1,72 @@
+type flow
+title "Compiler pipeline: 5-layer deep dependency graph with cross-layer and reverse edges"
+direction TB
+spacing spacious
+
+# Layer 1 — Source input
+subgraph "Layer 1: Source Input" {fill: dotgrid, badge: "INPUT", border-style: dashed}
+  component "Source Files" {fill: dotgrid, emphasis: primary, sublabel: ".ts, .tsx, .js"}
+  component "Config Loader" {fill: dotgrid, sublabel: "tsconfig.json\npath aliases"}
+  component "Plugin Registry" {fill: dotgrid, sublabel: "Transform plugins\nCustom resolvers"}
+  SOURCE_FILES --> CONFIG_LOADER
+end
+
+# Layer 2 — Frontend (parsing + type checking)
+subgraph "Layer 2: Frontend" {fill: crosshatch, badge: "PARSE"}
+  component "Lexer" {fill: dotgrid, sublabel: "Token stream\nUnicode support"}
+  component "Parser" {fill: dotgrid, sublabel: "AST construction\nError recovery"}
+  component "Type Checker" {fill: dotgrid, emphasis: primary, sublabel: "Hindley-Milner\nBidirectional inference"}
+  component "Name Resolver" {fill: dotgrid, sublabel: "Scope analysis\nImport resolution"}
+  LEXER --> PARSER
+  PARSER --> NAME_RESOLVER
+  NAME_RESOLVER --> TYPE_CHECKER
+end
+
+# Layer 3 — Middle (IR + optimization)
+subgraph "Layer 3: IR Transform" {fill: dotgrid, badge: "OPTIMIZE"}
+  component "AST Lowering" {fill: dotgrid, sublabel: "Desugar syntax\nPattern expansion"}
+  component "IR Builder" {fill: dotgrid, sublabel: "SSA form\nCFG construction"}
+  component "Optimizer" {fill: dotgrid, emphasis: primary, sublabel: "Dead code elimination\nConstant folding\nInlining"}
+  AST_LOWERING --> IR_BUILDER
+  IR_BUILDER --> OPTIMIZER
+end
+
+# Layer 4 — Backend (code generation)
+subgraph "Layer 4: Code Generation" {fill: crosshatch, badge: "EMIT"}
+  component "Target Selector" {fill: dotgrid, sublabel: "ESM vs CJS\nTarget ES version"}
+  component "Code Emitter" {fill: dotgrid, sublabel: "Source map support\nMinification pass"}
+  component "Bundle Linker" {fill: dotgrid, emphasis: secondary, sublabel: "Tree shaking\nChunk splitting"}
+  TARGET_SELECTOR --> CODE_EMITTER
+  CODE_EMITTER --> BUNDLE_LINKER
+end
+
+# Layer 5 — Output
+subgraph "Layer 5: Output" {fill: dotgrid, badge: "OUTPUT", border-style: dashed}
+  datastore "Dist Artifacts" {fill: crosshatch, emphasis: secondary, sublabel: ".js bundles\n.d.ts declarations\nSource maps"}
+  component "Cache Writer" {fill: dotgrid, emphasis: muted, sublabel: "Incremental build\nContent hash keys"}
+  DIST_ARTIFACTS --> CACHE_WRITER
+end
+
+# Normal top-down flow between layers
+SOURCE_FILES --> LEXER : Read source
+CONFIG_LOADER --> NAME_RESOLVER : Path aliases
+PLUGIN_REGISTRY --> AST_LOWERING : Custom transforms
+TYPE_CHECKER --> AST_LOWERING : Typed AST
+OPTIMIZER --> TARGET_SELECTOR : Optimized IR
+BUNDLE_LINKER --> DIST_ARTIFACTS : Write output
+
+# Cross-layer skip connections (stress topology)
+SOURCE_FILES --> NAME_RESOLVER : Direct imports {color: dim}
+CONFIG_LOADER --> TARGET_SELECTOR : Target config {color: dim}
+TYPE_CHECKER --> CODE_EMITTER : Type metadata for .d.ts {color: dim}
+PLUGIN_REGISTRY --> OPTIMIZER : Optimization hints {color: dim}
+
+# Reverse / feedback edges (stress layer assignment)
+TYPE_CHECKER -.-> PARSER : Re-parse on error
+OPTIMIZER -.-> TYPE_CHECKER : Inlining needs type info
+CACHE_WRITER -.-> LEXER : Invalidation signal
+CODE_EMITTER -.-> IR_BUILDER : Deopt feedback
+
+annotation "Cross-layer edges:\n4 skip connections violate\nstrict layering — tests\ntopology preservation" near NAME_RESOLVER side right
+annotation "Reverse dependencies:\n4 dashed feedback edges\nflow upward — tests\nlayer assignment logic" near OPTIMIZER side left
+annotation "17 nodes across 5 layers\nwith dense inter-layer wiring" near SOURCE_FILES side top

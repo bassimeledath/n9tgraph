@@ -6,6 +6,62 @@ export interface Point {
   y: number;
 }
 
+export function edgePoints(from: Point, to: Point, waypoints: Point[] = []): Point[] {
+  return [from, ...waypoints, to];
+}
+
+export function pointOnPolylineAtT(
+  points: Point[],
+  t: number,
+): { x: number; y: number; tangent: Point; normal: Point } {
+  if (points.length === 0) {
+    return { x: 0, y: 0, tangent: { x: 1, y: 0 }, normal: { x: 0, y: -1 } };
+  }
+  if (points.length === 1) {
+    return { x: points[0].x, y: points[0].y, tangent: { x: 1, y: 0 }, normal: { x: 0, y: -1 } };
+  }
+
+  const clampedT = Math.max(0, Math.min(1, t));
+  const lengths: number[] = [];
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = points[i + 1].x - points[i].x;
+    const dy = points[i + 1].y - points[i].y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    lengths.push(len);
+    total += len;
+  }
+
+  if (total === 0) {
+    return { x: points[0].x, y: points[0].y, tangent: { x: 1, y: 0 }, normal: { x: 0, y: -1 } };
+  }
+
+  const target = total * clampedT;
+  let walked = 0;
+  for (let i = 0; i < lengths.length; i++) {
+    const segLen = lengths[i];
+    if (walked + segLen >= target || i === lengths.length - 1) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      const localT = segLen === 0 ? 0 : (target - walked) / segLen;
+      const dx = p1.x - p0.x;
+      const dy = p1.y - p0.y;
+      const unitX = segLen === 0 ? 1 : dx / segLen;
+      const unitY = segLen === 0 ? 0 : dy / segLen;
+      return {
+        x: p0.x + dx * localT,
+        y: p0.y + dy * localT,
+        tangent: { x: unitX, y: unitY },
+        normal: { x: -unitY, y: unitX },
+      };
+    }
+    walked += segLen;
+  }
+
+  const last = points[points.length - 1];
+  return { x: last.x, y: last.y, tangent: { x: 1, y: 0 }, normal: { x: 0, y: -1 } };
+}
+
 export interface EdgeOpts {
   from: Point;
   to: Point;
@@ -77,13 +133,13 @@ export function edgeLabel(x: number, y: number, text: string): string {
 }
 
 /** Render a multiline edge label — wraps text at a max width */
-export function edgeLabelMultiline(x: number, y: number, text: string, maxCharsPerLine = 20): string {
-  const { bg, fg } = edgeLabelParts(x, y, text, maxCharsPerLine);
+export function edgeLabelMultiline(x: number, y: number, text: string, maxCharsPerLine = 20, color: string = colors.accent): string {
+  const { bg, fg } = edgeLabelParts(x, y, text, maxCharsPerLine, color);
   return bg + fg;
 }
 
 /** Split edge label into background and foreground parts for z-order control */
-export function edgeLabelParts(x: number, y: number, text: string, maxCharsPerLine = 20): { bg: string; fg: string } {
+export function edgeLabelParts(x: number, y: number, text: string, maxCharsPerLine = 20, color: string = colors.accent): { bg: string; fg: string } {
   // Split text into lines at word boundaries
   const words = text.split(/\s+/);
   const lines: string[] = [];
@@ -110,13 +166,13 @@ export function edgeLabelParts(x: number, y: number, text: string, maxCharsPerLi
   let fg = '';
   const startY = y - totalH / 2 + fontSizes.edgeLabel;
   for (let i = 0; i < lines.length; i++) {
-    fg += `<text x="${x}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="${opacity.edgeLabel}" text-anchor="middle">${lines[i]}</text>`;
+    fg += `<text x="${x}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${color}" opacity="${opacity.edgeLabel}" text-anchor="middle">${lines[i]}</text>`;
   }
   return { bg, fg };
 }
 
 /** Numbered circle marker (e.g. step indicators on edges) */
-export function numberedCircle(x: number, y: number, num: number, color = colors.accent): string {
+export function numberedCircle(x: number, y: number, num: number, color: string = colors.accent): string {
   const r = 11;
   let svg = `<circle cx="${x}" cy="${y}" r="${r}" fill="${color}" stroke="none"/>`;
   svg += `<text x="${x}" y="${y}" font-family="${fonts.mono}" font-size="11" fill="${colors.bg}" text-anchor="middle" dominant-baseline="central" font-weight="700">${num}</text>`;
