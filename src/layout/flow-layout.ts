@@ -204,6 +204,37 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 2: Layer assignment
   const layers = assignLayers(allNodes, dagAdj, dagInAdj, direction);
 
+  // Step 2a: Apply same-rank directive — move grouped nodes to the same layer
+  if (diagram.sameRank) {
+    for (const group of diagram.sameRank) {
+      // Find the max layer index among group members
+      let maxLayerIdx = -1;
+      for (const id of group) {
+        for (let li = 0; li < layers.length; li++) {
+          if (layers[li].includes(id)) {
+            maxLayerIdx = Math.max(maxLayerIdx, li);
+          }
+        }
+      }
+      if (maxLayerIdx < 0) continue;
+      // Move all group members to that layer
+      for (const id of group) {
+        for (let li = 0; li < layers.length; li++) {
+          if (li !== maxLayerIdx && layers[li].includes(id)) {
+            layers[li] = layers[li].filter(n => n !== id);
+            if (!layers[maxLayerIdx].includes(id)) {
+              layers[maxLayerIdx].push(id);
+            }
+          }
+        }
+      }
+    }
+    // Remove empty layers
+    for (let i = layers.length - 1; i >= 0; i--) {
+      if (layers[i].length === 0) layers.splice(i, 1);
+    }
+  }
+
   // Step 2b: Collapse bidirectional leaf pairs to same layer
   // When A→B and B→A both exist (separate edges, not <-->), and the later node
   // has no forward children in the DAG, move it to the earlier node's layer.
@@ -428,22 +459,46 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     minContentX = Math.min(minContentX, nodeLeft);
   }
   for (const ann of posAnnotations) {
-    minContentX = Math.min(minContentX, ann.x);
+    let annLeft = ann.x;
+    // Step circle renders 28px to the left of annotation text
+    if (ann.properties?.step) {
+      annLeft -= 28;
+    }
+    minContentX = Math.min(minContentX, annLeft);
   }
   for (const sg of posSubgraphs) {
     minContentX = Math.min(minContentX, sg.x);
   }
-  // Also account for backward edge routing (uses minNodeX - 30) and edge labels
-  const hasBackwardEdge = direction === 'TB' && allEdges.some(e => {
-    const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
-    const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
-    const srcPos = positioned.nodePositions.get(src);
-    const tgtPos = positioned.nodePositions.get(tgt);
-    if (!srcPos || !tgtPos) return false;
-    return tgtPos.y + (nodeSizes.get(tgt)?.h || 0) <= srcPos.y + 5;
-  });
-  if (hasBackwardEdge) {
-    minContentX = Math.min(minContentX, minContentX - 56);
+  // Account for backward edge routing clearance (must match renderer's BASE_CLEARANCE + PER_EDGE_OFFSET)
+  if (direction === 'TB') {
+    let backwardEdgeCount = 0;
+    let hasRightRouted = false;
+    for (const e of allEdges) {
+      const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+      const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+      const srcPos = positioned.nodePositions.get(src);
+      const tgtPos = positioned.nodePositions.get(tgt);
+      if (!srcPos || !tgtPos) continue;
+      const srcSz = nodeSizes.get(src);
+      const tgtSz = nodeSizes.get(tgt);
+      if (!srcSz || !tgtSz) continue;
+      if (tgtPos.y + tgtSz.h <= srcPos.y + 5) {
+        const srcCx = srcPos.x + srcSz.w / 2;
+        const tgtCx = tgtPos.x + tgtSz.w / 2;
+        if (srcCx > tgtCx) {
+          hasRightRouted = true;
+        }
+        backwardEdgeCount++;
+      }
+    }
+    if (backwardEdgeCount > 0) {
+      // Left-side clearance: 40px base + 20px per additional edge
+      const leftClearance = 40 + Math.max(0, backwardEdgeCount - 1) * 20;
+      minContentX = Math.min(minContentX, minContentX - leftClearance);
+    }
+    if (hasRightRouted) {
+      // Right-side clearance for right-routed backward edges (handled in finalWidth below)
+    }
   }
 
   const leftPad = MARGIN_X;
@@ -459,14 +514,37 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Adjust diagram bounds to include all elements
   let finalWidth = positioned.width + (minContentX < leftPad ? leftPad - minContentX : 0);
 
-  // Ensure width covers all positioned nodes with margin
+  // Ensure width covers all positioned nodes with margin (including actor label right overhang)
   for (const n of posNodes) {
-    const nodeRight = n.x + n.w + MARGIN_X;
+    let nodeRight = n.x + n.w + MARGIN_X;
+    // Actor labels are centered at node center; they overhang to the right too
+    if (n.kind === 'actor') {
+      const labelW = measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel;
+      const cx = n.x + n.w / 2;
+      nodeRight = Math.max(nodeRight, cx + labelW / 2 + 4 + MARGIN_X);
+    }
     if (nodeRight > finalWidth) finalWidth = nodeRight;
   }
   for (const sg of posSubgraphs) {
     const sgRight = sg.x + sg.w + MARGIN_X;
     if (sgRight > finalWidth) finalWidth = sgRight;
+  }
+
+  // Extend bounds for edge labels (estimated midpoint positions)
+  for (const e of allEdges) {
+    if (!e.label) continue;
+    const fromPos = positioned.nodePositions.get(e.from);
+    const toPos = positioned.nodePositions.get(e.to);
+    if (!fromPos || !toPos) continue;
+    const fromSz = nodeSizes.get(e.from);
+    const toSz = nodeSizes.get(e.to);
+    if (!fromSz || !toSz) continue;
+    const midX = (fromPos.x + fromSz.w / 2 + toPos.x + toSz.w / 2) / 2;
+    const midY = (fromPos.y + fromSz.h / 2 + toPos.y + toSz.h / 2) / 2;
+    const labelLen = Math.min(e.label.length, 30);
+    const labelHalfW = (labelLen * 6.5 + 24) / 2;
+    const labelRight = midX + labelHalfW + MARGIN_X;
+    if (labelRight > finalWidth) finalWidth = labelRight;
   }
 
   // Ensure width covers title text
@@ -540,6 +618,10 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   if (maxContentBottom + MARGIN_TOP > finalHeight) {
     finalHeight = maxContentBottom + MARGIN_TOP;
   }
+
+  // Universal safety margin for rounding and stroke widths
+  finalWidth += 10;
+  finalHeight += 10;
 
   return {
     width: finalWidth,

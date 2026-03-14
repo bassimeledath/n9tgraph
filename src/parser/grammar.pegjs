@@ -123,7 +123,7 @@ NoteTargets
 // ═══════════════════════════════════════════════════════════
 
 FlowBody
-  = WS title:TitleLine? WS theme:ThemeLine? WS dir:DirectionLine? WS spc:SpacingLine? WS asp:AspectLine? WS wrp:WrapLine? stmts:( WS s:FlowStatement { return s; } )* WS {
+  = WS title:TitleLine? WS theme:ThemeLine? WS dir:DirectionLine? WS spc:SpacingLine? WS asp:AspectLine? WS wrp:WrapLine? ranks:( WS r:SameRankLine { return r; } )* stmts:( WS s:FlowStatement { return s; } )* WS {
       const nodes = stmts.filter(s => s._kind === 'node').map(({ _kind, ...rest }) => rest);
       const edges = stmts.filter(s => s._kind === 'edge').map(({ _kind, ...rest }) => rest);
       const annotations = stmts.filter(s => s._kind === 'annotation').map(({ _kind, ...rest }) => rest);
@@ -137,6 +137,7 @@ FlowBody
         spacing: spc || undefined,
         aspect: asp || undefined,
         wrap: wrp || undefined,
+        sameRank: ranks.length > 0 ? ranks : undefined,
         nodes: nodes,
         edges: edges,
         annotations: annotations,
@@ -144,6 +145,9 @@ FlowBody
         codeblocks: codeblocks,
       };
     }
+
+SameRankLine
+  = "same-rank" HS+ "[" HS* first:Identifier rest:(HS* "," HS* id:Identifier { return id; })* HS* "]" EOL { return [first, ...rest]; }
 
 ThemeLine
   = "theme" HS+ t:$("white" / "default") EOL { return t; }

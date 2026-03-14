@@ -121,6 +121,7 @@ export interface FlowDiagram {
   spacing?: SpacingPreset;
   aspect?: AspectHint;
   wrap?: WrapMode;
+  sameRank?: string[][];
   nodes: FlowNode[];
   edges: FlowEdge[];
   annotations: FlowAnnotation[];

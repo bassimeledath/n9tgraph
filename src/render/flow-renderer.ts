@@ -213,6 +213,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
   const pairIndex = new Map<string, number>();
 
+  // Lazy-initialized backward edge index for TB mode offset stacking
+  let backwardEdgeIndex: Map<string, number> | undefined;
+
   for (const edge of edges) {
     const visualFrom = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.to : edge.from;
     const visualTo = (edge.arrow === '<--' || edge.arrow === '<-.-') ? edge.from : edge.to;
@@ -320,22 +323,55 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       } else if (isBackward) {
-        // Route along left side of diagram, entering target from below
+        // Route along left (or right) side of diagram, entering target from below
         const minNodeX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
+        const maxNodeX = Math.max(...nodes.map(n => n.x + n.w), ...codeblocks.map(c => c.x + c.w));
         const minSgX = subgraphs && subgraphs.length > 0
           ? Math.min(...subgraphs.map(sg => sg.x))
           : minNodeX;
-        const leftX = Math.min(minNodeX, minSgX) - 24;
-        fromPt = { x: fromNode.x, y: fc.y };
+        const maxSgX = subgraphs && subgraphs.length > 0
+          ? Math.max(...subgraphs.map(sg => sg.x + sg.w))
+          : maxNodeX;
+
+        // Count backward edges for offset stacking
+        if (!backwardEdgeIndex) {
+          backwardEdgeIndex = new Map();
+          let idx = 0;
+          for (const e2 of edges) {
+            const vFrom = (e2.arrow === '<--' || e2.arrow === '<-.-') ? e2.to : e2.from;
+            const vTo = (e2.arrow === '<--' || e2.arrow === '<-.-') ? e2.from : e2.to;
+            const fn = nodeById.get(vFrom);
+            const tn = nodeById.get(vTo);
+            if (!fn || !tn) continue;
+            if (tn.y + tn.h <= fn.y + 5) {
+              backwardEdgeIndex.set(`${vFrom}->${vTo}`, idx++);
+            }
+          }
+        }
+
+        const edgeIdx = backwardEdgeIndex.get(`${visualFrom}->${visualTo}`) || 0;
+        const BASE_CLEARANCE = 40;
+        const PER_EDGE_OFFSET = 20;
+
+        // Route right-side when source is to the right of target
+        const routeRight = fc.x > tc.x;
+        let routeX: number;
+        if (routeRight) {
+          routeX = Math.max(maxNodeX, maxSgX) + BASE_CLEARANCE + edgeIdx * PER_EDGE_OFFSET;
+          fromPt = { x: fromNode.x + fromNode.w, y: fc.y };
+        } else {
+          routeX = Math.min(minNodeX, minSgX) - BASE_CLEARANCE - edgeIdx * PER_EDGE_OFFSET;
+          fromPt = { x: fromNode.x, y: fc.y };
+        }
         toPt = { x: tc.x, y: toNode.y + toNode.h };
         const belowTarget = toNode.y + toNode.h + 15;
         parts.push(polylineEdge({
           from: fromPt, to: toPt,
-          waypoints: [{ x: leftX, y: fc.y }, { x: leftX, y: belowTarget }, { x: tc.x, y: belowTarget }],
+          waypoints: [{ x: routeX, y: fc.y }, { x: routeX, y: belowTarget }, { x: tc.x, y: belowTarget }],
           dashed: edge.dashed, color: colors.accent,
         }));
         if (edge.label) {
-          { const p = edgeLabelParts(leftX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+          { const p = edgeLabelParts(routeX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
         }
       } else {
         // Same row: standard routing
