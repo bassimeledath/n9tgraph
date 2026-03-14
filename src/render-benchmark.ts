@@ -7,7 +7,7 @@ import { render } from './render/svg.js';
 
 const BENCHMARK_DIR = join(import.meta.dirname ?? '.', '..', 'examples', 'benchmark');
 const OUTPUT_DIR = join(BENCHMARK_DIR, 'output');
-const DOWNLOADS_DIR = join(process.env.HOME ?? '~', 'Downloads', 'n9tgraph-text-fixes');
+const DOWNLOADS_DIR = join(process.env.HOME ?? '~', 'Downloads', 'n9tgraph-text-fixes3');
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
 mkdirSync(DOWNLOADS_DIR, { recursive: true });
@@ -36,8 +36,8 @@ for (const file of files) {
     const background = isWhiteTheme ? '#ffffff' : '#000000';
 
     // Convert to PNG — dynamic width to keep text readable
-    // Smallest text is edgeLabel at 11px SVG. For 8px min in PNG: scale >= 8/11 ≈ 0.73
-    // So pngWidth = max(800, svgWidth * 0.75) ensures text never shrinks below ~8px
+    // Smallest text is edgeLabel at 12px SVG. For 8px min in PNG: scale >= 8/12 ≈ 0.67
+    // So pngWidth = max(800, svgWidth * 0.75) ensures text never shrinks below ~9px
     const viewBoxMatch = svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
     const svgWidth = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 800;
     const pngWidth = Math.max(800, Math.round(svgWidth * 0.75));

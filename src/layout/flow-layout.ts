@@ -77,7 +77,7 @@ export interface FlowLayout {
 
 // ─── Constants ───────────────────────────────────────────
 
-const MARGIN_X = 28;
+const MARGIN_X = 36;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const DEFAULT_LAYER_GAP = 24;
@@ -97,7 +97,7 @@ const ACTOR_H = 72;
 const MIN_NODE_W = 62;
 const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
-const SUBGRAPH_PAD_TOP = 50;
+const SUBGRAPH_PAD_TOP = 56;
 const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
@@ -557,7 +557,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     const midX = (fromPos.x + fromSz.w / 2 + toPos.x + toSz.w / 2) / 2;
     const midY = (fromPos.y + fromSz.h / 2 + toPos.y + toSz.h / 2) / 2;
     const labelLen = Math.min(e.label.length, 30);
-    const labelHalfW = (labelLen * 6.5 + 24) / 2;
+    const labelHalfW = (labelLen * 7.0 + 24) / 2;
     const labelRight = midX + labelHalfW + MARGIN_X;
     if (labelRight > finalWidth) finalWidth = labelRight;
   }
@@ -1248,6 +1248,8 @@ function resolveSubgraphHeaderOverlaps(
   nodeSizes: Map<string, { w: number; h: number }>,
 ): void {
   const textH = fontSizes.subtitle + 10;
+  const clearance = 8;
+
   for (let pass = 0; pass < 3; pass++) {
     let changed = false;
     for (let i = 0; i < posSubgraphs.length; i++) {
@@ -1256,20 +1258,19 @@ function resolveSubgraphHeaderOverlaps(
       const aTextW = a.label.length * 7.5 + 20;
       const aHdrY = a.y + 26;
 
+      // Header-to-header collision (existing)
       for (let j = i + 1; j < posSubgraphs.length; j++) {
         const b = posSubgraphs[j];
         if (!b.label) continue;
         const bTextW = b.label.length * 7.5 + 20;
         const bHdrY = b.y + 26;
 
-        // Check if header text bounding boxes overlap
         const aCx = a.x + a.w / 2;
         const bCx = b.x + b.w / 2;
-        const xOverlap = Math.abs(aCx - bCx) < (aTextW + bTextW) / 2 + 8;
+        const xOverlap = Math.abs(aCx - bCx) < (aTextW + bTextW) / 2 + clearance;
         const yOverlap = Math.abs(aHdrY - bHdrY) < textH + 4;
 
         if (xOverlap && yOverlap) {
-          // Shift the lower subgraph's children down to clear the header
           const [, lower] = aHdrY <= bHdrY ? [a, b] : [b, a];
           const upperHdrBottom = Math.min(aHdrY, bHdrY) + textH / 2 + 4;
           const lowerHdrTop = Math.max(aHdrY, bHdrY) - textH / 2;
@@ -1280,7 +1281,6 @@ function resolveSubgraphHeaderOverlaps(
               const pos = nodePositions.get(childId);
               if (pos) pos.y += shift;
             }
-            // Recompute this subgraph's vertical bounds
             let minY = Infinity, maxY = -Infinity;
             for (const childId of lower.childIds) {
               const pos = nodePositions.get(childId);
@@ -1294,6 +1294,50 @@ function resolveSubgraphHeaderOverlaps(
               lower.h = (maxY - minY) + SUBGRAPH_PAD_TOP + SUBGRAPH_PAD_BOTTOM;
             }
             changed = true;
+          }
+        }
+      }
+
+      // Header-to-child collision: check if this header overlaps with child
+      // nodes belonging to OTHER subgraphs (cross-subgraph collision)
+      const aHdrTop = aHdrY - textH / 2 - 1;
+      const aHdrBottom = aHdrY + textH / 2 + 1;
+      const aHdrLeft = a.x + a.w / 2 - aTextW / 2;
+      const aHdrRight = a.x + a.w / 2 + aTextW / 2;
+
+      for (let j = 0; j < posSubgraphs.length; j++) {
+        if (j === i) continue;
+        const other = posSubgraphs[j];
+        for (const childId of other.childIds) {
+          const pos = nodePositions.get(childId);
+          const sz = nodeSizes.get(childId);
+          if (!pos || !sz) continue;
+
+          // Check overlap between header and child node
+          const hOverlap = aHdrLeft < pos.x + sz.w + clearance && aHdrRight > pos.x - clearance;
+          const vOverlap = aHdrTop < pos.y + sz.h + clearance && aHdrBottom > pos.y - clearance;
+          if (hOverlap && vOverlap) {
+            // Shift child node down to clear the header
+            const shift = aHdrBottom + clearance - pos.y;
+            if (shift > 0) {
+              pos.y += shift;
+              changed = true;
+            }
+          }
+        }
+        // Recompute other subgraph bounds if any children moved
+        if (changed) {
+          let minY = Infinity, maxY = -Infinity;
+          for (const childId of other.childIds) {
+            const pos = nodePositions.get(childId);
+            const sz = nodeSizes.get(childId);
+            if (!pos || !sz) continue;
+            minY = Math.min(minY, pos.y);
+            maxY = Math.max(maxY, pos.y + sz.h);
+          }
+          if (minY !== Infinity) {
+            other.y = minY - SUBGRAPH_PAD_TOP;
+            other.h = (maxY - minY) + SUBGRAPH_PAD_TOP + SUBGRAPH_PAD_BOTTOM;
           }
         }
       }

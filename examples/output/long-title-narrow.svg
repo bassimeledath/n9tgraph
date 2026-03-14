@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 729.5 359" width="729.5" height="359">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">ADR-0042: Migration from monolithic PostgreSQL to event-sourced CQRS architecture with Apache</text><text x="30" y="55" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Kafka as the backbone — approved by architecture review board on 2024-11-15, supersedes ADR-0031</text>
+<line x1="209" y1="201" x2="298" y2="201" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="423" y1="201" x2="557.5" y2="201" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="215" y="132" width="77" height="21" rx="4" fill="#000000"/>
+<rect x="429" y="132" width="122.5" height="21" rx="4" fill="#000000"/>
+<rect x="28" y="161" width="181" height="80" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="50.5" y="181.9" width="136" height="22.2" fill="#000000" rx="2"/><text x="118.5" y="193" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LEGACY MONOLITH</text><rect x="70.5" y="202.3" width="96" height="21.4" fill="#000000" rx="2"/><text x="118.5" y="213" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Deprecated</text>
+<rect x="298" y="161" width="125" height="80" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><rect x="316.5" y="181.9" width="88" height="22.2" fill="#000000" rx="2"/><text x="360.5" y="193" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">EVENT BUS</text><rect x="332.5" y="202.3" width="56" height="21.4" fill="#000000" rx="2"/><text x="360.5" y="213" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Kafka</text>
+<rect x="557.5" y="181" width="134" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="576.5" y="189.9" width="96" height="22.2" fill="#000000" rx="2"/><text x="624.5" y="201" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">READ MODEL</text>
+<text x="253.5" y="146" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">CDC stream</text>
+<text x="490.25" y="146" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Materialized view</text>
+<text x="28" y="95" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Strangler fig pattern:</text><text x="28" y="113" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">gradual decomposition</text><text x="28" y="131" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">over 6 sprint cycles</text>
+<text x="298" y="279" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Exactly-once semantics</text><text x="298" y="297" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">via idempotent consumers</text>
+</g>
+</svg>

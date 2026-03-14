@@ -230,8 +230,8 @@ function labelDims(text: string, maxChars: number): { halfW: number; halfH: numb
   if (cur) wrapLines.push(cur);
   const maxLineLen = Math.max(...wrapLines.map(l => l.length));
   return {
-    halfW: (maxLineLen * 6.5 + 12) / 2,
-    halfH: (wrapLines.length * 15 + 6) / 2,
+    halfW: (maxLineLen * 7.0 + 12) / 2,
+    halfH: (wrapLines.length * 16 + 6) / 2,
   };
 }
 
@@ -682,8 +682,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       }
       if (cur) wrapLines.push(cur);
       const maxLineLen = Math.max(...wrapLines.map(l => l.length));
-      const labelHalfW = (maxLineLen * 6.5 + 12) / 2;
-      const labelHalfH = (wrapLines.length * 15 + 6) / 2;
+      const labelHalfW = (maxLineLen * 7.0 + 12) / 2;
+      const labelHalfH = (wrapLines.length * 16 + 6) / 2;
       // Fixed clearance for edge labels (sublabel-specific logic removed)
       const clearance = 8;
 
@@ -720,9 +720,13 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  // Convergence fan-out: when multiple labeled edges target the same node,
-  // pre-stagger their labels so they don't pile up at the same midpoint
+  // Convergence/fan-out: when multiple labeled edges share the same target
+  // or source node, pre-stagger their labels to prevent pile-up
   {
+    const isVerticalLayout = direction === 'TB' || direction === 'BT';
+    const fanSpacing = 30; // px between staggered labels
+
+    // Group by target node (convergence)
     const byTarget = new Map<string, number[]>();
     for (let i = 0; i < pendingLabels.length; i++) {
       const tid = pendingLabels[i].targetId;
@@ -730,21 +734,49 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       if (!byTarget.has(tid)) byTarget.set(tid, []);
       byTarget.get(tid)!.push(i);
     }
+    const alreadyStaggered = new Set<number>();
     for (const [tid, indices] of byTarget) {
       if (indices.length < 2) continue;
       const targetNode = nodeById.get(tid);
       if (!targetNode) continue;
-      // Determine fan direction based on layout direction
-      const isVerticalLayout = direction === 'TB' || direction === 'BT';
-      const fanSpacing = 24; // px between staggered labels
       const totalSpan = (indices.length - 1) * fanSpacing;
       for (let k = 0; k < indices.length; k++) {
         const offset = -totalSpan / 2 + k * fanSpacing;
         if (isVerticalLayout) {
-          // TB/BT: fan horizontally
           pendingLabels[indices[k]].x += offset;
         } else {
-          // LR/RL: fan vertically
+          pendingLabels[indices[k]].y += offset;
+        }
+        alreadyStaggered.add(indices[k]);
+      }
+    }
+
+    // Group by source node (fan-out) — only stagger labels not already handled
+    const bySource = new Map<string, number[]>();
+    for (const e of edges) {
+      const visualFrom = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+      if (!e.label) continue;
+      // Find the pending label index for this edge's label
+      // Match by targetId since we stored the visual target
+      const visualTo = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+      for (let i = 0; i < pendingLabels.length; i++) {
+        if (alreadyStaggered.has(i)) continue;
+        if (pendingLabels[i].targetId === visualTo && pendingLabels[i].text === escapeXml(e.label)) {
+          if (!bySource.has(visualFrom)) bySource.set(visualFrom, []);
+          const arr = bySource.get(visualFrom)!;
+          if (!arr.includes(i)) arr.push(i);
+          break;
+        }
+      }
+    }
+    for (const [, indices] of bySource) {
+      if (indices.length < 2) continue;
+      const totalSpan = (indices.length - 1) * fanSpacing;
+      for (let k = 0; k < indices.length; k++) {
+        const offset = -totalSpan / 2 + k * fanSpacing;
+        if (isVerticalLayout) {
+          pendingLabels[indices[k]].x += offset;
+        } else {
           pendingLabels[indices[k]].y += offset;
         }
       }
@@ -786,8 +818,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  // Resolve label-label collisions (multi-pass, 5 passes for dense convergence zones)
-  for (let pass = 0; pass < 5; pass++) {
+  // Resolve label-label collisions (multi-pass for dense convergence zones)
+  for (let pass = 0; pass < 7; pass++) {
     let changed = false;
     for (let i = 0; i < pendingLabels.length; i++) {
       for (let j = i + 1; j < pendingLabels.length; j++) {
@@ -795,10 +827,18 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const dx = Math.abs(a.x - b.x);
         const dy = Math.abs(a.y - b.y);
         if (dx < a.halfW + b.halfW && dy < a.halfH + b.halfH) {
+          const overlapX = (a.halfW + b.halfW) - dx;
           const overlapY = (a.halfH + b.halfH) - dy;
-          const shift = overlapY / 2 + 4;
-          if (a.y <= b.y) { a.y -= shift; b.y += shift; }
-          else { a.y += shift; b.y -= shift; }
+          // Resolve along the axis with smaller overlap (less disruptive)
+          if (overlapY <= overlapX) {
+            const shift = overlapY / 2 + 4;
+            if (a.y <= b.y) { a.y -= shift; b.y += shift; }
+            else { a.y += shift; b.y -= shift; }
+          } else {
+            const shift = overlapX / 2 + 4;
+            if (a.x <= b.x) { a.x -= shift; b.x += shift; }
+            else { a.x += shift; b.x -= shift; }
+          }
           changed = true;
         }
       }

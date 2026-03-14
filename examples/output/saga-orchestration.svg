@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1824.88 607.52" width="1824.88" height="607.52">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Order saga orchestration with compensation diamond</text>
+<line x1="83.44" y1="304.16589794565937" x2="206.38" y2="307.7302617627568" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="394.3466666666667" y1="270.76" x2="582.1466666666666" y2="180.76" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="415.38" y1="294.0667092651757" x2="533.38" y2="275.2168690095846" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="415.38" y1="327.4532907348243" x2="533.38" y2="346.30313099041535" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="689.78" y1="180.76" x2="887.48" y2="240.76" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="714.38" y1="260.76" x2="858.38" y2="260.76" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="689.78" y1="340.76" x2="887.48" y2="280.76" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="981.6492307692308" y1="280.76" x2="1287.6055015749262" y2="497.2188582570906" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="999.1003284399104" y1="240.76" x2="1229.4393431201793" y2="140" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="1048.38" y1="255.3934693877551" x2="1211.88" y2="246.15738775510204" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="1015.020389131164" y1="280.76" x2="1211.88" y2="344.6335782312925" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<polyline points="1375.9672968091513,140 1375.9672968091513,203 1653.8978450909258,203 1653.8978450909258,341.8109904682088" fill="none" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="1429.88" y1="277.45311475409835" x2="1648.3321146585802" y2="352.51469382366946" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="1429.88" y1="375.7591256830601" x2="1646.1508155032877" y2="367.34465460992675" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="394.3466666666667" y1="350.76" x2="582.1466666666666" y2="440.76" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="1415.331612903226" y1="140" x2="1592.4283870967743" y2="215" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<line x1="1429.88" y1="244.4672131147541" x2="1586.88" y2="250.9016393442623" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<rect x="103.16" y="354.76" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="439.99666666666667" y="211.76" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="432.63" y="274.14178913738016" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="429.38" y="326.3782108626198" width="90" height="21" rx="4" fill="#000000"/>
+<rect x="733.88" y="176.26" width="109.5" height="21" rx="4" fill="#000000"/>
+<rect x="725.13" y="250.26" width="122.5" height="21" rx="4" fill="#000000"/>
+<rect x="737.13" y="324.26" width="103" height="21" rx="4" fill="#000000"/>
+<rect x="1063.6273661720784" y="428" width="142" height="21" rx="4" fill="#000000"/>
+<rect x="1059.5198357800448" y="179.88" width="109.5" height="21" rx="4" fill="#000000"/>
+<rect x="1075.38" y="240.27542857142856" width="109.5" height="21" rx="4" fill="#000000"/>
+<rect x="1058.700194565582" y="302.19678911564625" width="109.5" height="21" rx="4" fill="#000000"/>
+<rect x="1473.1825709500386" y="206.4054952341044" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="1497.3560573292903" y="304.4839042888839" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="1496.265407751644" y="385.0518901464934" width="83.5" height="21" rx="4" fill="#000000"/>
+<rect x="443.24666666666667" y="388.76" width="90" height="21" rx="4" fill="#000000"/>
+<rect x="1436.13" y="155" width="135.5" height="21" rx="4" fill="#000000"/>
+<rect x="1440.63" y="249.18442622950818" width="135.5" height="21" rx="4" fill="#000000"/>
+<circle cx="69.44" cy="281.76" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="69.44" y1="288.76" x2="69.44" y2="310.76" stroke="#b4f079" stroke-width="1.5"/><line x1="55.44" y1="294.76" x2="83.44" y2="294.76" stroke="#b4f079" stroke-width="1.5"/><line x1="69.44" y1="310.76" x2="59.44" y2="326.76" stroke="#b4f079" stroke-width="1.5"/><line x1="69.44" y1="310.76" x2="79.44" y2="326.76" stroke="#b4f079" stroke-width="1.5"/><text x="69.44" y="340.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" letter-spacing="0.12em">CUSTOMER</text>
+<rect x="206.38" y="270.76" width="209" height="80" rx="12" fill="none" stroke="#b4f079" stroke-width="2"/><rect x="211.38" y="275.76" width="199" height="70" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><rect x="230.88" y="291.65999999999997" width="160" height="22.2" fill="#000000" rx="2"/><text x="310.88" y="302.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ORDER ORCHESTRATOR</text><rect x="238.88" y="312.06" width="144" height="21.4" fill="#000000" rx="2"/><text x="310.88" y="322.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Saga coordinator</text>
+<rect x="523.88" y="140.76" width="200" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="547.88" y="149.66" width="152" height="22.2" fill="#000000" rx="2"/><text x="623.88" y="160.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INVENTORY SERVICE</text>
+<rect x="533.38" y="240.76" width="181" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="555.88" y="249.66" width="136" height="22.2" fill="#000000" rx="2"/><text x="623.88" y="260.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">PAYMENT SERVICE</text>
+<rect x="858.38" y="240.76" width="190" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="881.38" y="249.66" width="144" height="22.2" fill="#000000" rx="2"/><text x="953.38" y="260.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SHIPPING SERVICE</text>
+<rect x="533.38" y="340.76" width="181" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="555.88" y="349.65999999999997" width="136" height="22.2" fill="#000000" rx="2"/><text x="623.88" y="360.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LOYALTY SERVICE</text>
+<rect x="1202.38" y="60" width="237" height="80" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="1228.88" y="80.9" width="184" height="22.2" fill="#000000" rx="2"/><text x="1320.88" y="92" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INVENTORY COMPENSATOR</text><rect x="1224.88" y="101.3" width="192" height="21.4" fill="#000000" rx="2"/><text x="1320.88" y="112" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Release reserved stock</text>
+<rect x="1211.88" y="200" width="218" height="80" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="1236.88" y="220.9" width="168" height="22.2" fill="#000000" rx="2"/><text x="1320.88" y="232" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">PAYMENT COMPENSATOR</text><rect x="1264.88" y="241.3" width="112" height="21.4" fill="#000000" rx="2"/><text x="1320.88" y="252" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Issue refund</text>
+<rect x="1211.88" y="340" width="218" height="80" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="1236.88" y="360.9" width="168" height="22.2" fill="#000000" rx="2"/><text x="1320.88" y="372" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LOYALTY COMPENSATOR</text><rect x="1260.88" y="381.3" width="120" height="21.4" fill="#000000" rx="2"/><text x="1320.88" y="392" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Revoke points</text>
+<rect x="566.38" y="450.76" width="115" height="20" fill="url(#crosshatch)" stroke="none"/><line x1="566.38" y1="450.76" x2="566.38" y2="470.76" stroke="#b4f079" stroke-width="1.5"/><line x1="681.38" y1="450.76" x2="681.38" y2="470.76" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="623.88" cy="450.76" rx="57.5" ry="10" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><path d="M566.38,470.76 A57.5,10 0 0,0 681.38,470.76" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="583.88" y="449.65999999999997" width="80" height="22.2" fill="#000000" rx="2"/><text x="623.88" y="460.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SAGA LOG</text>
+<rect x="1586.88" y="215" width="200" height="80" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="1610.88" y="235.9" width="152" height="22.2" fill="#000000" rx="2"/><text x="1686.88" y="247" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">DEAD LETTER QUEUE</text><rect x="1598.88" y="256.3" width="176" height="21.4" fill="#000000" rx="2"/><text x="1686.88" y="267" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Failed compensations</text>
+<circle cx="1320.88" cy="520.76" r="40.76" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="1320.88" y="520.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SUCCESS</text>
+<circle cx="1686.88" cy="365.76" r="40.76" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="1686.88" y="365.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">FAILURE</text>
+<text x="144.91" y="368.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Place order</text>
+<text x="488.24666666666667" y="225.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Reserve stock</text>
+<text x="474.38" y="288.14178913738016" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Charge card</text>
+<text x="474.38" y="340.3782108626198" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Award points</text>
+<text x="788.63" y="190.26" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Stock confirmed</text>
+<text x="786.38" y="264.26" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Payment confirmed</text>
+<text x="788.63" y="338.26" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Points awarded</text>
+<text x="1134.6273661720784" y="442" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Fulfillment complete</text>
+<text x="1114.2698357800448" y="193.88" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Shipping failed</text>
+<text x="1130.13" y="254.27542857142856" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Shipping failed</text>
+<text x="1113.450194565582" y="316.19678911564625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Shipping failed</text>
+<text x="1514.9325709500386" y="220.4054952341044" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Compensated</text>
+<text x="1539.1060573292903" y="318.4839042888839" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Compensated</text>
+<text x="1538.015407751644" y="399.0518901464934" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Compensated</text>
+<text x="488.24666666666667" y="402.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Persist step</text>
+<text x="1503.88" y="169" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Compensation failed</text>
+<text x="1508.38" y="263.1844262295082" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">Compensation failed</text>
+<text x="858.38" y="174.76" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Diamond convergence:</text><text x="858.38" y="192.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">3 services must all</text><text x="858.38" y="210.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">succeed before shipping</text>
+<text x="1646.1200000000001" y="444.52" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Mirror diamond:</text><text x="1646.1200000000001" y="462.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">compensation fan-out</text><text x="1646.1200000000001" y="480.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">and re-convergence</text>
+<text x="206.38" y="388.76" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Idempotent operations</text><text x="206.38" y="406.76" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">with dedup keys</text>
+</g>
+</svg>

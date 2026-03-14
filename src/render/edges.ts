@@ -70,7 +70,7 @@ export function edgeLabel(x: number, y: number, text: string): string {
   // background pill for readability
   const padX = 6;
   const padY = 3;
-  const estW = text.length * 6.5 + padX * 2;
+  const estW = text.length * 7.0 + padX * 2;
   let svg = `<rect x="${x - estW / 2}" y="${y - fontSizes.edgeLabel - padY}" width="${estW}" height="${fontSizes.edgeLabel + padY * 2 + 2}" rx="4" fill="${colors.bg}" opacity="0.9"/>`;
   svg += `<text x="${x}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="${opacity.edgeLabel}" text-anchor="middle">${text}</text>`;
   return svg;
@@ -102,7 +102,7 @@ export function edgeLabelParts(x: number, y: number, text: string, maxCharsPerLi
   const totalH = lines.length * lineH;
   const padX = 6;
   const padY = 3;
-  const maxLineW = Math.max(...lines.map(l => l.length)) * 6.5 + padX * 2;
+  const maxLineW = Math.max(...lines.map(l => l.length)) * 7.0 + padX * 2;
 
   // Background rect
   const bg = `<rect x="${x - maxLineW / 2}" y="${y - totalH / 2 - padY}" width="${maxLineW}" height="${totalH + padY * 2}" rx="4" fill="${colors.bg}"/>`;

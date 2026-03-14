@@ -32,7 +32,7 @@ export const fonts = {
 
 export const fontSizes = {
   nodeLabel: 13,
-  edgeLabel: 11,
+  edgeLabel: 12,
   annotation: 12,
   cardTitle: 13,
   cardBody: 11,
