@@ -66,6 +66,7 @@ export interface FlowLayout {
   direction: FlowDirection;
   theme?: ThemeName;
   title?: string;
+  titleMaxWidth?: number;
   nodes: PositionedNode[];
   edges: PositionedEdge[];
   annotations: PositionedAnnotation[];
@@ -547,16 +548,35 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     if (labelRight > finalWidth) finalWidth = labelRight;
   }
 
-  // Ensure width covers title text
+  // Title word-wrap: cap title width to content width, grow height for wrapped lines
+  let titleMaxWidth: number | undefined;
+  let wrappedTitleLineCount = 0;
   if (title) {
-    const titleLines = title.split('\n');
-    for (const line of titleLines) {
-      const titleW = measureLineWidth(line, fontSizes.title, 'sans') + 140;
-      if (titleW > finalWidth) finalWidth = titleW;
+    titleMaxWidth = Math.max(finalWidth - 60, 300);
+    const rawLines = title.split('\n');
+    for (const line of rawLines) {
+      const lineW = measureLineWidth(line, fontSizes.title, 'sans');
+      if (lineW <= titleMaxWidth) {
+        wrappedTitleLineCount++;
+      } else {
+        const words = line.split(/\s+/);
+        let cur = '';
+        for (const word of words) {
+          const test = cur ? cur + ' ' + word : word;
+          if (measureLineWidth(test, fontSizes.title, 'sans') > titleMaxWidth && cur) {
+            wrappedTitleLineCount++;
+            cur = word;
+          } else {
+            cur = test;
+          }
+        }
+        if (cur) wrappedTitleLineCount++;
+      }
     }
+    // Don't extend finalWidth for the title — it wraps to fit
   }
   let finalHeight = positioned.height;
-  const titleLinesCount = title ? title.split('\n').length : 0;
+  const titleLinesCount = wrappedTitleLineCount || (title ? title.split('\n').length : 0);
   const titleAreaBottom = title ? MARGIN_TOP + TITLE_HEIGHT + Math.max(0, titleLinesCount - 1) * 21 + 10 : MARGIN_TOP;
   let minAnnY = titleAreaBottom;
   let maxAnnY = finalHeight;
@@ -629,6 +649,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     direction,
     theme: diagram.theme,
     title,
+    titleMaxWidth,
     nodes: posNodes,
     edges: allEdges.map(e => ({
       from: e.from, to: e.to, arrow: e.arrow,

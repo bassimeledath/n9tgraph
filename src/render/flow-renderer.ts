@@ -4,7 +4,7 @@ import { colors, fonts, fontSizes, spacing, opacity, stroke } from './theme.js';
 import { rect, cylinder, doubleBorder, actor, annotation } from './shapes.js';
 import { straightEdge, biEdge, polylineEdge, edgeLabelMultiline, edgeLabelParts, numberedCircle } from './edges.js';
 import type { EdgeOpts } from './edges.js';
-import { wrapLabel } from '../layout/text-measure.js';
+import { wrapLabel, measureLineWidth } from '../layout/text-measure.js';
 
 const MAX_NODE_LABEL_CHARS = 28;
 
@@ -187,6 +187,68 @@ function nodeCenter(n: { x: number; y: number; w: number; h: number; kind?: stri
   return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
 }
 
+/** Compute label half-width and half-height for collision checking */
+function labelDims(text: string, maxChars: number): { halfW: number; halfH: number } {
+  const words = text.split(/\s+/);
+  const wrapLines: string[] = [];
+  let cur = '';
+  for (const w of words) {
+    if (cur && (cur + ' ' + w).length > maxChars) { wrapLines.push(cur); cur = w; }
+    else cur = cur ? cur + ' ' + w : w;
+  }
+  if (cur) wrapLines.push(cur);
+  const maxLineLen = Math.max(...wrapLines.map(l => l.length));
+  return {
+    halfW: (maxLineLen * 6.5 + 12) / 2,
+    halfH: (wrapLines.length * 15 + 6) / 2,
+  };
+}
+
+/** Check if a line segment from p1 to p2 intersects an axis-aligned bounding box */
+function lineSegmentIntersectsAABB(
+  p1: { x: number; y: number }, p2: { x: number; y: number },
+  box: { x: number; y: number; w: number; h: number },
+  clearance: number,
+): boolean {
+  const minX = box.x - clearance;
+  const maxX = box.x + box.w + clearance;
+  const minY = box.y - clearance;
+  const maxY = box.y + box.h + clearance;
+
+  if (p1.x < minX && p2.x < minX) return false;
+  if (p1.x > maxX && p2.x > maxX) return false;
+  if (p1.y < minY && p2.y < minY) return false;
+  if (p1.y > maxY && p2.y > maxY) return false;
+
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  let tMin = 0, tMax = 1;
+
+  if (dx !== 0) {
+    let t1 = (minX - p1.x) / dx;
+    let t2 = (maxX - p1.x) / dx;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return false;
+  } else {
+    if (p1.x < minX || p1.x > maxX) return false;
+  }
+
+  if (dy !== 0) {
+    let t1 = (minY - p1.y) / dy;
+    let t2 = (maxY - p1.y) / dy;
+    if (t1 > t2) [t1, t2] = [t2, t1];
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return false;
+  } else {
+    if (p1.y < minY || p1.y > maxY) return false;
+  }
+
+  return true;
+}
+
 /** Check if two edges connect the same pair of nodes */
 function edgePairKey(e: PositionedEdge): string {
   const a = e.from < e.to ? e.from : e.to;
@@ -320,7 +382,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
               }
             }
           }
-          { const p = edgeLabelParts(lx, ly, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
         }
       } else if (isBackward) {
         // Route along left (or right) side of diagram, entering target from below
@@ -371,7 +433,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           dashed: edge.dashed, color: colors.accent,
         }));
         if (edge.label) {
-          { const p = edgeLabelParts(routeX, (fc.y + belowTarget) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
         }
       } else {
         // Same row: standard routing
@@ -380,7 +442,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent };
         parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
         if (edge.label) {
-          { const p = edgeLabelParts((fromPt.x + toPt.x) / 2, (fromPt.y + toPt.y) / 2, escapeXml(edge.label), 30); labelBgParts.push(p.bg); labelParts.push(p.fg); }
+          { const eLabel = escapeXml(edge.label); const dims = labelDims(eLabel, 30); pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH }); }
         }
       }
 
@@ -447,17 +509,59 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       toPt = connectionPoint(toNode, nodeCenter(fromNode).x, nodeCenter(fromNode).y);
     }
 
-    const opts: EdgeOpts = {
-      from: fromPt,
-      to: toPt,
-      dashed: edge.dashed,
-      color: colors.accent,
-    };
+    // Check for obstacle nodes blocking straight non-TB edges
+    let obstacleRouted = false;
+    if (siblings.length === 1) {
+      const EDGE_CLEARANCE = 12;
+      let blockingNode: (PositionedNode | PositionedCodeBlock) | undefined;
+      for (const [, node] of nodeById) {
+        if (node === fromNode || node === toNode) continue;
+        if (lineSegmentIntersectsAABB(fromPt, toPt, node, EDGE_CLEARANCE)) {
+          blockingNode = node as PositionedNode | PositionedCodeBlock;
+          break;
+        }
+      }
+      if (blockingNode) {
+        const nc = nodeCenter(blockingNode as any);
+        const isHorizontal = Math.abs(toPt.x - fromPt.x) > Math.abs(toPt.y - fromPt.y);
+        if (isHorizontal) {
+          const midY = fromPt.y < nc.y
+            ? blockingNode.y - EDGE_CLEARANCE
+            : blockingNode.y + blockingNode.h + EDGE_CLEARANCE;
+          parts.push(polylineEdge({
+            from: fromPt, to: toPt,
+            waypoints: [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }],
+            dashed: edge.dashed, color: colors.accent,
+            ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
+          }));
+        } else {
+          const midX = fromPt.x < nc.x
+            ? blockingNode.x - EDGE_CLEARANCE
+            : blockingNode.x + blockingNode.w + EDGE_CLEARANCE;
+          parts.push(polylineEdge({
+            from: fromPt, to: toPt,
+            waypoints: [{ x: midX, y: fromPt.y }, { x: midX, y: toPt.y }],
+            dashed: edge.dashed, color: colors.accent,
+            ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
+          }));
+        }
+        obstacleRouted = true;
+      }
+    }
 
-    if (edge.arrow === '<-->') {
-      parts.push(biEdge(opts));
-    } else {
-      parts.push(straightEdge(opts));
+    if (!obstacleRouted) {
+      const opts: EdgeOpts = {
+        from: fromPt,
+        to: toPt,
+        dashed: edge.dashed,
+        color: colors.accent,
+      };
+
+      if (edge.arrow === '<-->') {
+        parts.push(biEdge(opts));
+      } else {
+        parts.push(straightEdge(opts));
+      }
     }
 
     // Edge label with collision avoidance
@@ -497,20 +601,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      // Check label against all node bounding boxes and shift if overlapping
-      for (const [, node] of nodeById) {
-        const hOverlap = lx - labelHalfW < node.x + node.w + clearance && lx + labelHalfW > node.x - clearance;
-        const vOverlap = ly - labelHalfH < node.y + node.h + clearance && ly + labelHalfH > node.y - clearance;
-        if (hOverlap && vOverlap) {
-          const nc = nodeCenter(node);
-          if (ly <= nc.y) {
-            ly = node.y - labelHalfH - clearance;
-          } else {
-            ly = node.y + node.h + labelHalfH + clearance;
-          }
-        }
-      }
-
       pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH });
     }
 
@@ -531,6 +621,23 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const nx = -edgeDy / edgeLen;
         const ny = edgeDx / edgeLen;
         parts.push(numberedCircle(sx + nx * offset, sy + ny * offset, stepNum));
+      }
+    }
+  }
+
+  // Node-overlap resolution for all pending labels
+  const labelClearance = 8;
+  for (const label of pendingLabels) {
+    for (const [, node] of nodeById) {
+      const hOverlap = label.x - label.halfW < node.x + node.w + labelClearance && label.x + label.halfW > node.x - labelClearance;
+      const vOverlap = label.y - label.halfH < node.y + node.h + labelClearance && label.y + label.halfH > node.y - labelClearance;
+      if (hOverlap && vOverlap) {
+        const nc = nodeCenter(node);
+        if (label.y <= nc.y) {
+          label.y = node.y - label.halfH - labelClearance;
+        } else {
+          label.y = node.y + node.h + label.halfH + labelClearance;
+        }
       }
     }
   }
@@ -680,10 +787,30 @@ function renderAnnotation(ann: PositionedAnnotation): string {
   return svg;
 }
 
-function renderTitle(title: string): string {
-  const lines = title.split('\n');
+function renderTitle(title: string, maxWidth?: number): string {
+  const rawLines = title.split('\n');
+  const lines: string[] = [];
+  for (const line of rawLines) {
+    if (!maxWidth || measureLineWidth(line, fontSizes.title, 'sans') <= maxWidth) {
+      lines.push(line);
+    } else {
+      const words = line.split(/\s+/);
+      let cur = '';
+      for (const word of words) {
+        const test = cur ? cur + ' ' + word : word;
+        if (measureLineWidth(test, fontSizes.title, 'sans') > maxWidth && cur) {
+          lines.push(cur);
+          cur = word;
+        } else {
+          cur = test;
+        }
+      }
+      if (cur) lines.push(cur);
+    }
+  }
+
   if (lines.length === 1) {
-    return `<text x="30" y="34" font-family="${fonts.sans}" font-size="${fontSizes.title}" fill="${colors.white}" font-weight="700">${escapeXml(title)}</text>`;
+    return `<text x="30" y="34" font-family="${fonts.sans}" font-size="${fontSizes.title}" fill="${colors.white}" font-weight="700">${escapeXml(lines[0])}</text>`;
   }
   let svg = '';
   const lineH = fontSizes.title + 6;
@@ -697,7 +824,7 @@ export function renderFlow(layout: FlowLayout): string {
   const parts: string[] = [];
 
   if (layout.title) {
-    parts.push(renderTitle(layout.title));
+    parts.push(renderTitle(layout.title, layout.titleMaxWidth));
   }
 
   // Subgraph backgrounds (behind everything)
