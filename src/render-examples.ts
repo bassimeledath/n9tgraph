@@ -27,10 +27,15 @@ for (const file of files) {
     writeFileSync(svgPath, svg);
     console.log(`  → ${svgPath}`);
 
-    // Convert to PNG
+    // Convert to PNG — dynamic width to keep text readable
+    const viewBoxMatch = svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+    const svgWidth = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 800;
+    const isWhiteTheme = /^theme\s+white/m.test(input);
+    const background = isWhiteTheme ? '#ffffff' : '#000000';
+    const pngWidth = Math.max(800, Math.round(svgWidth * 0.85));
     const resvg = new Resvg(svg, {
-      fitTo: { mode: 'width', value: 800 },
-      background: '#000000',
+      fitTo: { mode: 'width', value: pngWidth },
+      background,
     });
     const pngData = resvg.render();
     const pngPath = join(OUTPUT_DIR, `${name}.png`);

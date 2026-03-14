@@ -62,21 +62,30 @@ export function measureText(
   };
 }
 
-/** Word-wrap a label into lines of at most maxChars characters */
+/** Word-wrap a label into lines of at most maxChars characters.
+ *  Preserves explicit newlines (\n) — each newline-separated segment
+ *  is wrapped independently. */
 export function wrapLabel(label: string, maxChars: number): string[] {
-  if (label.length <= maxChars) return [label];
-  const words = label.split(/\s+/);
+  // Split on explicit newlines first
+  const segments = label.split('\n');
   const lines: string[] = [];
-  let cur = '';
-  for (const word of words) {
-    if (cur && (cur + ' ' + word).length > maxChars) {
-      lines.push(cur);
-      cur = word;
-    } else {
-      cur = cur ? cur + ' ' + word : word;
+  for (const segment of segments) {
+    if (segment.length <= maxChars) {
+      lines.push(segment);
+      continue;
     }
+    const words = segment.split(/\s+/);
+    let cur = '';
+    for (const word of words) {
+      if (cur && (cur + ' ' + word).length > maxChars) {
+        lines.push(cur);
+        cur = word;
+      } else {
+        cur = cur ? cur + ' ' + word : word;
+      }
+    }
+    if (cur) lines.push(cur);
   }
-  if (cur) lines.push(cur);
   return lines.length > 0 ? lines : [label];
 }
 

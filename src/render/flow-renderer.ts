@@ -22,16 +22,19 @@ function fillForPattern(fill?: string): string {
 }
 
 function renderSublabel(cx: number, y: number, text: string): string {
-  // Wrap sublabel if too long
+  // Wrap sublabel, preserving explicit newlines
   const MAX_SUBLABEL_CHARS = 34;
   const lines = wrapLabel(text, MAX_SUBLABEL_CHARS);
   if (lines.length === 1) {
     return `<text x="${cx}" y="${y}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(text)}</text>`;
   }
   const lineH = fontSizes.edgeLabel * 1.4;
+  // Center the block vertically around the anchor point
+  const totalH = (lines.length - 1) * lineH;
+  const startY = y - totalH / 2;
   let svg = '';
   for (let i = 0; i < lines.length; i++) {
-    svg += `<text x="${cx}" y="${y + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(lines[i])}</text>`;
+    svg += `<text x="${cx}" y="${startY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.edgeLabel}" fill="${colors.accent}" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="${spacing.letterSpacing}">${escapeXml(lines[i])}</text>`;
   }
   return svg;
 }
@@ -1036,7 +1039,40 @@ export function renderFlow(layout: FlowLayout): string {
   for (const ann of layout.annotations) {
     annBoxes.push(annotationBBox(ann));
   }
-  const occupiedRects = [...sgHeaderBoxes, ...annBoxes];
+  // Actor name bounding boxes — labels render centered below the actor figure
+  const actorLabelBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  for (const node of layout.nodes) {
+    if (node.kind === 'actor' && node.label) {
+      const labelW = measureLineWidth(node.label.toUpperCase(), fontSizes.nodeLabel, 'mono')
+        + node.label.length * 0.12 * fontSizes.nodeLabel;
+      const cx = node.x + node.w / 2;
+      // Actor label renders below the stick figure (approx at y + h - 8)
+      actorLabelBoxes.push({
+        x: cx - labelW / 2 - 4,
+        y: node.y + node.h - fontSizes.nodeLabel - 6,
+        w: labelW + 8,
+        h: fontSizes.nodeLabel + 10,
+      });
+    }
+    // Sublabel bounding boxes — sublabels render below node center
+    if (node.properties.sublabel) {
+      const sublabelLines = wrapLabel(node.properties.sublabel, 34);
+      const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
+      const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono')
+        + maxSubLine.length * 0.12 * fontSizes.edgeLabel + 16;
+      const lineH = fontSizes.edgeLabel * 1.4;
+      const totalH = sublabelLines.length * lineH + 6;
+      const cx = node.x + node.w / 2;
+      const sy = node.y + node.h / 2 + 12 - totalH / 2;
+      actorLabelBoxes.push({
+        x: cx - sublabelW / 2,
+        y: sy,
+        w: sublabelW,
+        h: totalH,
+      });
+    }
+  }
+  const occupiedRects = [...sgHeaderBoxes, ...annBoxes, ...actorLabelBoxes];
 
   // Edge lines and label backgrounds behind nodes, label text on top
   const edgeResult = renderEdges(layout.edges, layout.nodes, layout.codeblocks, layout.direction, layout.subgraphs, occupiedRects);

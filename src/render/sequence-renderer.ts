@@ -147,7 +147,25 @@ function renderSelfMessage(msg: LayoutMessage): string {
   svg += `<path d="M${fromX},${y} L${fromX + loopW},${y} L${fromX + loopW},${y + loopH} L${fromX},${y + loopH}" fill="none" stroke="${colors.accent}" stroke-width="${stroke.edge}" marker-end="url(#arrowhead)"/>`;
 
   if (label) {
-    svg += renderLabel(fromX + loopW + 8, y + loopH / 2, label, 'start');
+    // Word-wrap self-loop labels to prevent them from extending too far right
+    const maxChars = 28;
+    if (label.length > maxChars) {
+      const words = label.split(/\s+/);
+      const lines: string[] = [];
+      let cur = '';
+      for (const w of words) {
+        if (cur && (cur + ' ' + w).length > maxChars) { lines.push(cur); cur = w; }
+        else cur = cur ? cur + ' ' + w : w;
+      }
+      if (cur) lines.push(cur);
+      const lineH = fontSizes.edgeLabel + 4;
+      const startY = y + loopH / 2 - ((lines.length - 1) * lineH) / 2;
+      for (let i = 0; i < lines.length; i++) {
+        svg += renderLabel(fromX + loopW + 8, startY + i * lineH, lines[i], 'start');
+      }
+    } else {
+      svg += renderLabel(fromX + loopW + 8, y + loopH / 2, label, 'start');
+    }
   }
 
   return svg;

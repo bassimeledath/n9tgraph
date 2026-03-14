@@ -39,7 +39,7 @@ export const fontSizes = {
   codeBlock: 11,
   title: 15,
   subtitle: 14,
-  iconLabel: 10,
+  iconLabel: 11,
 } as const;
 
 export const spacing = {

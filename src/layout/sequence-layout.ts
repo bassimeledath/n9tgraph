@@ -269,18 +269,28 @@ export function layoutSequence(diagram: SequenceDiagram): SequenceLayout {
     };
   });
 
-  // Compute annotation overhang
-  const maxAnnotationWidth = layoutMessages.reduce((max, msg) => {
-    if (!msg.annotation) return max;
-    const annW = measureLineWidth(msg.annotation, 12, 'sans');
-    return Math.max(max, annW);
-  }, 0);
+  // Compute annotation and self-loop label overhang
+  let maxRightOverhang = 0;
+  for (const msg of layoutMessages) {
+    if (msg.annotation) {
+      const annW = measureLineWidth(msg.annotation, 12, 'sans');
+      maxRightOverhang = Math.max(maxRightOverhang, annW + 30);
+    }
+    // Self-loop labels extend to the right of the participant
+    if (msg.isSelf && msg.label) {
+      const maxChars = 28;
+      const displayLen = Math.min(msg.label.length, maxChars);
+      const labelW = measureLineWidth(msg.label.slice(0, displayLen), fontSizes.edgeLabel, 'mono')
+        + displayLen * 0.04 * fontSizes.edgeLabel;
+      maxRightOverhang = Math.max(maxRightOverhang, SELF_MESSAGE_WIDTH + 8 + labelW + 20);
+    }
+  }
 
   // Total dimensions
   const rightEdge = Math.max(
     ...participantXs.map((x, i) => x + headerSizes[i].w / 2)
   );
-  let totalWidth = rightEdge + Math.max(MARGIN_X, maxAnnotationWidth + 30);
+  let totalWidth = rightEdge + Math.max(MARGIN_X, maxRightOverhang);
   // Ensure width covers title text (bold font needs extra margin)
   if (diagram.title) {
     const titleW = measureLineWidth(diagram.title, fontSizes.title, 'sans') + 140;

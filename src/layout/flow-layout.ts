@@ -647,24 +647,67 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
 
   if (maxAnnY > finalHeight) finalHeight = maxAnnY + 20;
 
-  // Ensure canvas height encompasses all positioned elements
-  // (nodes with sublabels, subgraphs, codeblocks, edge labels)
+  // Ensure canvas encompasses all positioned elements with proper margins
+  let maxContentRight = finalWidth;
   let maxContentBottom = finalHeight;
+  let minContentLeft = Infinity;
+
   for (const n of posNodes) {
     let nodeBottom = n.y + n.h;
+    let nodeRight = n.x + n.w;
+    let nodeLeft = n.x;
     // Sublabels render ~12px below node center and may extend further
     if (n.properties.sublabel) {
       const sublabelLines = wrapLabel(n.properties.sublabel, 34);
       nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + sublabelLines.length * fontSizes.edgeLabel * 1.4);
+      // Sublabel may also extend wider than the node
+      const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
+      const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
+      const cx = n.x + n.w / 2;
+      nodeRight = Math.max(nodeRight, cx + sublabelW / 2);
+      nodeLeft = Math.min(nodeLeft, cx - sublabelW / 2);
     }
+    // Actor labels are centered and may overhang
+    if (n.kind === 'actor' && n.label) {
+      const labelW = measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel;
+      const cx = n.x + n.w / 2;
+      nodeRight = Math.max(nodeRight, cx + labelW / 2 + 4);
+      nodeLeft = Math.min(nodeLeft, cx - labelW / 2 - 4);
+    }
+    maxContentRight = Math.max(maxContentRight, nodeRight + MARGIN_X);
     maxContentBottom = Math.max(maxContentBottom, nodeBottom);
+    minContentLeft = Math.min(minContentLeft, nodeLeft);
   }
   for (const sg of posSubgraphs) {
+    maxContentRight = Math.max(maxContentRight, sg.x + sg.w + MARGIN_X);
     maxContentBottom = Math.max(maxContentBottom, sg.y + sg.h);
   }
   for (const cb of posCodeblocks) {
+    maxContentRight = Math.max(maxContentRight, cb.x + cb.w + MARGIN_X);
     maxContentBottom = Math.max(maxContentBottom, cb.y + cb.h);
   }
+  for (const ann of posAnnotations) {
+    const lines = ann.text.split('\n');
+    const maxLineLen = Math.max(...lines.map(l => l.length));
+    const textExtent = Math.min(maxLineLen, 50) * 7 + 12;
+    const stepOffset = ann.properties?.step ? 28 : 0;
+    maxContentRight = Math.max(maxContentRight, ann.x + textExtent + MARGIN_X);
+    maxContentBottom = Math.max(maxContentBottom, ann.y + lines.length * 18 + 10);
+    minContentLeft = Math.min(minContentLeft, ann.x - stepOffset);
+  }
+
+  // Shift everything right if any content extends past the left margin
+  if (minContentLeft < MARGIN_X) {
+    const shift = MARGIN_X - minContentLeft;
+    for (const n of posNodes) n.x += shift;
+    for (const sg of posSubgraphs) sg.x += shift;
+    for (const ov of posOverflows) ov.x += shift;
+    for (const cb of posCodeblocks) cb.x += shift;
+    for (const ann of posAnnotations) ann.x += shift;
+    maxContentRight += shift;
+  }
+
+  if (maxContentRight > finalWidth) finalWidth = maxContentRight;
   // Add bottom margin
   if (maxContentBottom + MARGIN_TOP > finalHeight) {
     finalHeight = maxContentBottom + MARGIN_TOP;
@@ -1550,6 +1593,22 @@ function positionAnnotations(
     if (sz) maxContentRight = Math.max(maxContentRight, pos.x + sz.w);
   }
 
+  // Helper to check if a candidate position overlaps any node
+  function checkOverlap(
+    candX: number, candY: number, annW: number, annH: number,
+    nearId: string, margin = 6,
+  ): boolean {
+    for (const [otherId, otherPos] of nodePositions) {
+      if (otherId === nearId) continue;
+      const otherSz = nodeSizes.get(otherId);
+      if (!otherSz) continue;
+      const hOverlap = candX < otherPos.x + otherSz.w + margin && otherPos.x - margin < candX + annW;
+      const vOverlap = candY < otherPos.y + otherSz.h + margin && otherPos.y - margin < candY + annH;
+      if (hOverlap && vOverlap) return true;
+    }
+    return false;
+  }
+
   return annotations.map(a => {
     const pos = nodePositions.get(a.near);
     const sz = nodeSizes.get(a.near);
@@ -1561,56 +1620,50 @@ function positionAnnotations(
     // Extra offset for nodes inside subgraphs (clear subgraph border)
     const sgExtra = subgraphChildIds.has(a.near) ? SUBGRAPH_PAD_TOP + 10 : 0;
 
-    const side = a.side || 'right';
-    switch (side) {
-      case 'right': {
-        // Check if placing to the right of the node would overlap other nodes
-        const candX = pos.x + sz.w + 12;
-        const annH = isMultiline ? multilineHeight : 20;
-        const candY = pos.y + sz.h / 2 + 4;
-        let hasOverlap = false;
-        for (const [otherId, otherPos] of nodePositions) {
-          if (otherId === a.near) continue;
-          const otherSz = nodeSizes.get(otherId);
-          if (!otherSz) continue;
-          const hOverlap = candX < otherPos.x + otherSz.w + 6 && otherPos.x - 6 < candX + 250;
-          const vOverlap = candY < otherPos.y + otherSz.h + 6 && otherPos.y - 6 < candY + annH;
-          if (hOverlap && vOverlap) { hasOverlap = true; break; }
-        }
-        if (hasOverlap && isMultiline) {
-          // Place at diagram right margin instead
-          return { text: a.text, x: maxContentRight + 24, y: pos.y - 10, properties: a.properties };
-        }
-        return { text: a.text, x: candX, y: candY, properties: a.properties };
-      }
-      case 'left': {
+    // Estimate annotation dimensions for overlap checking
+    const maxLineW = isMultiline
+      ? measureLineWidth(lines[0], fontSizes.subtitle, 'sans') + 40
+      : 120;
+    const annH = isMultiline ? multilineHeight : 20;
+
+    // Candidate positions for each side
+    const candidates = {
+      right: { x: pos.x + sz.w + 12, y: pos.y + sz.h / 2 + 4 },
+      left: (() => {
         const annTextW = measureLineWidth(lines[0], isMultiline ? fontSizes.subtitle : fontSizes.annotation, isMultiline ? 'sans' : 'mono');
         const stepOffset = a.properties?.step ? 28 : 0;
         const totalW = stepOffset + annTextW + 8;
-        return { text: a.text, x: pos.x - totalW - 8, y: pos.y + sz.h / 2 + 4, properties: a.properties };
+        return { x: pos.x - totalW - 8, y: pos.y + sz.h / 2 + 4 };
+      })(),
+      top: {
+        x: isMultiline ? pos.x : pos.x + sz.w / 2,
+        y: pos.y - (isMultiline ? multilineHeight + 10 + sgExtra : 16 + sgExtra),
+      },
+      bottom: {
+        x: isMultiline ? pos.x : pos.x + sz.w / 2,
+        y: pos.y + sz.h + 24 + sgExtra,
+      },
+    };
+
+    // Try the requested side first, then fallback sides, then margin
+    const side = a.side || 'right';
+    const fallbackOrder: Record<string, string[]> = {
+      right: ['right', 'top', 'bottom', 'left'],
+      left: ['left', 'top', 'bottom', 'right'],
+      top: ['top', 'right', 'left', 'bottom'],
+      bottom: ['bottom', 'right', 'left', 'top'],
+    };
+
+    for (const trySide of fallbackOrder[side] || [side]) {
+      const cand = candidates[trySide as keyof typeof candidates];
+      if (!cand) continue;
+      if (!checkOverlap(cand.x, cand.y, maxLineW, annH, a.near)) {
+        return { text: a.text, x: cand.x, y: cand.y, properties: a.properties };
       }
-      case 'top': {
-        const candX = isMultiline ? pos.x : pos.x + sz.w / 2;
-        const candY = pos.y - (isMultiline ? multilineHeight + 10 + sgExtra : 16 + sgExtra);
-        const annW = isMultiline ? measureLineWidth(lines[0], fontSizes.subtitle, 'sans') + 40 : 120;
-        const annH = isMultiline ? multilineHeight : 20;
-        let hasOverlap = false;
-        for (const [otherId, otherPos] of nodePositions) {
-          if (otherId === a.near) continue;
-          const otherSz = nodeSizes.get(otherId);
-          if (!otherSz) continue;
-          const hOvlp = candX < otherPos.x + otherSz.w + 6 && otherPos.x - 6 < candX + annW;
-          const vOvlp = candY < otherPos.y + otherSz.h + 6 && otherPos.y - 6 < candY + annH;
-          if (hOvlp && vOvlp) { hasOverlap = true; break; }
-        }
-        if (hasOverlap && isMultiline) {
-          return { text: a.text, x: maxContentRight + 24, y: pos.y - 10, properties: a.properties };
-        }
-        return { text: a.text, x: candX, y: candY, properties: a.properties };
-      }
-      case 'bottom':
-        return { text: a.text, x: isMultiline ? pos.x : pos.x + sz.w / 2, y: pos.y + sz.h + 24 + sgExtra, properties: a.properties };
     }
+
+    // Last resort: place at diagram right margin, near the target node's y
+    return { text: a.text, x: maxContentRight + 24, y: pos.y + sz.h / 2, properties: a.properties };
   });
 }
 
