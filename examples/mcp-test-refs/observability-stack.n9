@@ -1,0 +1,40 @@
+type flow
+title Giving Codex a full observability stack
+direction LR
+
+component APP {fill: dotgrid}
+component VECTOR {fill: dotgrid}
+
+subgraph "Observability stack services"
+  component "Victoria Logs" {shape: pill}
+  component "LogQL API" {shape: pill}
+  component "Victoria Metrics" {shape: pill}
+  component "PromQL API" {shape: pill}
+  component "Victoria Traces" {shape: pill}
+  component "TraceQL API" {shape: pill}
+  VICTORIA_LOGS --> LOGQL_API
+  VICTORIA_METRICS --> PROMQL_API
+  VICTORIA_TRACES --> TRACEQL_API
+end
+
+component CODEX {fill: dotgrid}
+component CODEBASE {fill: dotgrid}
+
+APP --> VECTOR
+VECTOR --> VICTORIA_LOGS
+VECTOR --> VICTORIA_METRICS
+VECTOR --> VICTORIA_TRACES
+LOGQL_API --> CODEX
+PROMQL_API --> CODEX
+TRACEQL_API --> CODEX
+CODEX --> CODEBASE
+CODEBASE --> CODEX
+
+annotation "LOGS (HTTP)\nOTLP METRICS\nOTLP TRACES" near APP side bottom
+annotation "Fan out\n(local)" near VECTOR side bottom
+annotation "Query\nCorrelate\nReason" near CODEX side top
+annotation "Implement change (PR)\n+ Restart app" near CODEX side bottom
+annotation "UI Journey" near CODEBASE side top
+annotation "Feedback loop" near CODEBASE side bottom
+annotation "Test → Feedback loop" near CODEBASE side right
+annotation "Re-run workload" near CODEBASE side left

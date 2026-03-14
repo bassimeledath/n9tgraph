@@ -384,7 +384,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   const posNodesForCollision = allNodes.filter(n => !codeblockIds.has(n.id)).map(n => {
     const pos = positioned.nodePositions.get(n.id)!;
     const sz = nodeSizes.get(n.id)!;
-    return { id: n.id, x: pos.x, y: pos.y, w: sz.w, h: sz.h };
+    // Actors: extend collision height to include the label rendered below the stick figure
+    const h = n.kind === 'actor' ? sz.h + 16 : sz.h;
+    return { id: n.id, x: pos.x, y: pos.y, w: sz.w, h };
   });
 
   // Step 8c: Resolve annotation overlaps (collision avoidance)
