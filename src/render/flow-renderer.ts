@@ -129,17 +129,19 @@ function renderNode(node: PositionedNode, theme?: string): string {
   if (kind === 'datastore') {
     let svg = cylinder({ x, y, w, h, label: undefined, fill });
     const dsHasPattern = rawFill.startsWith('url(');
+    const rimY = 10; // must match shapes.ts cylinder ry
+    const bodyCenterY = y + rimY + (h - rimY * 2) / 2;
     if (label) {
       if (dsHasPattern) {
-        svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+        svg += wrappedLabelBg(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);
       }
-      svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
+      svg += renderWrappedLabel(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);
     }
     if (properties.sublabel) {
       if (dsHasPattern) {
-        svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
+        svg += sublabelBgRect(x + w / 2, bodyCenterY + 12, properties.sublabel);
       }
-      svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel);
+      svg += renderSublabel(x + w / 2, bodyCenterY + 12, properties.sublabel);
     }
     return svg;
   }
@@ -935,18 +937,23 @@ function renderOverflow(ov: PositionedOverflow): string {
 }
 
 function renderCodeBlock(cb: PositionedCodeBlock): string {
-  const { x, y, label, code } = cb;
-  const lines = code.split('\n');
+  const { x, y, w, h, label, code } = cb;
+  const lines = code.split('\n').filter(l => l.length > 0);
+  const rx = 8;
+  const pad = 12;
   let svg = '';
 
+  // Background card
+  svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${colors.cardBg}" stroke="${colors.cardBorder}" stroke-width="1"/>`;
+
   // Title in bold uppercase green
-  svg += `<text x="${x}" y="${y + fontSizes.nodeLabel}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" font-weight="700" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
+  svg += `<text x="${x + pad}" y="${y + pad + fontSizes.nodeLabel}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${colors.accent}" font-weight="700" letter-spacing="${spacing.letterSpacing}">${escapeXml(label).toUpperCase()}</text>`;
 
   // Code lines below title
-  const codeStartY = y + fontSizes.nodeLabel + 16;
+  const codeStartY = y + pad + fontSizes.nodeLabel + 16;
   const lineH = 18;
   for (let i = 0; i < lines.length; i++) {
-    svg += `<text x="${x + 4}" y="${codeStartY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.codeBlock}" fill="${colors.accent}" opacity="0.7">${escapeXml(lines[i])}</text>`;
+    svg += `<text x="${x + pad}" y="${codeStartY + i * lineH}" font-family="${fonts.mono}" font-size="${fontSizes.codeBlock}" fill="${colors.accent}" opacity="0.7">${escapeXml(lines[i])}</text>`;
   }
 
   return svg;

@@ -311,12 +311,12 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     } else if (codeblockIds.has(n.id)) {
       // Size codeblock based on its code content
       const cb = codeblocks.find(c => c.id === n.id)!;
-      const code = cb.properties.code || '';
-      const lines = code.split('\n');
-      const titleW = measureLineWidth(cb.label, fontSizes.nodeLabel, 'mono') + 20;
-      const codeW = Math.max(...lines.map(l => measureLineWidth(l, fontSizes.codeBlock, 'mono')));
-      const w = Math.max(titleW, codeW + CODEBLOCK_PAD * 2, MIN_NODE_W);
-      const h = fontSizes.nodeLabel + 12 + lines.length * CODEBLOCK_LINE_H + CODEBLOCK_PAD;
+      const code = cb.properties.body || cb.properties.code || '';
+      const lines = code.split('\n').filter(l => l.length > 0);
+      const titleW = measureLineWidth(cb.label, fontSizes.nodeLabel, 'mono') + CODEBLOCK_PAD * 2 + 20;
+      const codeW = lines.length > 0 ? Math.max(...lines.map(l => measureLineWidth(l, fontSizes.codeBlock, 'mono'))) : 0;
+      const w = Math.max(titleW, codeW + CODEBLOCK_PAD * 3, MIN_NODE_W);
+      const h = CODEBLOCK_PAD + fontSizes.nodeLabel + 16 + lines.length * CODEBLOCK_LINE_H + CODEBLOCK_PAD;
       nodeSizes.set(n.id, { w, h });
     } else {
       // Account for sublabel in height
@@ -334,6 +334,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         size.h = Math.ceil(wrappedLines.length * lineH + padY * 2);
       }
       let h = Math.max(size.h, isPill ? 34 : 36);
+      // Datastores (cylinders) have 10px rims top+bottom; add rim to ensure body has room
+      if (n.kind === 'datastore') {
+        const CYLINDER_RIM = 10;
+        h = Math.max(h, h + CYLINDER_RIM);
+      }
       if (sublabel) {
         // Wrap sublabel too to prevent nodes from becoming excessively wide
         const sublabelWrapped = wrapLabel(sublabel, MAX_NODE_LABEL_CHARS + 6);
@@ -438,6 +443,13 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 8c: Resolve annotation overlaps (collision avoidance)
   resolveAnnotationOverlaps(posAnnotations, posSubgraphs, posNodesForCollision);
 
+  // Step 8d: Constraint verification pass
+  verifyConstraints(
+    allNodes, codeblockIds, posSubgraphs, posAnnotations,
+    positioned.nodePositions, nodeSizes, allEdges, direction,
+    NODE_GAP, subgraphChildIds,
+  );
+
   // Step 9: Build positioned codeblocks
   const posCodeblocks: PositionedCodeBlock[] = codeblocks.map(cb => {
     const pos = positioned.nodePositions.get(cb.id)!;
@@ -445,7 +457,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     return {
       id: cb.id,
       label: cb.label,
-      code: cb.properties.code || '',
+      code: cb.properties.body || cb.properties.code || '',
       x: pos.x,
       y: pos.y,
       w: sz.w,
@@ -1771,4 +1783,295 @@ function refineCoordinatesLR(
     const pos = positions.get(id)!;
     positions.set(id, { x: pos.x, y: medianCy - sz.h / 2 });
   }
+}
+
+// ─── Constraint Verification Pass ─────────────────────────────────
+
+function verifyConstraints(
+  allNodes: FlowNode[],
+  codeblockIds: Set<string>,
+  posSubgraphs: PositionedSubgraph[],
+  posAnnotations: PositionedAnnotation[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+  allEdges: FlowEdge[],
+  direction: FlowDirection,
+  nodeGap: number,
+  subgraphChildIds: Set<string>,
+): void {
+  for (let iteration = 0; iteration < 3; iteration++) {
+    let changed = false;
+
+    // Check 1: Node label fits inside node bounds
+    changed = checkNodeLabelFit(allNodes, codeblockIds, nodeSizes) || changed;
+
+    // Check 2: Subgraph containment — all children inside bounds
+    changed = checkSubgraphContainment(posSubgraphs, nodePositions, nodeSizes) || changed;
+
+    // Check 3: Subgraph non-overlap
+    changed = checkSubgraphOverlap(posSubgraphs, nodePositions, nodeSizes, direction) || changed;
+
+    // Check 4: Text-text collision (node labels vs sublabels vs annotation text)
+    changed = checkTextCollisions(allNodes, codeblockIds, posAnnotations, nodePositions, nodeSizes) || changed;
+
+    if (!changed) break;
+  }
+}
+
+function checkNodeLabelFit(
+  allNodes: FlowNode[],
+  codeblockIds: Set<string>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+): boolean {
+  let changed = false;
+  for (const n of allNodes) {
+    if (codeblockIds.has(n.id)) continue;
+    if (n.kind === 'actor') continue; // actors have external labels
+
+    const sz = nodeSizes.get(n.id);
+    if (!sz) continue;
+
+    // Measure the actual rendered label width
+    const wrappedLines = wrapLabel(n.label, MAX_NODE_LABEL_CHARS);
+    const maxLine = wrappedLines.reduce((a, b) => a.length > b.length ? a : b, '');
+    const formatLabel = (l: string) => l.toUpperCase();
+    const labelW = measureLineWidth(formatLabel(maxLine), fontSizes.nodeLabel, 'mono')
+      + maxLine.length * 0.12 * fontSizes.nodeLabel;
+    const lineH = fontSizes.nodeLabel * 1.4;
+    const labelH = wrappedLines.length * lineH;
+
+    // Check horizontal fit: label width + padding must fit inside node width
+    const neededW = labelW + 16;
+    if (neededW > sz.w) {
+      sz.w = Math.ceil(neededW);
+      changed = true;
+    }
+
+    // Check vertical fit: label height + sublabel height must fit inside node height
+    let neededH = labelH + 8;
+    if (n.properties.sublabel) {
+      const sublabelLines = wrapLabel(n.properties.sublabel, MAX_NODE_LABEL_CHARS + 6);
+      const sublabelH = sublabelLines.length * Math.ceil(fontSizes.edgeLabel * 1.4);
+      neededH += sublabelH + 12;
+    }
+    if (n.kind === 'datastore') {
+      neededH += 20; // cylinder rim overhead
+    }
+    if (neededH > sz.h) {
+      sz.h = Math.ceil(neededH);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function checkSubgraphContainment(
+  posSubgraphs: PositionedSubgraph[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+): boolean {
+  let changed = false;
+  for (const sg of posSubgraphs) {
+    for (const childId of sg.childIds) {
+      const pos = nodePositions.get(childId);
+      const sz = nodeSizes.get(childId);
+      if (!pos || !sz) continue;
+
+      const sgRight = sg.x + sg.w;
+      const sgBottom = sg.y + sg.h;
+      const childRight = pos.x + sz.w + SUBGRAPH_PAD_X;
+      const childBottom = pos.y + sz.h + SUBGRAPH_PAD_BOTTOM;
+      const childLeft = pos.x - SUBGRAPH_PAD_X;
+      const childTop = pos.y - SUBGRAPH_PAD_TOP;
+
+      if (childRight > sgRight) {
+        sg.w = childRight - sg.x;
+        changed = true;
+      }
+      if (childBottom > sgBottom) {
+        sg.h = childBottom - sg.y;
+        changed = true;
+      }
+      if (childLeft < sg.x) {
+        const expand = sg.x - childLeft;
+        sg.x = childLeft;
+        sg.w += expand;
+        changed = true;
+      }
+      if (childTop < sg.y) {
+        const expand = sg.y - childTop;
+        sg.y = childTop;
+        sg.h += expand;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+function checkSubgraphOverlap(
+  posSubgraphs: PositionedSubgraph[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+  direction: FlowDirection,
+): boolean {
+  let changed = false;
+  const clearance = 16;
+
+  for (let i = 0; i < posSubgraphs.length; i++) {
+    for (let j = i + 1; j < posSubgraphs.length; j++) {
+      const a = posSubgraphs[i];
+      const b = posSubgraphs[j];
+
+      const hOverlap = a.x < b.x + b.w + clearance && b.x < a.x + a.w + clearance;
+      const vOverlap = a.y < b.y + b.h + clearance && b.y < a.y + a.h + clearance;
+
+      if (!hOverlap || !vOverlap) continue;
+
+      if (direction === 'LR') {
+        const aCx = a.x + a.w / 2;
+        const bCx = b.x + b.w / 2;
+        const shift = (aCx < bCx)
+          ? (a.x + a.w + clearance) - b.x
+          : (b.x + b.w + clearance) - a.x;
+
+        const target = aCx < bCx ? b : a;
+        const moveDir = aCx < bCx ? 1 : -1;
+
+        for (const childId of target.childIds) {
+          const pos = nodePositions.get(childId);
+          if (pos) pos.x += shift * moveDir;
+        }
+        target.x += shift * moveDir;
+        changed = true;
+      } else {
+        const aCy = a.y + a.h / 2;
+        const bCy = b.y + b.h / 2;
+        const shift = (aCy < bCy)
+          ? (a.y + a.h + clearance) - b.y
+          : (b.y + b.h + clearance) - a.y;
+
+        const target = aCy < bCy ? b : a;
+        const moveDir = aCy < bCy ? 1 : -1;
+
+        for (const childId of target.childIds) {
+          const pos = nodePositions.get(childId);
+          if (pos) pos.y += shift * moveDir;
+        }
+        target.y += shift * moveDir;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+function checkTextCollisions(
+  allNodes: FlowNode[],
+  codeblockIds: Set<string>,
+  posAnnotations: PositionedAnnotation[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+): boolean {
+  let changed = false;
+  const clearance = 10;
+
+  interface TextBox {
+    x: number; y: number; w: number; h: number;
+    kind: 'nodeLabel' | 'sublabel' | 'annotation';
+    nodeId?: string;
+  }
+
+  const textBoxes: TextBox[] = [];
+
+  for (const n of allNodes) {
+    if (codeblockIds.has(n.id)) continue;
+    const pos = nodePositions.get(n.id);
+    const sz = nodeSizes.get(n.id);
+    if (!pos || !sz) continue;
+
+    const wrappedLines = wrapLabel(n.label, MAX_NODE_LABEL_CHARS);
+    const maxLine = wrappedLines.reduce((a, b) => a.length > b.length ? a : b, '');
+    const labelW = measureLineWidth(maxLine.toUpperCase(), fontSizes.nodeLabel, 'mono')
+      + maxLine.length * 0.12 * fontSizes.nodeLabel;
+    const lineH = fontSizes.nodeLabel * 1.4;
+    const labelH = wrappedLines.length * lineH;
+    const cx = pos.x + sz.w / 2;
+    const cy = pos.y + sz.h / 2 + (n.properties.sublabel ? -8 : 0);
+    textBoxes.push({
+      x: cx - labelW / 2, y: cy - labelH / 2,
+      w: labelW, h: labelH,
+      kind: 'nodeLabel', nodeId: n.id,
+    });
+
+    if (n.properties.sublabel) {
+      const sublabelLines = wrapLabel(n.properties.sublabel, 34);
+      const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
+      const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono')
+        + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
+      const subLineH = fontSizes.edgeLabel * 1.4;
+      const sublabelH = sublabelLines.length * subLineH;
+      const subCy = pos.y + sz.h / 2 + 12;
+      textBoxes.push({
+        x: cx - sublabelW / 2, y: subCy - sublabelH / 2,
+        w: sublabelW, h: sublabelH,
+        kind: 'sublabel', nodeId: n.id,
+      });
+    }
+  }
+
+  for (const ann of posAnnotations) {
+    const lines = ann.text.split('\n');
+    const maxLineLen = Math.max(...lines.map(l => l.length));
+    const textW = Math.min(maxLineLen, 50) * 7 + 12;
+    const textH = lines.length * 18;
+    textBoxes.push({
+      x: ann.x, y: ann.y,
+      w: textW, h: textH,
+      kind: 'annotation',
+    });
+  }
+
+  for (let i = 0; i < textBoxes.length; i++) {
+    for (let j = i + 1; j < textBoxes.length; j++) {
+      const a = textBoxes[i];
+      const b = textBoxes[j];
+
+      // Skip collisions between a node's own label and sublabel
+      if (a.nodeId && a.nodeId === b.nodeId) continue;
+
+      const hOverlap = a.x < b.x + b.w + clearance && b.x < a.x + a.w + clearance;
+      const vOverlap = a.y < b.y + b.h + clearance && b.y < a.y + a.h + clearance;
+
+      if (!hOverlap || !vOverlap) continue;
+
+      const priority: Record<string, number> = { annotation: 0, sublabel: 1, nodeLabel: 2 };
+      const [cheaper, costlier] = priority[a.kind] <= priority[b.kind] ? [a, b] : [b, a];
+
+      const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) + clearance;
+
+      if (cheaper.kind === 'annotation') {
+        for (const ann of posAnnotations) {
+          if (Math.abs(ann.x - cheaper.x) < 1 && Math.abs(ann.y - cheaper.y) < 1) {
+            if (cheaper.y + cheaper.h / 2 <= costlier.y + costlier.h / 2) {
+              ann.y -= overlapY;
+            } else {
+              ann.y += overlapY;
+            }
+            changed = true;
+            break;
+          }
+        }
+      }
+      if (cheaper.kind === 'sublabel' && cheaper.nodeId) {
+        const sz = nodeSizes.get(cheaper.nodeId);
+        if (sz) {
+          sz.h += overlapY;
+          changed = true;
+        }
+      }
+    }
+  }
+
+  return changed;
 }
