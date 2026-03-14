@@ -121,7 +121,7 @@ function renderNode(node: PositionedNode, theme?: string): string {
   }
   if (properties.sublabel) {
     if (hasPatternFill) {
-      const sublabelW = properties.sublabel.length * 6.5 + 12;
+      const sublabelW = properties.sublabel.length * 8 + 16;
       const sublabelH = fontSizes.edgeLabel + 6;
       svg += `<rect x="${x + w / 2 - sublabelW / 2}" y="${y + h / 2 + 12 - sublabelH / 2}" width="${sublabelW}" height="${sublabelH}" fill="${colors.bg}" rx="2"/>`;
     }
@@ -240,9 +240,41 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         // Forward edge: exit bottom center, enter top center
         fromPt = { x: fc.x, y: fromNode.y + fromNode.h };
         toPt = { x: tc.x, y: toNode.y };
+        const EDGE_CLEARANCE = 12;
         if (Math.abs(fc.x - tc.x) < 80) {
-          // Use direct straight arrow for close-enough horizontal alignment
-          parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
+          // Check for intermediate nodes blocking the straight path
+          let blocked = false;
+          for (const [, node] of nodeById) {
+            if (node === fromNode || node === toNode) continue;
+            if (node.x < Math.max(fc.x, tc.x) + EDGE_CLEARANCE &&
+                node.x + node.w > Math.min(fc.x, tc.x) - EDGE_CLEARANCE &&
+                node.y < toPt.y && node.y + node.h > fromPt.y) {
+              blocked = true;
+              break;
+            }
+          }
+          if (!blocked) {
+            // Use direct straight arrow for close-enough horizontal alignment
+            parts.push(straightEdge({ from: fromPt, to: toPt, dashed: edge.dashed, color: colors.accent }));
+          } else {
+            // Route around blocking node with a polyline
+            let midY = (fromPt.y + toPt.y) / 2;
+            for (const [, node] of nodeById) {
+              if (node === fromNode || node === toNode) continue;
+              if (node.x + node.w + EDGE_CLEARANCE < Math.min(fc.x, tc.x)) continue;
+              if (node.x - EDGE_CLEARANCE > Math.max(fc.x, tc.x)) continue;
+              if (midY >= node.y - EDGE_CLEARANCE && midY <= node.y + node.h + EDGE_CLEARANCE) {
+                const aboveMid = node.y - EDGE_CLEARANCE;
+                const belowMid = node.y + node.h + EDGE_CLEARANCE;
+                midY = Math.abs(midY - aboveMid) < Math.abs(midY - belowMid) ? aboveMid : belowMid;
+              }
+            }
+            parts.push(polylineEdge({
+              from: fromPt, to: toPt,
+              waypoints: [{ x: fc.x, y: midY }, { x: tc.x, y: midY }],
+              dashed: edge.dashed, color: colors.accent,
+            }));
+          }
         } else {
           let midY = (fromPt.y + toPt.y) / 2;
           // Avoid subgraph label areas — compute zone from font metrics
@@ -252,6 +284,19 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
               if (midY >= sg.y - 2 && midY <= sg.y + labelZoneH) {
                 midY = sg.y + labelZoneH + 4;
               }
+            }
+          }
+          // Clear intermediate nodes from polyline horizontal segment
+          const segMinX = Math.min(fc.x, tc.x);
+          const segMaxX = Math.max(fc.x, tc.x);
+          for (const [, node] of nodeById) {
+            if (node === fromNode || node === toNode) continue;
+            if (node.x + node.w + EDGE_CLEARANCE < segMinX) continue;
+            if (node.x - EDGE_CLEARANCE > segMaxX) continue;
+            if (midY >= node.y - EDGE_CLEARANCE && midY <= node.y + node.h + EDGE_CLEARANCE) {
+              const aboveMid = node.y - EDGE_CLEARANCE;
+              const belowMid = node.y + node.h + EDGE_CLEARANCE;
+              midY = Math.abs(midY - aboveMid) < Math.abs(midY - belowMid) ? aboveMid : belowMid;
             }
           }
           parts.push(polylineEdge({
@@ -276,8 +321,11 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         }
       } else if (isBackward) {
         // Route along left side of diagram, entering target from below
-        const minX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
-        const leftX = minX - 30;
+        const minNodeX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
+        const minSgX = subgraphs && subgraphs.length > 0
+          ? Math.min(...subgraphs.map(sg => sg.x))
+          : minNodeX;
+        const leftX = Math.min(minNodeX, minSgX) - 24;
         fromPt = { x: fromNode.x, y: fc.y };
         toPt = { x: tc.x, y: toNode.y + toNode.h };
         const belowTarget = toNode.y + toNode.h + 15;

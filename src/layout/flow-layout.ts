@@ -287,7 +287,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       const sublabel = n.properties.sublabel;
       // Pills need wider padding and less height for proper capsule shape
       const isPill = n.properties.shape === 'pill';
-      const padX = isPill ? 22 : 16;
+      const padX = isPill ? 22 : 20;
       const padY = isPill ? 6 : 10;
       // Wrap long labels into multiple lines for compact node sizing
       const wrappedLines = wrapLabel(n.label, MAX_NODE_LABEL_CHARS);
@@ -371,6 +371,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Step 6: Compute subgraph bounding boxes
   const posSubgraphs = computeSubgraphBounds(subgraphs, positioned.nodePositions, nodeSizes);
 
+  // Step 6b: Push non-subgraph nodes away from subgraph bounding boxes
+  separateNodesFromSubgraphs(allNodes, positioned.nodePositions, nodeSizes, posSubgraphs, subgraphChildIds, direction, NODE_GAP);
+
   // Step 7: Compute overflow positions
   const posOverflows = computeOverflowPositions(subgraphs, positioned.nodePositions, nodeSizes, direction);
 
@@ -438,7 +441,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     return tgtPos.y + (nodeSizes.get(tgt)?.h || 0) <= srcPos.y + 5;
   });
   if (hasBackwardEdge) {
-    minContentX = Math.min(minContentX, minContentX - 50);
+    minContentX = Math.min(minContentX, minContentX - 56);
   }
 
   const leftPad = MARGIN_X;
@@ -1004,6 +1007,57 @@ function assignCoordinates(
     // TB aspect ratio correction removed — use DSL `spacing` or `aspect` hints
 
     return { nodePositions: positions, width: totalW, height: totalH };
+  }
+}
+
+// ─── Node-subgraph separation ────────────────────────────
+
+function separateNodesFromSubgraphs(
+  allNodes: FlowNode[],
+  nodePositions: Map<string, { x: number; y: number }>,
+  nodeSizes: Map<string, { w: number; h: number }>,
+  posSubgraphs: PositionedSubgraph[],
+  subgraphChildIds: Set<string>,
+  direction: FlowDirection,
+  nodeGap: number,
+): void {
+  if (posSubgraphs.length === 0) return;
+  const clearance = SUBGRAPH_PAD_X + nodeGap / 2;
+
+  for (const n of allNodes) {
+    if (subgraphChildIds.has(n.id)) continue;
+    const pos = nodePositions.get(n.id);
+    const sz = nodeSizes.get(n.id);
+    if (!pos || !sz) continue;
+
+    for (const sg of posSubgraphs) {
+      // Check overlap between node rect and subgraph rect (with clearance)
+      const overlapX = pos.x + sz.w + clearance > sg.x && pos.x - clearance < sg.x + sg.w;
+      const overlapY = pos.y + sz.h + clearance > sg.y && pos.y - clearance < sg.y + sg.h;
+      if (!overlapX || !overlapY) continue;
+
+      // Shift node away along the primary axis
+      const nodeCX = pos.x + sz.w / 2;
+      const nodeCY = pos.y + sz.h / 2;
+      const sgCX = sg.x + sg.w / 2;
+      const sgCY = sg.y + sg.h / 2;
+
+      if (direction === 'TB') {
+        // Shift vertically
+        if (nodeCY < sgCY) {
+          pos.y = sg.y - sz.h - clearance;
+        } else {
+          pos.y = sg.y + sg.h + clearance;
+        }
+      } else {
+        // LR: shift horizontally
+        if (nodeCX < sgCX) {
+          pos.x = sg.x - sz.w - clearance;
+        } else {
+          pos.x = sg.x + sg.w + clearance;
+        }
+      }
+    }
   }
 }
 
