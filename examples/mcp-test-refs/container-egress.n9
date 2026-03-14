@@ -1,0 +1,25 @@
+type flow
+title Container egress proxy controls network access: Accessing network
+direction LR
+spacing spacious
+
+actor USERS
+service "RESPONSES API" {fill: hero}
+
+subgraph "Compose session" {fill: crosshatch}
+  component "MAIN CONTAINER" {border: double, sublabel: "OFFLINE"}
+  component "SIDECAR PROXY" {border: double}
+end
+
+circle NETWORK
+
+USERS --> RESPONSES_API {step: 1}
+RESPONSES_API --> MAIN_CONTAINER {step: 2}
+RESPONSES_API --> SIDECAR_PROXY {step: 3}
+SIDECAR_PROXY --> NETWORK
+
+annotation "Set up container network policy\n\nallowed_domains = [domain_1, domain_2, ...]\ndomain_secrets:\n  domain_1: API_KEY_1 = raw_secret_1\n  domain_2: API_KEY_2 = raw_secret_2" near USERS side top {step: 1}
+
+annotation "Only send placeholder secrets\n\nAPI_KEY_1 = placeholder_secret_1\nAPI_KEY_2 = placeholder_secret_2" near MAIN_CONTAINER side top {step: 2}
+
+annotation "Set allowed domains and secret mappings\n\nallowed_domains = [domain_1, domain_2, ...]\ndomain_secrets:\n  placeholder_secret_1 = raw_secret_1\n  placeholder_secret_2 = raw_secret_2" near NETWORK side bottom {step: 3}

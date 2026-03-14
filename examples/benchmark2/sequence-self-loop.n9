@@ -1,0 +1,63 @@
+type sequence
+title "State machine: order lifecycle with retry loops and self-transitions"
+message-step 38
+
+participant "Client SDK" {fill: none}
+participant "API Server" {fill: dotgrid}
+participant "Order Engine" {fill: hero}
+participant "Validator" {fill: dotgrid}
+participant "Event Bus" {fill: crosshatch}
+
+CLIENT_SDK -> API_SERVER : POST /orders {items: [...], payment: token_abc}
+
+API_SERVER -> API_SERVER : Rate limit check — sliding window 100/min per client_id
+
+API_SERVER -> ORDER_ENGINE : CreateOrder command
+
+ORDER_ENGINE -> ORDER_ENGINE : Generate idempotency key — SHA256(client_id + items + timestamp)
+
+ORDER_ENGINE -> VALIDATOR : Validate order payload
+
+VALIDATOR -> VALIDATOR : Schema validation — OpenAPI 3.1 rules, max depth 5
+
+VALIDATOR -> VALIDATOR : Business rules — inventory check, price freeze, geo-restriction
+
+VALIDATOR -> ORDER_ENGINE : Validation result: PASS | 12 rules evaluated, 0 violations
+
+ORDER_ENGINE -> ORDER_ENGINE : State transition: CREATED → VALIDATING → VALIDATED
+
+ORDER_ENGINE -> EVENT_BUS : OrderValidated event
+
+loop PAYMENT RETRY (max 3 attempts)
+  ORDER_ENGINE -> ORDER_ENGINE : State transition: VALIDATED → PAYMENT_PENDING
+
+  alt PAYMENT SUCCESS
+    EVENT_BUS -> ORDER_ENGINE : PaymentCaptured event
+    ORDER_ENGINE -> ORDER_ENGINE : State transition: PAYMENT_PENDING → PAID
+  end
+
+  alt PAYMENT FAILURE — RETRYABLE
+    EVENT_BUS -> ORDER_ENGINE : PaymentFailed event | reason: timeout
+    ORDER_ENGINE -> ORDER_ENGINE : Exponential backoff — attempt N, delay 2^N seconds
+  end
+end
+
+opt PAYMENT PERMANENTLY FAILED
+  ORDER_ENGINE -> ORDER_ENGINE : State transition: PAYMENT_PENDING → PAYMENT_FAILED
+  ORDER_ENGINE -> EVENT_BUS : OrderCancelled event | reason: payment_exhausted
+  ORDER_ENGINE -> API_SERVER : Webhook: order.failed
+  API_SERVER -> CLIENT_SDK : 402 Payment Required | retry_after: null
+end
+
+ORDER_ENGINE -> ORDER_ENGINE : State transition: PAID → FULFILLMENT_PENDING
+
+ORDER_ENGINE -> EVENT_BUS : OrderFulfillmentRequested event
+
+EVENT_BUS -> ORDER_ENGINE : FulfillmentCompleted event
+
+ORDER_ENGINE -> ORDER_ENGINE : State transition: FULFILLMENT_PENDING → SHIPPED → DELIVERED
+
+ORDER_ENGINE -> API_SERVER : Final state: DELIVERED
+API_SERVER -> CLIENT_SDK : 200 OK | status: delivered, tracking: TRK-98765
+
+note over ORDER_ENGINE: All state transitions are persisted to event store with monotonic sequence numbers

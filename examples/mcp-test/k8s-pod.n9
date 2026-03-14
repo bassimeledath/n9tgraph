@@ -1,0 +1,32 @@
+type flow
+title "Kubernetes Pod Lifecycle"
+direction TB
+spacing balanced
+
+circle Created {fill: hero}
+
+component Pending {fill: dotgrid, sublabel: "scheduling"}
+component "Container Creating" {fill: crosshatch}
+component Running {fill: hero, sublabel: "healthy"}
+
+component Succeeded {fill: dotgrid}
+component Failed {fill: crosshatch}
+component CrashLoopBackOff {fill: crosshatch, sublabel: "restart delay"}
+component Terminating
+
+circle Deleted
+
+CREATED --> PENDING : submit
+PENDING --> CONTAINER_CREATING : scheduled
+CONTAINER_CREATING --> RUNNING : started
+CONTAINER_CREATING -.-> FAILED : image pull error
+RUNNING --> SUCCEEDED : exit 0
+RUNNING --> FAILED : exit non-zero
+FAILED --> CRASHLOOPBACKOFF : restart policy
+CRASHLOOPBACKOFF --> PENDING : retry
+RUNNING --> TERMINATING : SIGTERM
+TERMINATING --> DELETED : grace period
+SUCCEEDED --> DELETED : cleanup
+
+annotation "restartPolicy: Always" near CRASHLOOPBACKOFF side right
+annotation "kubelet watches" near RUNNING side left

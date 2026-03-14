@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2222.5 880" width="2222.5" height="880">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2258.5 880" width="2258.5" height="880">
 <defs>
   <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
     <rect width="8" height="8" fill="#000000"/>
@@ -46,23 +46,23 @@
 <line x1="416.9" y1="508.9103690685413" x2="814.4" y2="486.5553602811951" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <rect x="549.4000000000001" y="336.34615384615387" width="152" height="22" rx="4" fill="#000000"/>
 <rect x="476.29999999999995" y="451" width="82" height="22" rx="4" fill="#000000"/>
-<rect x="911.6153846153845" y="409.75" width="40" height="22" rx="4" fill="#000000"/>
-<rect x="1252.3621212121213" y="304.8856502242153" width="82" height="22" rx="4" fill="#000000"/>
-<rect x="990.9000000000001" y="462.5" width="131" height="22" rx="4" fill="#000000"/>
-<rect x="708.9000000000001" y="539.0364509117115" width="145" height="22" rx="4" fill="#000000"/>
-<rect x="697.1500000000001" y="509.03645091171154" width="159" height="22" rx="4" fill="#000000"/>
-<rect x="1338.7858695652176" y="354.5625" width="131" height="22" rx="4" fill="#000000"/>
-<rect x="1320.65" y="384.5625" width="117" height="22" rx="4" fill="#000000"/>
+<rect x="911.6153846153845" y="430.40000000000003" width="40" height="22" rx="4" fill="#000000"/>
+<rect x="1252.3621212121213" y="293.3008688340807" width="82" height="22" rx="4" fill="#000000"/>
+<rect x="990.9000000000001" y="439.40000000000003" width="131" height="22" rx="4" fill="#000000"/>
+<rect x="708.9000000000001" y="544.2864509117115" width="145" height="22" rx="4" fill="#000000"/>
+<rect x="697.1500000000001" y="511.9942105987682" width="159" height="22" rx="4" fill="#000000"/>
+<rect x="1338.7858695652176" y="361.4714125560538" width="131" height="22" rx="4" fill="#000000"/>
+<rect x="1320.65" y="393.6419562780269" width="117" height="22" rx="4" fill="#000000"/>
 <rect x="1326.9820783132532" y="617.5" width="145" height="22" rx="4" fill="#000000"/>
 <rect x="1347.9532178217823" y="582.5" width="117" height="22" rx="4" fill="#000000"/>
-<rect x="645.1500000000001" y="478.85845438720065" width="124" height="22" rx="4" fill="#000000"/>
-<rect x="870.1500000000001" y="439.75" width="201" height="22" rx="4" fill="#000000"/>
+<rect x="645.1500000000001" y="470.25457454367233" width="124" height="22" rx="4" fill="#000000"/>
+<rect x="870.1500000000001" y="475.40000000000003" width="201" height="22" rx="4" fill="#000000"/>
 <rect x="1318.4" y="525.792700729927" width="131" height="22" rx="4" fill="#000000"/>
 <rect x="1666.1769230769232" y="259.3377659574468" width="96" height="22" rx="4" fill="#000000"/>
 <rect x="1642.1814814814816" y="397.52925531914894" width="96" height="22" rx="4" fill="#000000"/>
-<rect x="1319.65" y="329.875" width="138" height="22" rx="4" fill="#000000"/>
-<rect x="568.9" y="533.5149384885765" width="103" height="22" rx="4" fill="#000000"/>
-<rect x="564.15" y="508.8584543872007" width="103" height="22" rx="4" fill="#000000"/>
+<rect x="1319.65" y="325.4714125560538" width="138" height="22" rx="4" fill="#000000"/>
+<rect x="568.9" y="539.3847565161244" width="103" height="22" rx="4" fill="#000000"/>
+<rect x="564.15" y="503.3847565161244" width="103" height="22" rx="4" fill="#000000"/>
 <rect x="516.4" y="419" width="170" height="24" fill="#000000" rx="3"/><text x="601.4" y="432" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Command Side (Write)</text>
 <rect x="1335.65" y="398" width="125" height="24" fill="#000000" rx="3"/><text x="1398.15" y="411" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Event Backbone</text>
 <rect x="1486.15" y="189" width="147.5" height="24" fill="#000000" rx="3"/><text x="1559.9" y="202" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Query Side (Read)</text>
@@ -84,25 +84,25 @@
 <rect x="1445.9" y="794" width="228" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="1471.9" y="802.9" width="176" height="22.2" fill="#000000" rx="2"/><text x="1559.9" y="814" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ANALYTICS PROJECTION</text>
 <text x="625.4000000000001" y="351.34615384615387" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">GraphQL subscription</text>
 <text x="517.3" y="466" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">REST + SSE</text>
-<text x="931.6153846153845" y="424.75" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">gRPC</text>
-<text x="1293.3621212121213" y="319.8856502242153" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">gRPC query</text>
-<text x="1056.4" y="477.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">OrderPlaced event</text>
-<text x="781.4000000000001" y="554.0364509117115" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">StockReserved event</text>
-<text x="776.6500000000001" y="524.0364509117115" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">PaymentCaptured event</text>
-<text x="1404.2858695652176" y="369.5625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Consume + project</text>
-<text x="1379.15" y="399.5625" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Consume + index</text>
+<text x="931.6153846153845" y="445.40000000000003" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">gRPC</text>
+<text x="1293.3621212121213" y="308.3008688340807" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">gRPC query</text>
+<text x="1056.4" y="454.40000000000003" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">OrderPlaced event</text>
+<text x="781.4000000000001" y="559.2864509117115" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">StockReserved event</text>
+<text x="776.6500000000001" y="526.9942105987682" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">PaymentCaptured event</text>
+<text x="1404.2858695652176" y="376.4714125560538" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Consume + project</text>
+<text x="1379.15" y="408.6419562780269" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Consume + index</text>
 <text x="1399.4820783132532" y="632.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Consume + aggregate</text>
 <text x="1406.4532178217823" y="597.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Poison messages</text>
-<text x="707.1500000000001" y="493.85845438720065" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Charge + webhook</text>
-<text x="970.6500000000001" y="454.75" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Send SMS + delivery receipt</text>
+<text x="707.1500000000001" y="485.25457454367233" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Charge + webhook</text>
+<text x="970.6500000000001" y="490.40000000000003" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Send SMS + delivery receipt</text>
 <text x="1383.9" y="540.792700729927" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Validate + evolve</text>
 <text x="1714.1769230769232" y="274.3377659574468" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Upsert views</text>
 <text x="1690.1814814814816" y="412.52925531914894" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Update index</text>
-<text x="1388.65" y="344.875" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Persist all events</text>
-<text x="620.4" y="548.5149384885765" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Saga callback</text>
-<text x="615.65" y="523.8584543872007" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Saga callback</text>
-<text x="1969.5" y="380" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Solid: synchronous RPC</text><text x="1969.5" y="398" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Dashed: async events</text><text x="1969.5" y="416" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Bidirectional: request + callback</text>
+<text x="1388.65" y="340.4714125560538" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Persist all events</text>
+<text x="620.4" y="554.3847565161244" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Saga callback</text>
+<text x="615.65" y="518.3847565161244" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Saga callback</text>
+<text x="1969.5" y="431" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Solid: synchronous RPC</text><text x="1969.5" y="449" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Dashed: async events</text><text x="1969.5" y="467" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Bidirectional: request + callback</text>
 <text x="1136.4" y="744" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">At-least-once delivery</text><text x="1136.4" y="762" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Consumer group rebalancing</text><text x="1136.4" y="780" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Exactly-once via transactions</text>
-<text x="1969.5" y="236" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">CQRS boundary:</text><text x="1969.5" y="254" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">write side never queries</text><text x="1969.5" y="272" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">read side never mutates</text>
+<text x="1670.9" y="172" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">CQRS boundary:</text><text x="1670.9" y="190" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">write side never queries</text><text x="1670.9" y="208" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">read side never mutates</text>
 </g>
 </svg>

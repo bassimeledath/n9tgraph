@@ -1,0 +1,34 @@
+type card
+title "API surface area: REST, GraphQL, gRPC, and WebSocket endpoints"
+
+node "API Gateway" {fill: hero}
+
+edge_in API_GATEWAY top : Clients connect here
+edge_in API_GATEWAY left : Internal services {icon: "chain-broken"}
+edge_in API_GATEWAY right : Partner integrations {icon: doc}
+
+hanging API_GATEWAY bottom : Deprecation: v1 endpoints sunset 2025-03-01 {icon: "chain-broken"}
+
+container "REST Endpoints (v2)" {fill: dotgrid}
+  card "POST /users" {icon: person, body: "Create user account\nRate limit: 10/min\nAuth: API key"}
+  card "GET /users/:id" {icon: person, body: "Retrieve user profile\nCache: 60s TTL\nAuth: Bearer token"}
+  card "PUT /orders/:id" {icon: doc, body: "Update order status\nIdempotency key required\nAuth: Service token"}
+  card "DELETE /sessions" {icon: "chain-broken", body: "Revoke all sessions\nAudit logged\nAuth: Admin only"}
+end
+
+container "GraphQL Schema" {fill: dotgrid}
+  card "Query.user" {icon: person, body: "Federated subgraph\nDataLoader batching\nComplexity limit: 100"}
+  card "Mutation.checkout" {icon: doc, body: "Transactional mutation\nSaga orchestration\nMax depth: 5"}
+  card "Subscription.orderStatus" {icon: brain, body: "WebSocket transport\nHeartbeat: 30s\nReconnect: exponential backoff"}
+end
+
+container "gRPC Services" {fill: crosshatch}
+  card "UserService.GetUser" {icon: person, body: "Unary RPC\nProtobuf v3\nDeadline: 500ms"}
+  card "OrderService.StreamUpdates" {icon: doc, body: "Server streaming\nBackpressure via flow control\nKeep-alive: 20s"}
+  card "AnalyticsService.IngestBatch" {icon: brain, body: "Client streaming\nBatch size: 1000\nCompression: gzip"}
+  overflow
+end
+
+API_GATEWAY --> REST_ENDPOINTS__V2_
+API_GATEWAY --> GRAPHQL_SCHEMA
+API_GATEWAY --> GRPC_SERVICES

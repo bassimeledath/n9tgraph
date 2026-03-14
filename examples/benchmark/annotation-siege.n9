@@ -1,0 +1,42 @@
+type flow
+title "API gateway compliance audit: every control surface annotated"
+direction TB
+spacing spacious
+
+actor "Mobile Client"
+actor "Web Client"
+actor "Partner API"
+
+service "API Gateway" {fill: hero, sublabel: "Kong + custom plugins"}
+
+component "Rate Limiter" {fill: dotgrid, shape: pill}
+component "Auth Middleware" {fill: dotgrid}
+component "Request Validator" {fill: dotgrid, shape: pill}
+component "Response Transformer" {fill: dotgrid, shape: pill}
+
+datastore "Audit Trail" {fill: crosshatch}
+external "PagerDuty" {fill: none}
+
+MOBILE_CLIENT --> API_GATEWAY : mTLS
+WEB_CLIENT --> API_GATEWAY : HTTPS
+PARTNER_API --> API_GATEWAY : OAuth2 + API key
+
+API_GATEWAY --> RATE_LIMITER : Pre-filter
+RATE_LIMITER --> AUTH_MIDDLEWARE : Throttled
+AUTH_MIDDLEWARE --> REQUEST_VALIDATOR : Authenticated
+REQUEST_VALIDATOR --> RESPONSE_TRANSFORMER : Valid payload
+API_GATEWAY --> AUDIT_TRAIL : Every request logged
+AUTH_MIDDLEWARE --> PAGERDUTY : Auth failures > threshold
+
+# Annotations on ALL 4 sides of the gateway
+annotation "SOC2 Type II certified\nPenetration tested quarterly\nBug bounty program active" near API_GATEWAY side top {step: 1}
+annotation "GDPR Article 25:\nData protection by design\nPII never logged in plaintext\nRight to erasure endpoint" near API_GATEWAY side right {step: 2}
+annotation "PCI DSS Level 1:\nCardholder data isolated\nTLS 1.3 minimum\nKey rotation every 90 days\nHSM-backed certificates" near API_GATEWAY side bottom {step: 3}
+annotation "HIPAA BAA signed:\nPHI encrypted at rest\nAccess logging mandatory\nBreak-glass audit trail" near API_GATEWAY side left {step: 4}
+
+# Additional annotations on surrounding nodes
+annotation "Token bucket algorithm\n10k req/min per client\nBurst: 500 req/sec" near RATE_LIMITER side right
+annotation "JWT RS256 validation\nmTLS client cert pinning\nOAuth2 scope enforcement" near AUTH_MIDDLEWARE side right
+annotation "OpenAPI 3.1 schema\nMax body: 10MB\nContent-type whitelist" near REQUEST_VALIDATOR side left
+annotation "PII redaction filter\nResponse size cap: 50MB\nCache-Control injection" near RESPONSE_TRANSFORMER side right
+annotation "Immutable append-only\n7-year retention\nCross-region replication" near AUDIT_TRAIL side bottom

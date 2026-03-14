@@ -1,0 +1,82 @@
+type sequence
+title "OAuth 2.0 + PKCE authorization code flow with token refresh"
+message-step 36
+participant-gap 120
+
+participant "Mobile App" {fill: none}
+participant "System Browser" {fill: none}
+participant "Auth Server" {fill: hero}
+participant "Token Endpoint" {fill: dotgrid}
+participant "User Directory" {fill: dotgrid}
+participant "MFA Service" {fill: dotgrid}
+participant "Session Store" {fill: crosshatch}
+participant "Resource Server" {fill: dotgrid}
+
+MOBILE_APP -> MOBILE_APP : Generate code_verifier (43-128 chars, unreserved URI chars)
+
+MOBILE_APP -> MOBILE_APP : Compute code_challenge = BASE64URL(SHA256(code_verifier))
+
+MOBILE_APP -> SYSTEM_BROWSER : Open /authorize?response_type=code&client_id=app_123&redirect_uri=app://callback&code_challenge=abc&code_challenge_method=S256&scope=openid profile email&state=xyz
+
+SYSTEM_BROWSER -> AUTH_SERVER : GET /authorize with PKCE parameters
+
+AUTH_SERVER -> AUTH_SERVER : Validate client_id, redirect_uri against registered values
+
+AUTH_SERVER -> SYSTEM_BROWSER : 302 → /login (render login page with CSRF token)
+
+SYSTEM_BROWSER -> AUTH_SERVER : POST /login {username, password, csrf_token}
+
+AUTH_SERVER -> USER_DIRECTORY : LDAP bind: verify credentials
+
+USER_DIRECTORY -> AUTH_SERVER : Bind success: user_id=u_456, groups=[engineering, admin]
+
+AUTH_SERVER -> MFA_SERVICE : Initiate MFA challenge for user u_456
+
+MFA_SERVICE -> MFA_SERVICE : Generate TOTP challenge — algorithm: SHA256, digits: 6, period: 30s
+
+MFA_SERVICE -> AUTH_SERVER : Challenge issued: session_token=mfa_789
+
+AUTH_SERVER -> SYSTEM_BROWSER : 302 → /mfa (render TOTP input form)
+
+SYSTEM_BROWSER -> AUTH_SERVER : POST /mfa {code: 123456, session_token: mfa_789}
+
+AUTH_SERVER -> MFA_SERVICE : Verify TOTP code for session mfa_789
+
+MFA_SERVICE -> AUTH_SERVER : TOTP verified: valid within time window ±1
+
+AUTH_SERVER -> SESSION_STORE : Create session: {user_id: u_456, auth_time: now, amr: [pwd, otp]}
+
+AUTH_SERVER -> SYSTEM_BROWSER : 302 → app://callback?code=auth_code_xyz&state=xyz
+
+SYSTEM_BROWSER -> MOBILE_APP : Deep link: callback with authorization code
+
+MOBILE_APP -> TOKEN_ENDPOINT : POST /token {grant_type: authorization_code, code: auth_code_xyz, code_verifier: original_verifier, redirect_uri: app://callback}
+
+TOKEN_ENDPOINT -> TOKEN_ENDPOINT : Verify: SHA256(code_verifier) == stored code_challenge
+
+TOKEN_ENDPOINT -> SESSION_STORE : Lookup auth code, verify not expired and not reused
+
+TOKEN_ENDPOINT -> MOBILE_APP : {access_token: "eyJ...", id_token: "eyJ...", refresh_token: "rt_abc", expires_in: 3600, token_type: "Bearer"}
+
+MOBILE_APP -> RESOURCE_SERVER : GET /api/user/profile — Authorization: Bearer eyJ...
+
+RESOURCE_SERVER -> RESOURCE_SERVER : Validate JWT signature (RS256), check exp, aud, iss claims
+
+RESOURCE_SERVER -> MOBILE_APP : 200 OK {name: "Alice", email: "alice@example.com"}
+
+loop TOKEN REFRESH (every 55 minutes)
+  MOBILE_APP -> TOKEN_ENDPOINT : POST /token {grant_type: refresh_token, refresh_token: rt_abc}
+
+  TOKEN_ENDPOINT -> SESSION_STORE : Validate refresh token, check revocation list
+
+  alt REFRESH VALID
+    TOKEN_ENDPOINT -> TOKEN_ENDPOINT : Rotate refresh token — invalidate old, issue new
+    TOKEN_ENDPOINT -> MOBILE_APP : {access_token: "new_eyJ...", refresh_token: "rt_def", expires_in: 3600}
+  end
+
+  alt REFRESH REVOKED
+    TOKEN_ENDPOINT -> MOBILE_APP : 401 {error: "invalid_grant"} — re-authentication required
+  end
+end
+
+note over MOBILE_APP: PKCE prevents authorization code interception — no client_secret needed for public clients

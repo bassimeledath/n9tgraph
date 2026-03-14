@@ -1,0 +1,63 @@
+type flow
+title "Data mesh: domain-owned data products with consumer-producer contracts"
+direction TB
+spacing spacious
+
+# Many actors — data consumers
+actor "Data Scientist"
+actor "ML Engineer"
+actor "Product Analyst"
+actor "Finance Team"
+actor "Compliance Officer"
+actor "Executive Dashboard"
+
+# Central data infrastructure
+service "Data Catalog" {fill: hero, sublabel: "Apache DataHub\nSchema registry\nLineage tracking"}
+
+# Many datastores — domain-owned data products
+datastore "Customer Events" {fill: crosshatch, sublabel: "Kafka topic\nAvro schema v3\nRetention: 90 days\nOwner: Growth team"}
+datastore "Order Facts" {fill: crosshatch, sublabel: "Iceberg table\nPartitioned by date\n2.3B rows\nOwner: Commerce team"}
+datastore "Payment Ledger" {fill: crosshatch, sublabel: "PostgreSQL\nAppend-only\nPCI-DSS scoped\nOwner: Payments team"}
+datastore "Product Inventory" {fill: crosshatch, sublabel: "DynamoDB\nGSI on SKU + region\nEventually consistent\nOwner: Supply chain"}
+datastore "User Profiles" {fill: crosshatch, sublabel: "MongoDB\nPII encrypted\nGDPR compliant\nOwner: Identity team"}
+datastore "Clickstream" {fill: crosshatch, sublabel: "S3 Parquet\nHourly partitions\n50TB compressed\nOwner: Analytics team"}
+datastore "ML Feature Store" {fill: crosshatch, sublabel: "Feast + Redis\nOnline + offline\n1200 features\nOwner: ML Platform"}
+
+# Actor → Catalog discovery
+DATA_SCIENTIST --> DATA_CATALOG : Discover datasets
+ML_ENGINEER --> DATA_CATALOG : Register features
+PRODUCT_ANALYST --> DATA_CATALOG : Search lineage
+FINANCE_TEAM --> DATA_CATALOG : Audit access
+COMPLIANCE_OFFICER --> DATA_CATALOG : Review PII tags
+
+# Catalog → Datastores (metadata)
+DATA_CATALOG -.-> CUSTOMER_EVENTS : Metadata sync
+DATA_CATALOG -.-> ORDER_FACTS : Metadata sync
+DATA_CATALOG -.-> PAYMENT_LEDGER : Metadata sync
+DATA_CATALOG -.-> PRODUCT_INVENTORY : Metadata sync
+DATA_CATALOG -.-> USER_PROFILES : Metadata sync
+DATA_CATALOG -.-> CLICKSTREAM : Metadata sync
+DATA_CATALOG -.-> ML_FEATURE_STORE : Metadata sync
+
+# Direct data consumption
+DATA_SCIENTIST --> CLICKSTREAM : Ad-hoc queries
+DATA_SCIENTIST --> ML_FEATURE_STORE : Training data
+ML_ENGINEER --> ML_FEATURE_STORE : Feature engineering
+ML_ENGINEER --> CUSTOMER_EVENTS : Stream processing
+PRODUCT_ANALYST --> ORDER_FACTS : BI queries
+PRODUCT_ANALYST --> CLICKSTREAM : Funnel analysis
+FINANCE_TEAM --> PAYMENT_LEDGER : Reconciliation
+FINANCE_TEAM --> ORDER_FACTS : Revenue reports
+COMPLIANCE_OFFICER --> USER_PROFILES : PII audit
+COMPLIANCE_OFFICER --> PAYMENT_LEDGER : PCI audit
+EXECUTIVE_DASHBOARD --> ORDER_FACTS : KPI metrics
+
+# Inter-datastore flows
+CUSTOMER_EVENTS --> ORDER_FACTS : Join enrichment
+CUSTOMER_EVENTS --> ML_FEATURE_STORE : Real-time features
+ORDER_FACTS --> PAYMENT_LEDGER : Reconciliation check
+CLICKSTREAM --> ML_FEATURE_STORE : Behavioral features
+
+annotation "6 consumer personas:\neach has different\naccess patterns and SLAs" near DATA_CATALOG side top
+annotation "PCI-DSS boundary:\npayment data access\nrequires SOC2 attestation" near PAYMENT_LEDGER side right
+annotation "GDPR boundary:\nPII data products require\nDPIA before consumption" near USER_PROFILES side left

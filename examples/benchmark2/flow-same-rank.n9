@@ -1,0 +1,61 @@
+type flow
+title "Microservices deployment topology: same-rank tier alignment"
+direction TB
+spacing balanced
+
+same-rank [MOBILE_CLIENT, WEB_CLIENT, PARTNER_API, INTERNAL_CLI]
+same-rank [API_GATEWAY, GRAPHQL_FEDERATION, GRPC_GATEWAY]
+same-rank [USER_SERVICE, ORDER_SERVICE, CATALOG_SERVICE, NOTIFICATION_SERVICE]
+same-rank [USER_DB, ORDER_DB, CATALOG_DB, NOTIFICATION_QUEUE]
+
+# Tier 0 — Clients
+actor "Mobile Client"
+actor "Web Client"
+actor "Partner API"
+actor "Internal CLI"
+
+# Tier 1 — Edge / API layer
+service "API Gateway" {fill: hero, sublabel: "Kong\nRate limiting\nJWT validation"}
+service "GraphQL Federation" {fill: hero, sublabel: "Apollo Router\nSubgraph composition"}
+service "gRPC Gateway" {fill: hero, sublabel: "Envoy\nmTLS termination"}
+
+# Tier 2 — Application services
+component "User Service" {fill: dotgrid, sublabel: "Go\nPort 8001"}
+component "Order Service" {fill: dotgrid, sublabel: "Go\nPort 8002"}
+component "Catalog Service" {fill: dotgrid, sublabel: "Rust\nPort 8003"}
+component "Notification Service" {fill: dotgrid, sublabel: "Python\nPort 8004"}
+
+# Tier 3 — Data layer
+datastore "User DB" {fill: crosshatch, sublabel: "PostgreSQL 16"}
+datastore "Order DB" {fill: crosshatch, sublabel: "PostgreSQL 16"}
+datastore "Catalog DB" {fill: crosshatch, sublabel: "MongoDB 7"}
+datastore "Notification Queue" {fill: crosshatch, sublabel: "RabbitMQ"}
+
+# Tier 0 → Tier 1
+MOBILE_CLIENT --> API_GATEWAY : REST
+WEB_CLIENT --> GRAPHQL_FEDERATION : GraphQL
+PARTNER_API --> API_GATEWAY : OAuth2
+INTERNAL_CLI --> GRPC_GATEWAY : gRPC
+
+# Tier 1 → Tier 2
+API_GATEWAY --> USER_SERVICE
+API_GATEWAY --> ORDER_SERVICE
+GRAPHQL_FEDERATION --> USER_SERVICE : Subgraph
+GRAPHQL_FEDERATION --> ORDER_SERVICE : Subgraph
+GRAPHQL_FEDERATION --> CATALOG_SERVICE : Subgraph
+GRPC_GATEWAY --> CATALOG_SERVICE
+GRPC_GATEWAY --> NOTIFICATION_SERVICE
+
+# Tier 2 → Tier 3
+USER_SERVICE --> USER_DB
+ORDER_SERVICE --> ORDER_DB
+CATALOG_SERVICE --> CATALOG_DB
+NOTIFICATION_SERVICE --> NOTIFICATION_QUEUE
+
+# Cross-service communication
+ORDER_SERVICE --> USER_SERVICE : Lookup buyer
+ORDER_SERVICE -.-> NOTIFICATION_SERVICE : Order events
+CATALOG_SERVICE -.-> NOTIFICATION_SERVICE : Stock alerts
+
+annotation "Same-rank constraint:\n4 tiers aligned horizontally\ntesting layout alignment" near API_GATEWAY side top
+annotation "Cross-tier calls:\nservices communicate\nvia gRPC internally" near ORDER_SERVICE side right

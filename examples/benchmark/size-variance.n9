@@ -1,0 +1,41 @@
+type flow
+title "System context: extreme node size variance"
+direction TB
+
+actor "End User"
+actor "Ops SRE"
+actor "Data Analyst"
+
+service "Primary Application Platform" {fill: hero, sublabel: "Monorepo: 14 microservices, 2.3M LoC\nDeployed across 3 regions\nServing 50M monthly active users\n99.95% SLA target"}
+
+circle "LB"
+label "--- internal boundary ---"
+
+component "Identity Provider" {fill: dotgrid, sublabel: "SAML 2.0 + OIDC\nMulti-tenant federation\nDevice trust evaluation\nStep-up authentication"}
+
+component "Cache" {fill: dotgrid, shape: pill}
+
+datastore "Primary Database Cluster" {fill: crosshatch, sublabel: "PostgreSQL 16\nPatroni HA with 3 replicas\n12TB data, 500k TPS peak\nPoint-in-time recovery: 30 days"}
+
+external "Stripe Payment Processing" {fill: none}
+external "Datadog" {fill: none}
+external "AWS S3" {fill: none}
+external "SendGrid" {fill: none}
+
+END_USER --> LB : HTTPS
+LB --> PRIMARY_APPLICATION_PLATFORM
+OPS_SRE --> DATADOG : Monitor
+OPS_SRE --> PRIMARY_APPLICATION_PLATFORM : SSH + kubectl
+DATA_ANALYST --> PRIMARY_DATABASE_CLUSTER : Read replica queries
+
+PRIMARY_APPLICATION_PLATFORM --> IDENTITY_PROVIDER : Authenticate
+PRIMARY_APPLICATION_PLATFORM --> CACHE : Hot data
+PRIMARY_APPLICATION_PLATFORM --> PRIMARY_DATABASE_CLUSTER : CRUD
+PRIMARY_APPLICATION_PLATFORM --> STRIPE_PAYMENT_PROCESSING : Charges
+PRIMARY_APPLICATION_PLATFORM --> SENDGRID : Transactional email
+PRIMARY_APPLICATION_PLATFORM --> AWS_S3 : Object storage
+PRIMARY_APPLICATION_PLATFORM --> DATADOG : Metrics + traces
+
+IDENTITY_PROVIDER --> PRIMARY_DATABASE_CLUSTER : User store
+
+annotation "Tiny actors vs large services:\ntests node size variance\nin layout algorithm" near PRIMARY_APPLICATION_PLATFORM side right

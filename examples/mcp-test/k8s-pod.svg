@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 719 633.04" width="719" height="633.04">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Kubernetes Pod Lifecycle</text>
+<line x1="313" y1="131.51999999999998" x2="313" y2="165.51999999999998" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="313" y1="223.51999999999998" x2="313" y2="257.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="313" y1="297.52" x2="259.5" y2="331.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="313" y1="297.52" x2="371" y2="340.52" stroke="#b4f079" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowhead)"/>
+<polyline points="259.5,389.52 259.5,411.02 136.5,411.02 136.5,432.52" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="308.5" y1="360.52" x2="326.5" y2="360.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="371,380.52 371,402.02 457,402.02 457,423.52" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="366,452.52 48,452.52 48,238.51999999999998 313,238.51999999999998 313,223.51999999999998" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="259.5" y1="389.52" x2="280.5" y2="432.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="280.5" y1="472.52" x2="208.5" y2="515.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="136.5" y1="472.52" x2="208.5" y2="515.52" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="287.5" y="138.01999999999998" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="277.75" y="230.01999999999998" width="70.5" height="21" rx="4" fill="#000000"/>
+<rect x="257.5" y="304.02" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="284" y="308.52" width="116" height="21" rx="4" fill="#000000"/>
+<rect x="172.5" y="400.52" width="51" height="21" rx="4" fill="#000000"/>
+<rect x="269.25" y="350.02" width="96.5" height="21" rx="4" fill="#000000"/>
+<rect x="362.5" y="391.52" width="103" height="21" rx="4" fill="#000000"/>
+<rect x="25.75" y="335.02" width="44.5" height="21" rx="4" fill="#000000"/>
+<rect x="241.25" y="400.52" width="57.5" height="21" rx="4" fill="#000000"/>
+<rect x="199.5" y="483.52" width="90" height="21" rx="4" fill="#000000"/>
+<rect x="143.75" y="483.52" width="57.5" height="21" rx="4" fill="#000000"/>
+<circle cx="313" cy="90.75999999999999" r="40.76" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><text x="313" y="90.75999999999999" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CREATED</text>
+<rect x="264" y="165.51999999999998" width="98" height="58" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="277" y="175.42" width="72" height="22.2" fill="#000000" rx="2"/><text x="313" y="186.51999999999998" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">PENDING</text><rect x="274.5" y="198.01999999999998" width="77" height="17" fill="#000000" rx="2"/><text x="313" y="206.51999999999998" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">scheduling</text>
+<rect x="212.5" y="257.52" width="201" height="40" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="233" y="266.41999999999996" width="160" height="22.2" fill="#000000" rx="2"/><text x="313" y="277.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CONTAINER CREATING</text>
+<rect x="210.5" y="331.52" width="98" height="58" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><rect x="223.5" y="341.41999999999996" width="72" height="22.2" fill="#000000" rx="2"/><text x="259.5" y="352.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">RUNNING</text><rect x="230.75" y="364.02" width="57.5" height="17" fill="#000000" rx="2"/><text x="259.5" y="372.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">healthy</text>
+<rect x="78" y="432.52" width="117" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="92.5" y="441.41999999999996" width="88" height="22.2" fill="#000000" rx="2"/><text x="136.5" y="452.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SUCCEEDED</text>
+<rect x="326.5" y="340.52" width="89" height="40" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="339" y="349.41999999999996" width="64" height="22.2" fill="#000000" rx="2"/><text x="371" y="360.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">FAILED</text>
+<rect x="366" y="423.52" width="182" height="58" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="385" y="433.41999999999996" width="144" height="22.2" fill="#000000" rx="2"/><text x="457" y="444.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CRASHLOOPBACKOFF</text><rect x="408.75" y="456.02" width="96.5" height="17" fill="#000000" rx="2"/><text x="457" y="464.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">restart delay</text>
+<rect x="213" y="432.52" width="135" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="280.5" y="452.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">TERMINATING</text>
+<circle cx="208.5" cy="556.28" r="40.76" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="208.5" y="556.28" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">DELETED</text>
+<text x="313" y="152.01999999999998" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">submit</text>
+<text x="313" y="244.01999999999998" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">scheduled</text>
+<text x="286.25" y="318.02" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">started</text>
+<text x="342" y="322.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">image pull error</text>
+<text x="198" y="414.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">exit 0</text>
+<text x="317.5" y="364.02" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">exit non-zero</text>
+<text x="414" y="405.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">restart policy</text>
+<text x="48" y="349.02" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">retry</text>
+<text x="270" y="414.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">SIGTERM</text>
+<text x="244.5" y="497.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">grace period</text>
+<text x="172.5" y="497.52" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.85" text-anchor="middle">cleanup</text>
+<text x="560" y="497.52" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#b4f079" opacity="0.6" font-style="italic">restartPolicy: Always</text>
+<text x="190.5" y="388.52" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#b4f079" opacity="0.6" font-style="italic">kubelet watches</text>
+</g>
+</svg>

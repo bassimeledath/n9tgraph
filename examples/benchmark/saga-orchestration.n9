@@ -1,0 +1,51 @@
+type flow
+title "Order saga orchestration with compensation diamond"
+direction LR
+
+actor Customer
+service "Order Orchestrator" {fill: hero, sublabel: "Saga coordinator"}
+
+component "Inventory Service" {fill: dotgrid}
+component "Payment Service" {fill: dotgrid}
+component "Shipping Service" {fill: dotgrid}
+component "Loyalty Service" {fill: dotgrid}
+
+component "Inventory Compensator" {fill: crosshatch, sublabel: "Release reserved stock"}
+component "Payment Compensator" {fill: crosshatch, sublabel: "Issue refund"}
+component "Loyalty Compensator" {fill: crosshatch, sublabel: "Revoke points"}
+
+datastore "Saga Log" {fill: crosshatch}
+component "Dead Letter Queue" {fill: crosshatch, sublabel: "Failed compensations"}
+circle "Success"
+circle "Failure"
+
+# Happy path — fan out
+CUSTOMER --> ORDER_ORCHESTRATOR : Place order
+ORDER_ORCHESTRATOR --> INVENTORY_SERVICE : Reserve stock
+ORDER_ORCHESTRATOR --> PAYMENT_SERVICE : Charge card
+ORDER_ORCHESTRATOR --> LOYALTY_SERVICE : Award points
+
+# Happy path — converge
+INVENTORY_SERVICE --> SHIPPING_SERVICE : Stock confirmed
+PAYMENT_SERVICE --> SHIPPING_SERVICE : Payment confirmed
+LOYALTY_SERVICE --> SHIPPING_SERVICE : Points awarded
+SHIPPING_SERVICE --> SUCCESS : Fulfillment complete
+
+# Compensation diamond — fan out from failure
+SHIPPING_SERVICE -.-> INVENTORY_COMPENSATOR : Shipping failed
+SHIPPING_SERVICE -.-> PAYMENT_COMPENSATOR : Shipping failed
+SHIPPING_SERVICE -.-> LOYALTY_COMPENSATOR : Shipping failed
+
+# Compensation converge
+INVENTORY_COMPENSATOR -.-> FAILURE : Compensated
+PAYMENT_COMPENSATOR -.-> FAILURE : Compensated
+LOYALTY_COMPENSATOR -.-> FAILURE : Compensated
+
+# Cross-cutting concerns
+ORDER_ORCHESTRATOR --> SAGA_LOG : Persist step
+INVENTORY_COMPENSATOR -.-> DEAD_LETTER_QUEUE : Compensation failed
+PAYMENT_COMPENSATOR -.-> DEAD_LETTER_QUEUE : Compensation failed
+
+annotation "Diamond convergence:\n3 services must all\nsucceed before shipping" near SHIPPING_SERVICE side top
+annotation "Mirror diamond:\ncompensation fan-out\nand re-convergence" near FAILURE side bottom
+annotation "Idempotent operations\nwith dedup keys" near ORDER_ORCHESTRATOR side bottom

@@ -1,0 +1,13 @@
+type flow
+title "ADR-0042: Migration from monolithic PostgreSQL to event-sourced CQRS architecture with Apache Kafka as the backbone — approved by architecture review board on 2024-11-15, supersedes ADR-0031"
+direction LR
+
+component "Legacy Monolith" {fill: crosshatch, sublabel: "Deprecated"}
+component "Event Bus" {fill: hero, sublabel: "Kafka"}
+component "Read Model" {fill: dotgrid}
+
+LEGACY_MONOLITH --> EVENT_BUS : CDC stream
+EVENT_BUS --> READ_MODEL : Materialized view
+
+annotation "Strangler fig pattern:\ngradual decomposition\nover 6 sprint cycles" near LEGACY_MONOLITH side top
+annotation "Exactly-once semantics\nvia idempotent consumers" near EVENT_BUS side bottom

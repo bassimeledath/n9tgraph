@@ -1,0 +1,48 @@
+type card
+title "Incident response runbook: escalation paths and communication channels"
+
+node "PagerDuty Alert" {fill: hero}
+node "Incident Commander" {fill: hero}
+node "Postmortem Board" {fill: crosshatch}
+
+edge_in PAGERDUTY_ALERT top : Automated monitoring triggers {icon: brain}
+edge_in PAGERDUTY_ALERT left : Manual trigger via /incident {icon: person}
+edge_in PAGERDUTY_ALERT right : External customer report {icon: doc}
+edge_in PAGERDUTY_ALERT bottom : Dependency failure cascade {icon: "chain-broken"}
+
+hanging INCIDENT_COMMANDER top : On-call rotation: weekly, follows the sun {icon: person}
+hanging INCIDENT_COMMANDER left : War room: Zoom bridge auto-created {icon: brain}
+hanging INCIDENT_COMMANDER right : Status page: auto-updated via API {icon: doc}
+hanging INCIDENT_COMMANDER bottom : Timeline: all actions logged with timestamps {icon: doc}
+
+hanging POSTMORTEM_BOARD top : Blameless culture: focus on systems, not people {icon: person}
+hanging POSTMORTEM_BOARD bottom : Action items tracked in Linear with SLA {icon: doc}
+
+container "Severity Levels" {fill: dotgrid}
+  card "SEV-1: Critical" {icon: "chain-broken", body: "Revenue impact > $10K/min\nAll hands on deck\nExec notification\nStatuspage: Major outage"}
+  card "SEV-2: Major" {icon: "chain-broken", body: "Feature degraded\nOn-call + backup\n30 min SLA to bridge\nStatuspage: Partial outage"}
+  card "SEV-3: Minor" {icon: doc, body: "Non-critical impact\nOn-call only\n4 hour SLA\nNo status page update"}
+  card "SEV-4: Low" {icon: doc, body: "Cosmetic or logging\nNext business day\nTicket-only workflow\nNo page required"}
+end
+
+container "Response Actions" {fill: dotgrid}
+  card "Triage" {icon: brain, body: "Identify blast radius\nCheck dashboards\nCorrelate recent deploys\nEstimate time to resolve"}
+  card "Mitigate" {icon: brain, body: "Rollback if deploy-related\nScale if capacity-related\nFailover if region-related\nBlock if security-related"}
+  card "Communicate" {icon: person, body: "Internal: Slack #incidents\nExternal: status.example.com\nExec: email + SMS\nCustomer: support ticket update"}
+  card "Resolve" {icon: brain, body: "Root cause identified\nFix deployed and verified\nMonitoring confirms recovery\nAll-clear announcement"}
+  card "Review" {icon: doc, body: "Postmortem within 48h\n5 Whys analysis\nAction items assigned\nProcess improvements logged"}
+  overflow
+end
+
+container "Communication Templates" {fill: crosshatch}
+  card "Initial Alert" {icon: doc, body: "What: brief description\nImpact: who is affected\nStatus: investigating\nNext update: 30 min"}
+  card "Update" {icon: doc, body: "What changed: progress\nCurrent status: mitigating\nETA: if known\nNext update: 30 min"}
+  card "Resolution" {icon: doc, body: "Resolved: timestamp\nRoot cause: brief\nDuration: total time\nPostmortem: link"}
+end
+
+PAGERDUTY_ALERT --> INCIDENT_COMMANDER : Page on-call
+INCIDENT_COMMANDER --> SEVERITY_LEVELS : Assess severity
+INCIDENT_COMMANDER --> RESPONSE_ACTIONS : Execute runbook
+INCIDENT_COMMANDER --> COMMUNICATION_TEMPLATES : Draft comms
+INCIDENT_COMMANDER --> POSTMORTEM_BOARD : After resolution
+SEVERITY_LEVELS --> RESPONSE_ACTIONS

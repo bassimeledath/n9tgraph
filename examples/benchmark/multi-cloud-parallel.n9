@@ -1,0 +1,49 @@
+type flow
+title "Multi-cloud disaster recovery with active-active-passive topology"
+direction TB
+spacing spacious
+
+actor "Traffic Manager"
+
+subgraph "AWS us-east-1 (Active Primary)" {fill: hero}
+  component "ALB" {fill: dotgrid, sublabel: "Application Load Balancer"}
+  component "ECS Fargate" {fill: dotgrid, sublabel: "8 tasks"}
+  datastore "Aurora PostgreSQL" {fill: crosshatch, sublabel: "Writer instance"}
+  component "ElastiCache" {fill: dotgrid, sublabel: "Redis 7.x cluster"}
+  ALB --> ECS_FARGATE
+  ECS_FARGATE --> AURORA_POSTGRESQL
+  ECS_FARGATE --> ELASTICACHE
+end
+
+subgraph "GCP us-central1 (Active Secondary)" {fill: dotgrid}
+  component "Cloud Load Balancing" {fill: dotgrid, sublabel: "Global HTTPS LB"}
+  component "Cloud Run" {fill: dotgrid, sublabel: "6 instances"}
+  datastore "Cloud SQL" {fill: crosshatch, sublabel: "Read replica"}
+  component "Memorystore" {fill: dotgrid, sublabel: "Redis 7.x"}
+  CLOUD_LOAD_BALANCING --> CLOUD_RUN
+  CLOUD_RUN --> CLOUD_SQL
+  CLOUD_RUN --> MEMORYSTORE
+end
+
+subgraph "Azure westeurope (Passive DR)" {fill: crosshatch}
+  component "Azure Front Door" {fill: dotgrid, sublabel: "Standby"}
+  component "Container Apps" {fill: dotgrid, sublabel: "0 replicas — scale on failover"}
+  datastore "Azure SQL" {fill: crosshatch, sublabel: "Async geo-replica"}
+  AZURE_FRONT_DOOR --> CONTAINER_APPS
+  CONTAINER_APPS --> AZURE_SQL
+end
+
+# Cross-cloud traffic
+TRAFFIC_MANAGER --> ALB : 60% traffic
+TRAFFIC_MANAGER --> CLOUD_LOAD_BALANCING : 40% traffic
+TRAFFIC_MANAGER -.-> AZURE_FRONT_DOOR : Failover only
+
+# Cross-cloud data sync
+AURORA_POSTGRESQL --> CLOUD_SQL : Logical replication
+AURORA_POSTGRESQL --> AZURE_SQL : Async WAL shipping
+ELASTICACHE <--> MEMORYSTORE : CRDT-based sync
+
+annotation "RPO: 0 seconds\nRTO: < 30 seconds\nActive-active read/write" near ALB side top
+annotation "RPO: < 5 seconds\nRTO: < 60 seconds\nRead-write via conflict resolution" near CLOUD_LOAD_BALANCING side top
+annotation "RPO: < 30 seconds\nRTO: < 5 minutes\nManual promotion required" near AZURE_FRONT_DOOR side top
+annotation "Global traffic split\nvia latency-based routing\nwith health checks every 10s" near TRAFFIC_MANAGER side right

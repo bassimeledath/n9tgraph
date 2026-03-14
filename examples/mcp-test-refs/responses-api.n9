@@ -1,0 +1,16 @@
+type flow
+title Responses API orchestrates agent loop
+direction LR
+
+actor USER
+service "RESPONSES API" {fill: hero}
+component MODEL {fill: dotgrid}
+component "RUNTIME CONTAINER" {fill: crosshatch}
+
+USER --> RESPONSES_API : PROMPT
+RESPONSES_API --> MODEL : PROMPT + SHELL INSTRUCTION + STDOUT/STDERR
+MODEL --> RESPONSES_API : SHELL COMMANDS
+RESPONSES_API --> RUNTIME_CONTAINER : EXECUTE COMMANDS
+RUNTIME_CONTAINER --> RESPONSES_API : STDOUT/STDERR
+
+annotation "Feedback loop\n(until complete)" near MODEL side bottom

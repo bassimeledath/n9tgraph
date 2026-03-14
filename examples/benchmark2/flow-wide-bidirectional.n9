@@ -1,0 +1,68 @@
+type flow
+title "API gateway rate limiting: token bucket with distributed coordination"
+direction LR
+aspect landscape
+wrap auto
+
+actor "Client A"
+actor "Client B"
+actor "Client C"
+
+service "Load Balancer" {fill: hero, sublabel: "HAProxy\nLayer 7 routing\nHealth checks"}
+
+subgraph "Rate Limit Cluster" {fill: dotgrid}
+  component "Rate Limiter 1" {fill: dotgrid, sublabel: "Instance us-east-1a\nToken bucket algorithm"}
+  component "Rate Limiter 2" {fill: dotgrid, sublabel: "Instance us-east-1b\nToken bucket algorithm"}
+  component "Rate Limiter 3" {fill: dotgrid, sublabel: "Instance us-east-1c\nToken bucket algorithm"}
+end
+
+subgraph "Coordination Layer" {fill: hero}
+  datastore "Redis Cluster" {fill: crosshatch, sublabel: "6 nodes, 3 primary + 3 replica\nLua scripting for atomic ops"}
+  component "Sync Agent" {fill: dotgrid, sublabel: "Gossip protocol\nCounter reconciliation\nConflict resolution"}
+end
+
+subgraph "Backend Services" {fill: dotgrid}
+  component "Service A" {fill: dotgrid, sublabel: "User API"}
+  component "Service B" {fill: dotgrid, sublabel: "Order API"}
+  component "Service C" {fill: dotgrid, sublabel: "Search API"}
+end
+
+datastore "Config Store" {fill: crosshatch, sublabel: "etcd\nRate limit rules\nPer-client quotas"}
+external "Prometheus" {fill: none}
+
+# Client → LB
+CLIENT_A --> LOAD_BALANCER : 10k req/s
+CLIENT_B --> LOAD_BALANCER : 5k req/s
+CLIENT_C --> LOAD_BALANCER : 2k req/s
+
+# LB → Rate limiters (round robin)
+LOAD_BALANCER --> RATE_LIMITER_1
+LOAD_BALANCER --> RATE_LIMITER_2
+LOAD_BALANCER --> RATE_LIMITER_3
+
+# Bidirectional sync between rate limiters and Redis
+RATE_LIMITER_1 <--> REDIS_CLUSTER : EVALSHA token_bucket.lua
+RATE_LIMITER_2 <--> REDIS_CLUSTER : EVALSHA token_bucket.lua
+RATE_LIMITER_3 <--> REDIS_CLUSTER : EVALSHA token_bucket.lua
+
+# Sync agent coordinates
+SYNC_AGENT <--> REDIS_CLUSTER : Counter sync
+
+# Rate limiter → Backend (allowed requests)
+RATE_LIMITER_1 --> SERVICE_A : Allowed
+RATE_LIMITER_2 --> SERVICE_B : Allowed
+RATE_LIMITER_3 --> SERVICE_C : Allowed
+
+# Config
+CONFIG_STORE -.-> RATE_LIMITER_1 : Push rules
+CONFIG_STORE -.-> RATE_LIMITER_2 : Push rules
+CONFIG_STORE -.-> RATE_LIMITER_3 : Push rules
+
+# Monitoring
+RATE_LIMITER_1 -.-> PROMETHEUS : Metrics
+RATE_LIMITER_2 -.-> PROMETHEUS : Metrics
+RATE_LIMITER_3 -.-> PROMETHEUS : Metrics
+
+annotation "Token bucket:\nrefill rate per client tier\nburst allowance configurable" near RATE_LIMITER_1 side top
+annotation "Distributed coordination:\nLua scripts ensure atomicity\nacross Redis cluster nodes" near REDIS_CLUSTER side bottom
+annotation "429 Too Many Requests:\nretry-after header set\nfrom bucket refill time" near LOAD_BALANCER side top

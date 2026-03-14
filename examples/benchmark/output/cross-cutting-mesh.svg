@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2086.9 794" width="2086.9" height="794">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2086.9 752" width="2086.9" height="752">
 <defs>
   <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
     <rect width="8" height="8" fill="#000000"/>
@@ -52,10 +52,10 @@
 <line x1="214" y1="442.1948051948052" x2="264" y2="440.46320346320346" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="214,455.46747614917604 214,469 1177,469 1177,579.9141370338248" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 <polyline points="464,437 464,460 605,460 605,437" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="1032.6944444444443" y="346.20785617657594" width="166" height="22" rx="4" fill="#000000"/>
-<rect x="1038.5" y="510.70339894589654" width="131" height="22" rx="4" fill="#000000"/>
+<rect x="1032.6944444444443" y="343.20785617657594" width="166" height="22" rx="4" fill="#000000"/>
+<rect x="1038.5" y="513.7033989458965" width="131" height="22" rx="4" fill="#000000"/>
 <rect x="923" y="293" width="131" height="22" rx="4" fill="#000000"/>
-<rect x="1081.1" y="376.20785617657594" width="117" height="22" rx="4" fill="#000000"/>
+<rect x="1081.1" y="379.20785617657594" width="117" height="22" rx="4" fill="#000000"/>
 <rect x="631.25" y="406" width="180" height="22" rx="4" fill="#000000"/>
 <rect x="470.25" y="465" width="138" height="22" rx="4" fill="#000000"/>
 <rect x="1392.35" y="347.4629518972214" width="103" height="22" rx="4" fill="#000000"/>
@@ -64,7 +64,7 @@
 <rect x="1722.5500000000002" y="397.80405405405406" width="110" height="22" rx="4" fill="#000000"/>
 <rect x="1734.0500000000002" y="462.09695160276556" width="82" height="22" rx="4" fill="#000000"/>
 <rect x="1403.1628158844765" y="410" width="75" height="22" rx="4" fill="#000000"/>
-<rect x="1098" y="480.70339894589654" width="75" height="22" rx="4" fill="#000000"/>
+<rect x="1098" y="477.70339894589654" width="75" height="22" rx="4" fill="#000000"/>
 <rect x="821.25" y="531.9317066612892" width="75" height="22" rx="4" fill="#000000"/>
 <rect x="1212.6136363636365" y="544" width="75" height="22" rx="4" fill="#000000"/>
 <rect x="1510.2" y="105" width="200" height="24" fill="#000000" rx="3"/><text x="1610.2" y="118" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Team Alpha — User Domain</text>
@@ -87,10 +87,10 @@
 <rect x="1857.9" y="382" width="162" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="1878.9" y="390.9" width="120" height="22.2" fill="#000000" rx="2"/><text x="1938.9" y="402" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CONFIG SERVER</text>
 <rect x="1852.9" y="452" width="172" height="40" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="1874.9" y="460.9" width="128" height="22.2" fill="#000000" rx="2"/><text x="1938.9" y="472" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SECRET MANAGER</text>
 <rect x="1503.5" y="584" width="234.4" height="62" fill="url(#crosshatch)" stroke="none"/><line x1="1503.5" y1="584" x2="1503.5" y2="646" stroke="#b4f079" stroke-width="1.5"/><line x1="1737.9" y1="584" x2="1737.9" y2="646" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="1620.7" cy="584" rx="117.2" ry="10" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><path d="M1503.5,646 A117.2,10 0 0,0 1737.9,646" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><rect x="1536.7" y="595.9" width="168" height="22.2" fill="#000000" rx="2"/><text x="1620.7" y="607" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">OBSERVABILITY STACK</text><rect x="1504.7" y="615.6" width="232" height="22.799999999999997" fill="#000000" rx="2"/><text x="1620.7" y="627" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Prometheus + Grafana + Loki</text>
-<text x="1115.6944444444443" y="361.20785617657594" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Lookup billing address</text>
-<text x="1104" y="525.7033989458965" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Get shipping cost</text>
+<text x="1115.6944444444443" y="358.20785617657594" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Lookup billing address</text>
+<text x="1104" y="528.7033989458965" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Get shipping cost</text>
 <text x="988.5" y="308" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Get current price</text>
-<text x="1139.6" y="391.20785617657594" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Personalization</text>
+<text x="1139.6" y="394.20785617657594" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Personalization</text>
 <text x="721.25" y="421" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Notification preferences</text>
 <text x="539.25" y="480" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Availability check</text>
 <text x="1443.85" y="362.4629518972214" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Sidecar proxy</text>
@@ -99,11 +99,11 @@
 <text x="1777.5500000000002" y="412.80405405405406" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Dynamic config</text>
 <text x="1775.0500000000002" y="477.09695160276556" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">mTLS certs</text>
 <text x="1440.6628158844765" y="425" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Telemetry</text>
-<text x="1135.5" y="495.70339894589654" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Telemetry</text>
+<text x="1135.5" y="492.70339894589654" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Telemetry</text>
 <text x="858.75" y="546.9317066612892" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Telemetry</text>
 <text x="1250.1136363636365" y="559" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">Telemetry</text>
 <text x="827" y="74" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">6 cross-team API calls</text><text x="827" y="92" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">create tight coupling</text><text x="827" y="110" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">Candidate for async events</text>
-<text x="1544.2" y="696" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Service mesh handles:</text><text x="1544.2" y="714" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">mTLS, retry, circuit break</text><text x="1544.2" y="732" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">rate limiting, tracing</text>
-<text x="1214.5" y="654" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Shared DB anti-pattern</text><text x="1214.5" y="672" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">avoided: each team</text><text x="1214.5" y="690" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">owns its data store</text>
+<text x="1745.7" y="266" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Service mesh handles:</text><text x="1745.7" y="284" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">mTLS, retry, circuit break</text><text x="1745.7" y="302" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">rate limiting, tracing</text>
+<text x="1068.02" y="654" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" font-weight="700">Shared DB anti-pattern</text><text x="1068.02" y="672" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">avoided: each team</text><text x="1068.02" y="690" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="11" fill="#b4f079" opacity="0.7">owns its data store</text>
 </g>
 </svg>

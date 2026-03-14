@@ -1,0 +1,17 @@
+type card
+title "The limits of agent knowledge:\nWhat Codex can't see doesn't exist"
+
+node "Codex's Knowledge" {fill: dotgrid}
+
+edge_in CODEX_S_KNOWLEDGE right : Encode into codebase as markdown
+
+hanging CODEX_S_KNOWLEDGE bottom : Unseen knowledge to Codex {icon: "chain-broken"}
+
+container "Unseen sources" {fill: dotgrid}
+  card "Google doc" {icon: doc, body: "This document outlines our approach to feature prioritization and planning."}
+  card "Slack message" {icon: person, body: "We will follow @PaulM's guidance on security posture from now on."}
+  card "Tacit knowledge" {icon: brain, body: "Ryan is responsible for the overall architectural direction of the system."}
+  overflow
+end
+
+CODEX_S_KNOWLEDGE --> UNSEEN_SOURCES

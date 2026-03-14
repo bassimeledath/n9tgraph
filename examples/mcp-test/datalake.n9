@@ -1,0 +1,43 @@
+type flow
+title "Data Lake Architecture"
+direction TB
+spacing spacious
+
+subgraph "Ingestion Layer" {fill: dotgrid}
+  external "REST APIs"
+  external "IoT Devices"
+  external "Log Streams"
+  component "Kafka" {fill: hero}
+end
+
+subgraph "Processing Layer" {fill: crosshatch}
+  component "Spark Jobs"
+  component "Flink Streaming"
+  component "Data Validation"
+end
+
+subgraph "Storage Layer" {fill: dotgrid}
+  datastore "Raw Zone" {sublabel: "S3 landing"}
+  datastore "Clean Zone" {sublabel: "parquet"}
+  datastore "Curated Zone" {sublabel: "aggregated"}
+end
+
+subgraph "Analytics Layer" {fill: crosshatch}
+  service "Presto" {fill: hero}
+  service Metabase
+  service Jupyter
+end
+
+REST_APIS --> KAFKA : events
+IOT_DEVICES --> KAFKA : telemetry
+LOG_STREAMS --> KAFKA : logs
+KAFKA --> SPARK_JOBS : batch
+KAFKA --> FLINK_STREAMING : realtime
+SPARK_JOBS --> DATA_VALIDATION : transform
+FLINK_STREAMING --> DATA_VALIDATION : enrich
+DATA_VALIDATION --> RAW_ZONE : land
+RAW_ZONE --> CLEAN_ZONE : ETL
+CLEAN_ZONE --> CURATED_ZONE : aggregate
+CURATED_ZONE --> PRESTO : query
+PRESTO --> METABASE : dashboards
+PRESTO --> JUPYTER : notebooks

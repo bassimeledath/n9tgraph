@@ -1,0 +1,64 @@
+type flow
+title "Event mesh: sync, async, and bidirectional communication patterns"
+direction LR
+
+actor "Mobile App"
+actor "Admin Dashboard"
+
+service "BFF Gateway" {fill: hero, sublabel: "Backend for Frontend"}
+
+subgraph "Command Side (Write)" {fill: dotgrid}
+  component "Order Command" {fill: dotgrid}
+  component "Inventory Command" {fill: dotgrid}
+  component "Payment Command" {fill: dotgrid}
+end
+
+subgraph "Event Backbone" {fill: hero}
+  component "Kafka Cluster" {fill: hero, sublabel: "3 brokers, RF=3"}
+  component "Schema Registry" {fill: dotgrid, sublabel: "Avro schemas"}
+  component "Dead Letter Topic" {fill: crosshatch}
+end
+
+subgraph "Query Side (Read)" {fill: dotgrid}
+  component "Order Projection" {fill: dotgrid}
+  component "Search Projection" {fill: dotgrid}
+  component "Analytics Projection" {fill: dotgrid}
+end
+
+datastore "Event Store" {fill: crosshatch, sublabel: "Append-only log"}
+datastore "Read DB" {fill: crosshatch, sublabel: "Denormalized views"}
+external "Stripe" {fill: none}
+external "Twilio" {fill: none}
+
+# Synchronous — solid arrows
+MOBILE_APP --> BFF_GATEWAY : GraphQL subscription
+ADMIN_DASHBOARD --> BFF_GATEWAY : REST + SSE
+BFF_GATEWAY --> ORDER_COMMAND : gRPC
+BFF_GATEWAY --> ORDER_PROJECTION : gRPC query
+
+# Async — dashed arrows
+ORDER_COMMAND -.-> KAFKA_CLUSTER : OrderPlaced event
+INVENTORY_COMMAND -.-> KAFKA_CLUSTER : StockReserved event
+PAYMENT_COMMAND -.-> KAFKA_CLUSTER : PaymentCaptured event
+KAFKA_CLUSTER -.-> ORDER_PROJECTION : Consume + project
+KAFKA_CLUSTER -.-> SEARCH_PROJECTION : Consume + index
+KAFKA_CLUSTER -.-> ANALYTICS_PROJECTION : Consume + aggregate
+KAFKA_CLUSTER -.-> DEAD_LETTER_TOPIC : Poison messages
+
+# Bidirectional — sync request/response over async
+PAYMENT_COMMAND <--> STRIPE : Charge + webhook
+ORDER_COMMAND <--> TWILIO : Send SMS + delivery receipt
+KAFKA_CLUSTER <--> SCHEMA_REGISTRY : Validate + evolve
+
+# Data flow
+ORDER_PROJECTION --> READ_DB : Upsert views
+SEARCH_PROJECTION --> READ_DB : Update index
+KAFKA_CLUSTER --> EVENT_STORE : Persist all events
+
+# Cross-cutting
+INVENTORY_COMMAND --> ORDER_COMMAND : Saga callback
+PAYMENT_COMMAND --> ORDER_COMMAND : Saga callback
+
+annotation "Solid: synchronous RPC\nDashed: async events\nBidirectional: request + callback" near BFF_GATEWAY side top
+annotation "At-least-once delivery\nConsumer group rebalancing\nExactly-once via transactions" near KAFKA_CLUSTER side bottom
+annotation "CQRS boundary:\nwrite side never queries\nread side never mutates" near ORDER_PROJECTION side right

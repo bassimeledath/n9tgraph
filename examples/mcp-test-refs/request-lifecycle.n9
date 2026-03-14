@@ -1,0 +1,25 @@
+type sequence
+title "Agent loop:\nFrom one prompt to durable artifacts\n(1) Skill discovery"
+
+participant MODEL { fill: dotgrid }
+participant CONTAINER { fill: crosshatch }
+participant USER { fill: none }
+
+MODEL -> USER : REQUEST | "Generate spreadsheet from live data..."
+MODEL <- USER :
+MODEL -> CONTAINER :
+MODEL <- CONTAINER :
+
+note over MODEL: **1  Skill discovery**\n    a. Explore skill folder + read docs
+
+MODEL -> CONTAINER : **COMMAND** | ls -l /home/oai/skills/spreadsheets
+MODEL -> CONTAINER : | cat /home/oai/skills/spreadsheets/SKILL.md
+MODEL <- CONTAINER : **STDOUT** | "SKILL.md example/..."
+MODEL <- CONTAINER : | "...constraints + usage instructions..."
+
+note over MODEL: **2**  Planning and setup
+note over MODEL: **3**  Data acquisition
+note over MODEL: **4**  Data processing
+note over MODEL: **5**  Artifact generation
+
+MODEL -> USER : RESPONSE | Summarize + return final output (link/file)

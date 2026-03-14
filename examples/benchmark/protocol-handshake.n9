@@ -1,0 +1,41 @@
+type sequence
+title "WebSocket upgrade with subprotocol negotiation and keepalive"
+
+participant "Browser" {fill: none}
+participant "Load Balancer" {fill: dotgrid}
+participant "WebSocket Gateway" {fill: hero}
+participant "Auth Service" {fill: dotgrid}
+participant "Session Store" {fill: crosshatch}
+
+BROWSER -> LOAD_BALANCER : GET /ws HTTP/1.1\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZQ==\nSec-WebSocket-Protocol: graphql-ws, json-rpc\nSec-WebSocket-Version: 13
+
+LOAD_BALANCER -> WEBSOCKET_GATEWAY : Forward upgrade request with X-Forwarded-For and X-Real-IP headers
+
+WEBSOCKET_GATEWAY -> AUTH_SERVICE : Validate bearer token from cookie | Extract claims and verify audience
+
+AUTH_SERVICE -> SESSION_STORE : Check session not revoked | Lookup by session_id with TTL check
+
+AUTH_SERVICE <- SESSION_STORE : Session valid, last_active: 2024-11-15T10:30:00Z, ip_match: true
+
+WEBSOCKET_GATEWAY <- AUTH_SERVICE : Claims: {sub: user_123, scope: [read, write], exp: 1700000000}
+
+WEBSOCKET_GATEWAY -> SESSION_STORE : Create WS session entry | ws_id: abc-123, protocol: graphql-ws
+
+LOAD_BALANCER <- WEBSOCKET_GATEWAY : HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\nSec-WebSocket-Protocol: graphql-ws
+
+BROWSER <- LOAD_BALANCER : 101 Switching Protocols | Connection upgraded to WebSocket
+
+BROWSER <-> WEBSOCKET_GATEWAY : graphql-ws: connection_init {payload: {Authorization: "Bearer ey..."}} | connection_ack {payload: {connectionTimeoutMs: 30000}}
+
+loop KEEPALIVE (every 30s)
+  BROWSER <-> WEBSOCKET_GATEWAY : ping frame (opcode 0x9) / pong frame (opcode 0xA) | Bidirectional heartbeat
+  WEBSOCKET_GATEWAY -> SESSION_STORE : Touch last_active timestamp
+end
+
+alt CONNECTION_CLOSE
+  BROWSER -> WEBSOCKET_GATEWAY : Close frame: code=1000, reason="Normal closure" | Graceful shutdown initiated
+  WEBSOCKET_GATEWAY -> SESSION_STORE : Delete WS session and publish disconnect event to pubsub channel
+  BROWSER <- WEBSOCKET_GATEWAY : Close frame: code=1000 acknowledged | TCP connection teardown
+end
+
+note over BROWSER: Full-duplex communication established with automatic reconnect on abnormal closure

@@ -1,0 +1,33 @@
+type flow
+title "Layered domain architecture with explicit cross-cutting boundaries"
+theme white
+direction TB
+spacing spacious
+
+component Utils {shape: pill}
+
+subgraph "Business logic domain" {fill: dotgrid}
+  component Providers {shape: pill}
+  component "App Wiring + UI" {shape: pill}
+  component Service {shape: pill}
+  component Runtime {shape: pill}
+  component UI {shape: pill}
+  component Types {shape: pill}
+  component Config {shape: pill}
+  component Repo {shape: pill}
+end
+
+UTILS --> PROVIDERS
+UTILS --> APP_WIRING_UI
+PROVIDERS --> APP_WIRING_UI
+PROVIDERS --> SERVICE
+PROVIDERS --> RUNTIME
+APP_WIRING_UI --> UI
+SERVICE --> RUNTIME
+RUNTIME --> UI
+SERVICE --> TYPES
+RUNTIME --> CONFIG
+UI --> REPO
+TYPES --> CONFIG
+CONFIG --> REPO
+TYPES --> UTILS

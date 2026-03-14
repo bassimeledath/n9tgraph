@@ -1,0 +1,33 @@
+type flow
+title "Microservices Architecture"
+direction LR
+spacing spacious
+
+actor User
+
+service "API Gateway" {fill: hero, sublabel: "main entry"}
+
+subgraph "Services" {fill: dotgrid}
+  service "Auth Service"
+  service "User Service"
+  service "Order Service"
+  service "Product Service"
+  service "Payment Service"
+  service "Notification Service"
+end
+
+component "Message Queue" {shape: pill, fill: crosshatch}
+
+datastore PostgreSQL {sublabel: "primary DB"}
+
+USER --> API_GATEWAY : requests
+API_GATEWAY --> AUTH_SERVICE : authenticate
+API_GATEWAY --> USER_SERVICE : user ops
+API_GATEWAY --> ORDER_SERVICE : orders
+API_GATEWAY --> PRODUCT_SERVICE : products
+API_GATEWAY --> PAYMENT_SERVICE : payments
+ORDER_SERVICE --> MESSAGE_QUEUE : events
+MESSAGE_QUEUE --> NOTIFICATION_SERVICE : notify
+AUTH_SERVICE --> POSTGRESQL : read/write
+USER_SERVICE --> POSTGRESQL : read/write
+ORDER_SERVICE --> POSTGRESQL : read/write

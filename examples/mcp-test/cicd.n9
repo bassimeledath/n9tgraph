@@ -1,0 +1,31 @@
+type flow
+title "CI/CD Pipeline"
+direction TB
+spacing balanced
+aspect landscape
+
+circle Start {fill: hero}
+component "Code Commit" {fill: dotgrid}
+component Build {fill: crosshatch}
+component "Unit Tests"
+component "Integration Tests"
+component "Staging Deploy" {fill: dotgrid}
+component "E2E Tests"
+component "Production Deploy" {fill: hero}
+circle Success
+circle Failure
+
+START --> CODE_COMMIT : push
+CODE_COMMIT --> BUILD : trigger
+BUILD --> UNIT_TESTS : artifacts
+UNIT_TESTS --> INTEGRATION_TESTS : pass
+INTEGRATION_TESTS --> STAGING_DEPLOY : pass
+STAGING_DEPLOY --> E2E_TESTS : deploy
+E2E_TESTS --> PRODUCTION_DEPLOY : pass
+PRODUCTION_DEPLOY --> SUCCESS : healthy
+PRODUCTION_DEPLOY -.-> STAGING_DEPLOY : rollback
+UNIT_TESTS -.-> FAILURE : fail
+INTEGRATION_TESTS -.-> FAILURE : fail
+E2E_TESTS -.-> FAILURE : fail
+
+annotation "manual approval" near PRODUCTION_DEPLOY side right

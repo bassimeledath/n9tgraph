@@ -1,0 +1,17 @@
+type sequence
+title Codex drives the app with Chrome DevTools MCP to validate its work
+
+participant CODEX { fill: dotgrid }
+participant APP { fill: none }
+participant "CHROME DEVTOOLS" { fill: crosshatch }
+
+CODEX -> APP: Select target + clear console
+CODEX -> CHROME_DEVTOOLS: Snapshot **BEFORE**
+CODEX -> APP: Trigger UI path
+APP -> CHROME_DEVTOOLS: Runtime events | (during interaction)
+CODEX -> CHROME_DEVTOOLS: Snapshot **AFTER**
+CODEX -> APP: Apply fix + restart
+
+loop UNTIL CLEAN
+  CODEX -> CHROME_DEVTOOLS: Re-run validation
+end

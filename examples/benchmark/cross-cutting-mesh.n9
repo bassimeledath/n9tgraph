@@ -1,0 +1,68 @@
+type flow
+title "Platform engineering: cross-team service mesh dependencies"
+direction LR
+spacing spacious
+
+subgraph "Team Alpha — User Domain" {fill: dotgrid}
+  component "User API" {fill: dotgrid}
+  component "Profile Service" {fill: dotgrid}
+  component "Preferences Service" {fill: dotgrid}
+  datastore "User DB" {fill: crosshatch}
+  USER_API --> PROFILE_SERVICE
+  USER_API --> PREFERENCES_SERVICE
+  PROFILE_SERVICE --> USER_DB
+  PREFERENCES_SERVICE --> USER_DB
+end
+
+subgraph "Team Beta — Commerce Domain" {fill: dotgrid}
+  component "Cart Service" {fill: dotgrid}
+  component "Checkout Service" {fill: dotgrid}
+  component "Pricing Engine" {fill: dotgrid}
+  datastore "Commerce DB" {fill: crosshatch}
+  CART_SERVICE --> CHECKOUT_SERVICE
+  CHECKOUT_SERVICE --> PRICING_ENGINE
+  CART_SERVICE --> COMMERCE_DB
+  CHECKOUT_SERVICE --> COMMERCE_DB
+end
+
+subgraph "Team Gamma — Fulfillment Domain" {fill: dotgrid}
+  component "Order Tracker" {fill: dotgrid}
+  component "Warehouse Service" {fill: dotgrid}
+  component "Shipping Calculator" {fill: dotgrid}
+  datastore "Fulfillment DB" {fill: crosshatch}
+  ORDER_TRACKER --> WAREHOUSE_SERVICE
+  ORDER_TRACKER --> SHIPPING_CALCULATOR
+  WAREHOUSE_SERVICE --> FULFILLMENT_DB
+end
+
+subgraph "Platform Team — Shared Infrastructure" {fill: hero}
+  service "Service Mesh" {fill: hero, sublabel: "Istio"}
+  component "Config Server" {fill: dotgrid}
+  component "Secret Manager" {fill: dotgrid}
+  datastore "Observability Stack" {fill: crosshatch, sublabel: "Prometheus + Grafana + Loki"}
+end
+
+# Cross-team dependencies (the mesh)
+CHECKOUT_SERVICE --> USER_API : Lookup billing address
+CHECKOUT_SERVICE --> SHIPPING_CALCULATOR : Get shipping cost
+CART_SERVICE --> PRICING_ENGINE : Get current price
+CART_SERVICE --> PREFERENCES_SERVICE : Personalization
+ORDER_TRACKER --> USER_API : Notification preferences
+WAREHOUSE_SERVICE --> CART_SERVICE : Availability check
+
+# Everything goes through the mesh
+USER_API --> SERVICE_MESH : Sidecar proxy
+CART_SERVICE --> SERVICE_MESH : Sidecar proxy
+ORDER_TRACKER --> SERVICE_MESH : Sidecar proxy
+
+# Platform provides to all
+SERVICE_MESH --> CONFIG_SERVER : Dynamic config
+SERVICE_MESH --> SECRET_MANAGER : mTLS certs
+USER_API -.-> OBSERVABILITY_STACK : Telemetry
+CART_SERVICE -.-> OBSERVABILITY_STACK : Telemetry
+ORDER_TRACKER -.-> OBSERVABILITY_STACK : Telemetry
+CHECKOUT_SERVICE -.-> OBSERVABILITY_STACK : Telemetry
+
+annotation "6 cross-team API calls\ncreate tight coupling\nCandidate for async events" near CHECKOUT_SERVICE side top
+annotation "Service mesh handles:\nmTLS, retry, circuit break\nrate limiting, tracing" near SERVICE_MESH side bottom
+annotation "Shared DB anti-pattern\navoided: each team\nowns its data store" near COMMERCE_DB side bottom

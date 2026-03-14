@@ -1,0 +1,44 @@
+type flow
+title "Kubernetes pod lifecycle: init containers, sidecars, and probes"
+direction TB
+spacing compact
+aspect portrait
+
+circle "Pending"
+circle "Scheduled"
+circle "Running"
+circle "Succeeded"
+circle "Failed"
+circle "Unknown"
+
+component "kube-scheduler" {fill: hero, sublabel: "Assigns node"}
+component "kubelet" {fill: hero, sublabel: "Node agent"}
+component "Init Container 1" {fill: dotgrid, sublabel: "DB migration\nRun-to-completion"}
+component "Init Container 2" {fill: dotgrid, sublabel: "Config fetch\nRun-to-completion"}
+component "App Container" {fill: dotgrid, sublabel: "Main workload\nPort 8080"}
+component "Sidecar: Envoy" {fill: dotgrid, sublabel: "Service mesh proxy\nPort 15001"}
+component "Sidecar: Fluentd" {fill: dotgrid, sublabel: "Log collector\nShared volume"}
+component "Liveness Probe" {fill: crosshatch, shape: pill}
+component "Readiness Probe" {fill: crosshatch, shape: pill}
+component "Startup Probe" {fill: crosshatch, shape: pill}
+
+label "--- container boundary ---"
+
+PENDING --> KUBE_SCHEDULER : Pod spec submitted
+KUBE_SCHEDULER --> SCHEDULED : Node selected
+SCHEDULED --> KUBELET : Pull images
+KUBELET --> INIT_CONTAINER_1 : Run sequentially
+INIT_CONTAINER_1 --> INIT_CONTAINER_2 : Exit 0
+INIT_CONTAINER_2 --> APP_CONTAINER : Exit 0
+INIT_CONTAINER_2 --> SIDECAR__ENVOY : Start parallel
+INIT_CONTAINER_2 --> SIDECAR__FLUENTD : Start parallel
+APP_CONTAINER --> RUNNING : All containers started
+STARTUP_PROBE --> APP_CONTAINER : HTTP GET /healthz
+LIVENESS_PROBE --> APP_CONTAINER : TCP :8080 every 10s
+READINESS_PROBE --> APP_CONTAINER : HTTP GET /ready every 5s
+APP_CONTAINER --> SUCCEEDED : Exit 0
+APP_CONTAINER --> FAILED : Exit non-zero
+KUBELET -.-> UNKNOWN : Node lost
+
+annotation "Init containers run sequentially:\neach must exit 0\nbefore next starts" near INIT_CONTAINER_1 side right
+annotation "Sidecars start in parallel\nafter all init containers\ncomplete successfully" near SIDECAR__ENVOY side left

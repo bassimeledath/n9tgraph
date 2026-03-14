@@ -1,0 +1,50 @@
+type flow
+title "CI/CD pipeline: from commit to production with quality gates"
+theme white
+direction LR
+spacing balanced
+
+actor Developer
+actor "Release Manager"
+
+service "GitHub" {fill: hero, sublabel: "Monorepo\n14 packages"}
+
+component "Pre-commit Hooks" {fill: dotgrid, sublabel: "lint-staged\nhusky"}
+component "GitHub Actions" {fill: dotgrid, sublabel: "Self-hosted runners\nARM64 + x86"}
+component "Unit Tests" {fill: dotgrid, sublabel: "Jest + Vitest\n4200 test cases"}
+component "Integration Tests" {fill: dotgrid, sublabel: "Testcontainers\nPostgres + Redis"}
+component "E2E Tests" {fill: dotgrid, sublabel: "Playwright\n3 browsers"}
+component "SAST Scanner" {fill: crosshatch, sublabel: "Semgrep\nCustom rules"}
+component "Container Build" {fill: dotgrid, sublabel: "Docker multi-stage\nBuildKit cache"}
+component "Staging Deploy" {fill: dotgrid, sublabel: "ArgoCD\nauto-sync"}
+component "Smoke Tests" {fill: dotgrid, sublabel: "Synthetic monitoring\nCritical paths only"}
+component "Canary Deploy" {fill: hero, sublabel: "10% traffic\n15 min bake"}
+component "Full Rollout" {fill: hero, sublabel: "Blue-green swap\nInstant rollback"}
+
+datastore "Artifact Registry" {fill: crosshatch, sublabel: "Harbor\nSigned images"}
+external "Datadog" {fill: none}
+external "Slack" {fill: none}
+
+DEVELOPER --> GITHUB : git push
+GITHUB --> PRE_COMMIT_HOOKS : Trigger
+PRE_COMMIT_HOOKS --> GITHUB_ACTIONS : PR opened
+GITHUB_ACTIONS --> UNIT_TESTS : Parallel
+GITHUB_ACTIONS --> INTEGRATION_TESTS : Parallel
+GITHUB_ACTIONS --> SAST_SCANNER : Parallel
+UNIT_TESTS --> E2E_TESTS : Gate: all pass
+INTEGRATION_TESTS --> E2E_TESTS : Gate: all pass
+E2E_TESTS --> CONTAINER_BUILD : Gate: all pass
+SAST_SCANNER --> CONTAINER_BUILD : Gate: no critical
+CONTAINER_BUILD --> ARTIFACT_REGISTRY : Push signed image
+ARTIFACT_REGISTRY --> STAGING_DEPLOY : Pull image
+STAGING_DEPLOY --> SMOKE_TESTS : Verify deployment
+SMOKE_TESTS --> CANARY_DEPLOY : Gate: smoke pass
+RELEASE_MANAGER --> CANARY_DEPLOY : Manual approval
+CANARY_DEPLOY --> FULL_ROLLOUT : Gate: error rate < 0.1%
+FULL_ROLLOUT --> DATADOG : Deploy marker
+GITHUB_ACTIONS -.-> SLACK : Build notifications
+CANARY_DEPLOY -.-> DATADOG : Canary metrics
+
+annotation "Quality gates:\neach stage must pass\nbefore next begins" near E2E_TESTS side top
+annotation "Signed images only:\nsupply chain security\nSLSA Level 3" near ARTIFACT_REGISTRY side bottom
+annotation "Instant rollback:\nblue-green swap\nin < 30 seconds" near FULL_ROLLOUT side right

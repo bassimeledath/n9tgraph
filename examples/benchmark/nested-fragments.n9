@@ -1,0 +1,61 @@
+type sequence
+title "Distributed transaction: two-phase commit with retry and rollback"
+message-step 40
+
+participant "Coordinator" {fill: hero}
+participant "Participant A" {fill: dotgrid}
+participant "Participant B" {fill: dotgrid}
+participant "Participant C" {fill: dotgrid}
+participant "WAL" {fill: crosshatch}
+
+COORDINATOR -> WAL : Begin transaction T-4092
+
+COORDINATOR -> PARTICIPANT_A : PREPARE | resource_id=inventory
+COORDINATOR -> PARTICIPANT_B : PREPARE | resource_id=payment
+COORDINATOR -> PARTICIPANT_C : PREPARE | resource_id=shipping
+
+alt ALL VOTE COMMIT
+  PARTICIPANT_A -> COORDINATOR : VOTE_COMMIT | locks acquired
+  PARTICIPANT_B -> COORDINATOR : VOTE_COMMIT | funds reserved
+  PARTICIPANT_C -> COORDINATOR : VOTE_COMMIT | slot allocated
+
+  COORDINATOR -> WAL : Decision: COMMIT
+
+  loop COMMIT PHASE (for each participant)
+    COORDINATOR -> PARTICIPANT_A : COMMIT
+    COORDINATOR -> PARTICIPANT_B : COMMIT
+    COORDINATOR -> PARTICIPANT_C : COMMIT
+
+    alt ACK RECEIVED
+      PARTICIPANT_A -> COORDINATOR : ACK
+      PARTICIPANT_B -> COORDINATOR : ACK
+      PARTICIPANT_C -> COORDINATOR : ACK
+    end
+
+    opt TIMEOUT — NO ACK
+      loop RETRY (max 3 attempts, exponential backoff)
+        COORDINATOR -> PARTICIPANT_A : COMMIT (retry) | attempt N
+        COORDINATOR -> PARTICIPANT_B : COMMIT (retry) | attempt N
+        COORDINATOR -> PARTICIPANT_C : COMMIT (retry) | attempt N
+      end
+    end
+  end
+
+  COORDINATOR -> WAL : Transaction T-4092 COMMITTED
+end
+
+alt ANY VOTE ABORT
+  PARTICIPANT_A -> COORDINATOR : VOTE_ABORT | constraint violation
+
+  COORDINATOR -> WAL : Decision: ABORT
+
+  par ROLLBACK ALL
+    COORDINATOR -> PARTICIPANT_A : ROLLBACK
+    COORDINATOR -> PARTICIPANT_B : ROLLBACK
+    COORDINATOR -> PARTICIPANT_C : ROLLBACK
+  end
+
+  COORDINATOR -> WAL : Transaction T-4092 ABORTED
+end
+
+note over COORDINATOR: Presumed-abort protocol — participants timeout to abort if coordinator crashes

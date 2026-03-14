@@ -1,0 +1,53 @@
+type card
+title "Platform observability dashboard: metrics, logs, traces, alerts, and SLOs"
+
+node "Grafana Hub" {fill: hero}
+
+edge_in GRAFANA_HUB top : All engineering teams
+edge_in GRAFANA_HUB left : On-call rotation {icon: person}
+edge_in GRAFANA_HUB right : Executive stakeholders {icon: doc}
+
+hanging GRAFANA_HUB bottom : Data retention: 90 days hot, 2 years cold {icon: brain}
+
+container "Infrastructure Metrics" {fill: dotgrid}
+  card "CPU Utilization" {icon: brain, body: "Per-node heatmap\nP99 threshold: 80%\nAlert: sustained > 90%"}
+  card "Memory Pressure" {icon: brain, body: "RSS vs available\nOOM kill tracking\nSwap usage trend"}
+  card "Disk I/O" {icon: doc, body: "IOPS per volume\nLatency percentiles\nQueue depth monitor"}
+  card "Network Throughput" {icon: doc, body: "Ingress/egress per AZ\nPacket loss rate\nTCP retransmit ratio"}
+  card "GPU Utilization" {icon: brain, body: "CUDA core usage\nVRAM allocation\nInference queue depth"}
+  overflow
+end
+
+container "Application Logs" {fill: dotgrid}
+  card "Error Rate" {icon: "chain-broken", body: "5xx per endpoint\nGrouped by service\nAnomaly detection"}
+  card "Slow Queries" {icon: doc, body: "P95 > 500ms flagged\nExplain plan capture\nIndex suggestions"}
+  card "Audit Events" {icon: person, body: "Auth attempts log\nPermission changes\nData access trail"}
+  card "Debug Traces" {icon: brain, body: "Sampled at 1%\nFull trace on error\nCorrelation ID linked"}
+end
+
+container "Distributed Traces" {fill: crosshatch}
+  card "Service Map" {icon: brain, body: "Auto-discovered topology\nLatency edge weights\nError rate per hop"}
+  card "Critical Path" {icon: doc, body: "Longest span chain\nBottleneck detection\nParallel span analysis"}
+  card "Trace Comparison" {icon: doc, body: "Baseline vs canary\nRegression detection\nA/B deployment diff"}
+  card "Span Analytics" {icon: brain, body: "Custom attributes\nTag-based filtering\nHistogram buckets"}
+  overflow
+end
+
+container "Alert Rules" {fill: crosshatch}
+  card "P0 — Page Immediately" {icon: "chain-broken", body: "Service down > 30s\nError rate > 5%\nLatency P99 > 2s"}
+  card "P1 — Page Business Hours" {icon: "chain-broken", body: "Degraded throughput\nDisk > 85% full\nCert expiry < 7 days"}
+  card "P2 — Ticket" {icon: doc, body: "Memory leak trend\nLog volume spike\nDependency deprecation"}
+  card "P3 — Informational" {icon: doc, body: "Deployment completed\nConfig change applied\nScaling event logged"}
+end
+
+container "SLO Tracking" {fill: dotgrid}
+  card "Availability SLO" {icon: brain, body: "Target: 99.95%\nBurn rate: 1.2x\nError budget: 21.6min/month"}
+  card "Latency SLO" {icon: brain, body: "P99 < 200ms\nCurrent: 147ms\nBudget remaining: 68%"}
+  card "Throughput SLO" {icon: doc, body: "Min 10k req/s\nPeak: 45k req/s\nCapacity plan: Q2"}
+end
+
+GRAFANA_HUB --> INFRASTRUCTURE_METRICS
+GRAFANA_HUB --> APPLICATION_LOGS
+GRAFANA_HUB --> DISTRIBUTED_TRACES
+GRAFANA_HUB --> ALERT_RULES
+GRAFANA_HUB --> SLO_TRACKING

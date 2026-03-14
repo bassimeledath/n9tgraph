@@ -1,0 +1,35 @@
+type flow
+title "Feature flag evaluation: runtime decision engine with code paths"
+direction TB
+spacing spacious
+
+actor "End User"
+
+service "Feature Flag Service" {fill: hero, sublabel: "LaunchDarkly compatible\nSSE streaming updates"}
+
+component "Flag Evaluator" {fill: dotgrid, sublabel: "In-process SDK\nLocal cache + fallback"}
+component "Targeting Rules Engine" {fill: dotgrid, sublabel: "Segment matching\nPercentage rollout"}
+component "Experiment Tracker" {fill: dotgrid, sublabel: "A/B assignment\nStatistical significance"}
+
+datastore "Flag Store" {fill: crosshatch, sublabel: "Redis cluster\nPub/sub for updates"}
+datastore "Event Log" {fill: crosshatch, sublabel: "Kafka\nFlag evaluation events"}
+
+external "Analytics Pipeline" {fill: none}
+
+END_USER --> FLAG_EVALUATOR : Request with context
+FLAG_EVALUATOR --> TARGETING_RULES_ENGINE : Evaluate rules
+TARGETING_RULES_ENGINE --> FLAG_STORE : Fetch flag config
+FLAG_EVALUATOR --> EXPERIMENT_TRACKER : Record assignment
+EXPERIMENT_TRACKER --> EVENT_LOG : Emit evaluation event
+EVENT_LOG -.-> ANALYTICS_PIPELINE : Stream events
+FEATURE_FLAG_SERVICE --> FLAG_STORE : Update flags
+FEATURE_FLAG_SERVICE -.-> FLAG_EVALUATOR : SSE push update
+
+codeblock "Flag Evaluation Logic" {language: typescript, body: "async function evaluateFlag(\n  flagKey: string,\n  context: UserContext\n): FlagValue {\n  const flag = cache.get(flagKey)\n    ?? await store.fetch(flagKey);\n\n  if (flag.killSwitch) return flag.offValue;\n\n  for (const rule of flag.rules) {\n    if (matchesSegment(context, rule)) {\n      return rule.value;\n    }\n  }\n\n  // Percentage rollout\n  const bucket = hash(context.userId, flagKey);\n  return bucket < flag.rolloutPct\n    ? flag.onValue\n    : flag.offValue;\n}"}
+
+codeblock "Targeting Rule Schema" {language: json, body: "{\n  \"flagKey\": \"new-checkout-flow\",\n  \"rules\": [\n    {\n      \"segment\": \"beta-users\",\n      \"operator\": \"in\",\n      \"value\": true\n    },\n    {\n      \"attribute\": \"country\",\n      \"operator\": \"eq\",\n      \"values\": [\"US\", \"CA\"],\n      \"value\": true\n    }\n  ],\n  \"rolloutPct\": 25,\n  \"onValue\": true,\n  \"offValue\": false\n}"}
+
+annotation "SDK evaluates locally:\nno network round-trip\nP99 < 1ms latency" near FLAG_EVALUATOR side right
+annotation "Kill switch:\ninstant disable\nno deploy required" near FEATURE_FLAG_SERVICE side top
+annotation "Consistent hashing:\nsame user always gets\nsame flag value" near TARGETING_RULES_ENGINE side left
+annotation "Event stream enables:\nfunnel analysis per variant\nrollback on metric regression" near EVENT_LOG side bottom

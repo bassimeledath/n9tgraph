@@ -1,0 +1,57 @@
+type flow
+title "Multi-tenant SaaS platform: isolated deployment islands"
+direction TB
+spacing balanced
+
+# Island 1 — US Region (completely isolated)
+subgraph "US-East Region" {fill: dotgrid}
+  service "US API Gateway" {fill: hero, sublabel: "us-east-1"}
+  component "US Auth" {fill: dotgrid}
+  component "US App Tier" {fill: dotgrid}
+  datastore "US Primary DB" {fill: crosshatch, sublabel: "PostgreSQL 16\nus-east-1a"}
+  datastore "US Replica" {fill: crosshatch, sublabel: "Read replica\nus-east-1b"}
+  US_API_GATEWAY --> US_AUTH : JWT verify
+  US_AUTH --> US_APP_TIER
+  US_APP_TIER --> US_PRIMARY_DB : Write path
+  US_APP_TIER --> US_REPLICA : Read path
+  US_PRIMARY_DB --> US_REPLICA : Streaming replication
+end
+
+# Island 2 — EU Region (completely isolated, GDPR boundary)
+subgraph "EU-West Region (GDPR)" {fill: dotgrid}
+  service "EU API Gateway" {fill: hero, sublabel: "eu-west-1"}
+  component "EU Auth" {fill: dotgrid}
+  component "EU App Tier" {fill: dotgrid}
+  component "EU PII Vault" {fill: crosshatch, sublabel: "Encrypted at rest\nField-level encryption"}
+  datastore "EU Primary DB" {fill: crosshatch, sublabel: "PostgreSQL 16\neu-west-1a"}
+  EU_API_GATEWAY --> EU_AUTH : JWT verify
+  EU_AUTH --> EU_APP_TIER
+  EU_APP_TIER --> EU_PII_VAULT : PII operations
+  EU_APP_TIER --> EU_PRIMARY_DB : Non-PII data
+end
+
+# Island 3 — APAC Region (completely isolated)
+subgraph "APAC Region" {fill: dotgrid}
+  service "APAC API Gateway" {fill: hero, sublabel: "ap-southeast-1"}
+  component "APAC Auth" {fill: dotgrid}
+  component "APAC App Tier" {fill: dotgrid}
+  datastore "APAC Primary DB" {fill: crosshatch, sublabel: "PostgreSQL 16\nap-southeast-1a"}
+  APAC_API_GATEWAY --> APAC_AUTH : JWT verify
+  APAC_AUTH --> APAC_APP_TIER
+  APAC_APP_TIER --> APAC_PRIMARY_DB : CRUD
+end
+
+# Island 4 — Shared control plane (also isolated from data planes)
+subgraph "Global Control Plane" {fill: hero}
+  service "Tenant Router" {fill: hero, sublabel: "DNS-based routing\nGeoIP → region"}
+  component "Config Service" {fill: dotgrid, sublabel: "Feature flags\nTenant settings"}
+  component "Billing Engine" {fill: dotgrid, sublabel: "Usage aggregation\nStripe integration"}
+  datastore "Tenant Registry" {fill: crosshatch, sublabel: "Tenant → region mapping"}
+  TENANT_ROUTER --> CONFIG_SERVICE
+  TENANT_ROUTER --> TENANT_REGISTRY : Lookup region
+  CONFIG_SERVICE --> BILLING_ENGINE : Usage events
+end
+
+annotation "No cross-region data flow:\neach island is a complete\nisolated deployment" near US_API_GATEWAY side top
+annotation "GDPR data residency:\nPII never leaves EU region\nRight to erasure supported" near EU_PII_VAULT side right
+annotation "Control plane is metadata only:\nno customer data transits\nthrough global services" near TENANT_ROUTER side bottom

@@ -1,0 +1,28 @@
+type sequence
+title "OAuth2 Login Flow"
+participant-gap 180
+
+participant Browser
+participant "Auth Server" {fill: hero}
+participant "Resource Server" {fill: crosshatch}
+
+BROWSER -> AUTH_SERVER : GET /authorize
+AUTH_SERVER -> BROWSER : login page
+BROWSER -> AUTH_SERVER : credentials
+AUTH_SERVER -> BROWSER : authorization code
+
+note over BROWSER : redirect with code
+
+BROWSER -> AUTH_SERVER : POST /token (code)
+AUTH_SERVER -> BROWSER : access token + refresh token
+
+BROWSER -> RESOURCE_SERVER : GET /api (Bearer token)
+RESOURCE_SERVER -> AUTH_SERVER : validate token
+AUTH_SERVER -> RESOURCE_SERVER : token valid
+
+RESOURCE_SERVER -> BROWSER : protected data
+
+alt token expired
+  BROWSER -> AUTH_SERVER : POST /token (refresh)
+  AUTH_SERVER -> BROWSER : new access token
+end
