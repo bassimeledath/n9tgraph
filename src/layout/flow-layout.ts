@@ -97,7 +97,7 @@ const ACTOR_H = 58;
 const MIN_NODE_W = 62;
 const CIRCLE_R = 32;
 const SUBGRAPH_PAD_X = 16;
-const SUBGRAPH_PAD_TOP = 36;
+const SUBGRAPH_PAD_TOP = 46;
 const SUBGRAPH_PAD_BOTTOM = 16;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
@@ -298,7 +298,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   const nodeSizes = new Map<string, { w: number; h: number }>();
   for (const n of allNodes) {
     if (n.kind === 'actor') {
-      nodeSizes.set(n.id, { w: ACTOR_W, h: ACTOR_H });
+      const labelW = n.label
+        ? measureLineWidth(n.label.toUpperCase(), fontSizes.nodeLabel, 'mono')
+          + n.label.length * 0.12 * fontSizes.nodeLabel
+        : 0;
+      nodeSizes.set(n.id, { w: Math.max(ACTOR_W, labelW + 8), h: ACTOR_H });
     } else if (n.kind === 'circle') {
       // Size circle to fit label text (with letter-spacing)
       const labelW = n.label ? measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel + 16 : 0;
@@ -357,7 +361,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         }
       }
       // Boost height for non-service nodes with labeled multi-edge pairs (skip subgraph children)
-      if (n.kind !== 'service' && n.kind !== 'actor' && n.kind !== 'circle' && !subgraphChildIds.has(n.id)) {
+      if (n.kind !== 'service' && !subgraphChildIds.has(n.id)) {
         const labeledPairCounts = new Map<string, number>();
         for (const e of allEdges) {
           if (e.from !== n.id && e.to !== n.id) continue;
@@ -827,42 +831,48 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
 }
 
 // ─── Aspect ratio adjustment ─────────────────────────────
-// Applies a deterministic Y-coordinate scaling when the user requests
-// a specific aspect hint via the DSL `aspect` directive.
-// Portrait: target W/H ≈ 0.85 (taller than wide)
-// Landscape: no change (natural LR flow is already landscape)
-// Square: target W/H ≈ 1.0
+// Scales both X and Y coordinates to approach the target aspect ratio.
+// Portrait: target W/H ≈ 0.85, Landscape: W/H ≈ 1.6, Square: W/H ≈ 1.0
+// Works for both TB and LR layouts by distributing scaling across both axes.
 
 function applyAspectHint(
   aspect: AspectHint | undefined,
   positioned: { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number },
 ): void {
-  if (!aspect || aspect === 'auto' || aspect === 'landscape') return;
+  if (!aspect || aspect === 'auto') return;
 
   const { width, height } = positioned;
   if (width === 0 || height === 0) return;
 
   const currentRatio = width / height;
-  const targetRatio = aspect === 'portrait' ? 0.85 : 1.0; // square = 1.0
+  let targetRatio: number;
+  switch (aspect) {
+    case 'landscape': targetRatio = 1.6; break;
+    case 'square':    targetRatio = 1.0; break;
+    case 'portrait':  targetRatio = 0.85; break;
+    default: return;
+  }
 
   // Only scale if the current ratio is farther from target than 10% tolerance
   if (Math.abs(currentRatio - targetRatio) < 0.1) return;
 
-  // Scale Y coordinates to achieve target ratio: newHeight = width / targetRatio
-  const newHeight = width / targetRatio;
-  const scaleY = newHeight / height;
+  // Distribute scaling across both axes (preserve area: scaleX * scaleY ≈ 1)
+  const scaleX = Math.max(0.5, Math.min(2.0, Math.sqrt(targetRatio / currentRatio)));
+  const scaleY = Math.max(0.5, Math.min(2.0, 1 / scaleX));
 
-  // Find the minimum Y so we scale relative to the top of the content
-  let minY = Infinity;
+  let minX = Infinity, minY = Infinity;
   for (const pos of positioned.nodePositions.values()) {
+    minX = Math.min(minX, pos.x);
     minY = Math.min(minY, pos.y);
   }
 
   for (const pos of positioned.nodePositions.values()) {
+    pos.x = minX + (pos.x - minX) * scaleX;
     pos.y = minY + (pos.y - minY) * scaleY;
   }
 
-  positioned.height = newHeight;
+  positioned.width = Math.ceil(width * scaleX);
+  positioned.height = Math.ceil(height * scaleY);
 }
 
 function assignCoordinates(
@@ -1327,8 +1337,22 @@ function resolveAnnotationOverlaps(
             const nodeCenterY = node.y + node.h / 2;
             if (annCenterY <= nodeCenterY) {
               const newY = node.y - b.h - 16;
-              annotations[i].y = newY;
-              boxes[i].y = newY;
+              // Check if pushing up would still overlap another node
+              let stillOverlaps = false;
+              for (const other of posNodes) {
+                if (other === node) continue;
+                const hO = b.x < other.x + other.w + margin && other.x - margin < b.x + b.w;
+                const vO = newY < other.y + other.h + margin && other.y - margin < newY + b.h;
+                if (hO && vO) { stillOverlaps = true; break; }
+              }
+              if (stillOverlaps) {
+                // Horizontal escape: move annotation to the right of the node
+                annotations[i].x = node.x + node.w + 16;
+                boxes[i].x = node.x + node.w + 16;
+              } else {
+                annotations[i].y = newY;
+                boxes[i].y = newY;
+              }
             } else {
               const newY = node.y + node.h + 16;
               annotations[i].y = newY;
@@ -1426,10 +1450,31 @@ function positionAnnotations(
         }
         return { text: a.text, x: candX, y: candY, properties: a.properties };
       }
-      case 'left':
-        return { text: a.text, x: pos.x - 20, y: pos.y + sz.h / 2 + 4, properties: a.properties };
-      case 'top':
-        return { text: a.text, x: isMultiline ? pos.x : pos.x + sz.w / 2, y: pos.y - (isMultiline ? multilineHeight + 10 + sgExtra : 16 + sgExtra), properties: a.properties };
+      case 'left': {
+        const annTextW = measureLineWidth(lines[0], isMultiline ? fontSizes.subtitle : fontSizes.annotation, isMultiline ? 'sans' : 'mono');
+        const stepOffset = a.properties?.step ? 28 : 0;
+        const totalW = stepOffset + annTextW + 8;
+        return { text: a.text, x: pos.x - totalW - 8, y: pos.y + sz.h / 2 + 4, properties: a.properties };
+      }
+      case 'top': {
+        const candX = isMultiline ? pos.x : pos.x + sz.w / 2;
+        const candY = pos.y - (isMultiline ? multilineHeight + 10 + sgExtra : 16 + sgExtra);
+        const annW = isMultiline ? measureLineWidth(lines[0], fontSizes.subtitle, 'sans') + 40 : 120;
+        const annH = isMultiline ? multilineHeight : 20;
+        let hasOverlap = false;
+        for (const [otherId, otherPos] of nodePositions) {
+          if (otherId === a.near) continue;
+          const otherSz = nodeSizes.get(otherId);
+          if (!otherSz) continue;
+          const hOvlp = candX < otherPos.x + otherSz.w + 6 && otherPos.x - 6 < candX + annW;
+          const vOvlp = candY < otherPos.y + otherSz.h + 6 && otherPos.y - 6 < candY + annH;
+          if (hOvlp && vOvlp) { hasOverlap = true; break; }
+        }
+        if (hasOverlap && isMultiline) {
+          return { text: a.text, x: maxContentRight + 24, y: pos.y - 10, properties: a.properties };
+        }
+        return { text: a.text, x: candX, y: candY, properties: a.properties };
+      }
       case 'bottom':
         return { text: a.text, x: isMultiline ? pos.x : pos.x + sz.w / 2, y: pos.y + sz.h + 24 + sgExtra, properties: a.properties };
     }
