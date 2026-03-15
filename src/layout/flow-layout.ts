@@ -309,7 +309,18 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         ? measureLineWidth(n.label.toUpperCase(), fontSizes.nodeLabel, 'mono')
           + n.label.length * 0.12 * fontSizes.nodeLabel
         : 0;
-      nodeSizes.set(n.id, { w: Math.max(ACTOR_W, labelW + 8), h: ACTOR_H });
+      let actorH = ACTOR_H;
+      let actorW = Math.max(ACTOR_W, labelW + 8);
+      if (n.properties.sublabel) {
+        const sublabelLines = wrapLabel(n.properties.sublabel, MAX_NODE_LABEL_CHARS + 6);
+        const sublabelLineH = Math.ceil(fontSizes.edgeLabel * 1.4);
+        // Sublabel starts at y+80 and spans sublabelLines * sublabelLineH
+        actorH = Math.max(actorH, 80 + sublabelLines.length * sublabelLineH + 4);
+        const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
+        const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + 16;
+        actorW = Math.max(actorW, sublabelW);
+      }
+      nodeSizes.set(n.id, { w: actorW, h: actorH });
     } else if (n.kind === 'circle') {
       // Size circle to fit label text (with letter-spacing)
       const labelW = n.label ? measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel + 16 : 0;
@@ -350,13 +361,15 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         // Wrap sublabel too to prevent nodes from becoming excessively wide
         const sublabelWrapped = wrapLabel(sublabel, MAX_NODE_LABEL_CHARS + 6);
         const maxSubLine = sublabelWrapped.reduce((a, b) => a.length > b.length ? a : b, '');
-        // Sublabel renders at y + h/2 + 12, each line at edgeLabel*1.4 = 15.4px
-        // Ensure node height accommodates all sublabel lines without clipping:
-        // h/2 >= 12 + sublabelLines * ceil(edgeLabel * 1.4) + 4px margin
+        // Compute sublabel extent from last label line's visual bottom (matches renderNode)
+        const labelLineH = fontSizes.nodeLabel * 1.4;
+        const lastLineCenter = (wrappedLines.length - 1) * labelLineH / 2;
+        const labelVisualBottom = (-8) + lastLineCenter + fontSizes.nodeLabel / 2;
+        const SUBLABEL_GAP = 10;
         const sublabelLineH = Math.ceil(fontSizes.edgeLabel * 1.4);
-        const sublabelExtent = 12 + sublabelWrapped.length * sublabelLineH + 4;
-        // Also need space above center for main label (offset -8 when sublabel present)
-        const neededH = Math.max(h + 18 * sublabelWrapped.length, sublabelExtent * 2 + 16);
+        const sublabelStart = labelVisualBottom + SUBLABEL_GAP + ((sublabelWrapped.length - 1) * sublabelLineH / 2); // sublabel center (offset for multi-line)
+        const sublabelExtent = sublabelStart + sublabelWrapped.length * sublabelLineH;
+        const neededH = Math.max(h, (sublabelExtent + 4) * 2);
         h = neededH;
         const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + padX * 2;
         if (sublabelW > size.w) {
@@ -681,10 +694,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     let nodeBottom = n.y + n.h;
     let nodeRight = n.x + n.w;
     let nodeLeft = n.x;
-    // Sublabels render ~12px below node center and may extend further
+    // Sublabels render below node center; account for multi-line centering offset
     if (n.properties.sublabel) {
       const sublabelLines = wrapLabel(n.properties.sublabel, 34);
-      nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + sublabelLines.length * fontSizes.edgeLabel * 1.4);
+      const sublabelLineH = fontSizes.edgeLabel * 1.4;
+      nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + (sublabelLines.length - 1) * sublabelLineH / 2 + sublabelLines.length * sublabelLineH);
       // Sublabel may also extend wider than the node
       const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
       const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
@@ -2059,7 +2073,10 @@ function checkTextCollisions(
         + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
       const subLineH = fontSizes.edgeLabel * 1.4;
       const sublabelH = sublabelLines.length * subLineH;
-      const subCy = pos.y + sz.h / 2 + 12;
+      // Dynamic sublabel center: matches renderNode's formula with multi-line offset
+      const lastLineCenter = (wrappedLines.length - 1) * lineH / 2;
+      const labelVisualBottom = -8 + lastLineCenter + fontSizes.nodeLabel / 2;
+      const subCy = pos.y + sz.h / 2 + labelVisualBottom + 10 + ((sublabelLines.length - 1) * subLineH / 2);
       textBoxes.push({
         x: cx - sublabelW / 2, y: subCy - sublabelH / 2,
         w: sublabelW, h: sublabelH,

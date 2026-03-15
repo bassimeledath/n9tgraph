@@ -1,0 +1,18 @@
+type flow
+title "Fill and emphasis combinations"
+direction LR
+spacing spacious
+
+component "Hero Primary" {fill: hero, emphasis: primary, sublabel: "fill:hero\nemphasis:primary"}
+component "Dotgrid Secondary" {fill: dotgrid, emphasis: secondary, sublabel: "fill:dotgrid\nemphasis:secondary"}
+component "Crosshatch Muted" {fill: crosshatch, emphasis: muted, sublabel: "fill:crosshatch\nemphasis:muted"}
+external "None Primary" {fill: none, emphasis: primary, sublabel: "fill:none\nemphasis:primary"}
+component "Hero Muted" {fill: hero, emphasis: muted, sublabel: "fill:hero\nemphasis:muted"}
+component "Dotgrid Primary" {fill: dotgrid, emphasis: primary, sublabel: "fill:dotgrid\nemphasis:primary"}
+
+HERO_PRIMARY --> DOTGRID_SECONDARY : dim {color: dim}
+DOTGRID_SECONDARY --> CROSSHATCH_MUTED : muted {color: muted}
+CROSSHATCH_MUTED --> NONE_PRIMARY : accent {color: accent}
+HERO_PRIMARY --> HERO_MUTED
+DOTGRID_PRIMARY --> HERO_PRIMARY
+NONE_PRIMARY -.-> DOTGRID_PRIMARY : dashed

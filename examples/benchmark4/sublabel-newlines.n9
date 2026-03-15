@@ -1,0 +1,18 @@
+type flow
+title "Sublabel newlines: multi-line sublabels on all node types"
+direction TB
+
+actor "DevOps Engineer" {sublabel: "On-call rotation\nPagerDuty responder\nTerraform owner"}
+actor "SRE Lead" {sublabel: "Incident commander\nRunbook author"}
+
+service "Orchestrator" {fill: hero, sublabel: "Kubernetes operator\nHelm chart v3\nArgoCD sync"}
+component "Sidecar Proxy" {sublabel: "Envoy 1.28\nmTLS termination\nCircuit breaker"}
+datastore "Config Store" {fill: crosshatch, sublabel: "etcd v3.5\nWatch notifications\nLease management"}
+external "Cloud Provider" {sublabel: "AWS us-east-1\nMulti-AZ deployment\nSpot instances"}
+
+DEVOPS_ENGINEER --> ORCHESTRATOR : deploy
+SRE_LEAD --> ORCHESTRATOR : rollback
+ORCHESTRATOR --> SIDECAR_PROXY : inject
+ORCHESTRATOR --> CONFIG_STORE : sync config
+ORCHESTRATOR --> CLOUD_PROVIDER : provision
+SIDECAR_PROXY --> CONFIG_STORE : watch

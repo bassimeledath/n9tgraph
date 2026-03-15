@@ -7,6 +7,7 @@ import type { EdgeOpts } from './edges.js';
 import { wrapLabel, measureLineWidth } from '../layout/text-measure.js';
 
 const MAX_NODE_LABEL_CHARS = 28;
+const SUBLABEL_GAP = 10;
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -75,7 +76,7 @@ function sublabelBgRect(cx: number, y: number, text: string): string {
   const textW = maxLineLen * 8 + 16;
   const lineH = fontSizes.edgeLabel * 1.4;
   const textH = lines.length * lineH + 6;
-  const centerY = y + (lines.length - 1) * lineH / 2;
+  const centerY = y;
   return `<rect x="${cx - textW / 2}" y="${centerY - textH / 2}" width="${textW}" height="${textH}" fill="${colors.bg}" rx="2"/>`;
 }
 
@@ -112,7 +113,7 @@ function resolveNodeEmphasis(emphasis?: string): {
         textColor: colors.accent,
         sublabelColor: colors.accent,
         strokeWidth: stroke.nodeDouble,
-        textOpacity: 1,
+        textOpacity: 0.7,
         sublabelOpacity: 0.7,
       };
     case 'secondary':
@@ -121,7 +122,7 @@ function resolveNodeEmphasis(emphasis?: string): {
         textColor: colors.accentDim,
         sublabelColor: colors.accentDim,
         strokeWidth: stroke.node,
-        textOpacity: 0.85,
+        textOpacity: 0.55,
         sublabelOpacity: 0.55,
       };
     case 'muted':
@@ -130,7 +131,7 @@ function resolveNodeEmphasis(emphasis?: string): {
         textColor: colors.gray,
         sublabelColor: colors.gray,
         strokeWidth: 1,
-        textOpacity: 0.65,
+        textOpacity: 0.45,
         sublabelOpacity: 0.45,
       };
     default:
@@ -139,7 +140,7 @@ function resolveNodeEmphasis(emphasis?: string): {
         textColor: colors.accent,
         sublabelColor: colors.accent,
         strokeWidth: stroke.node,
-        textOpacity: 1,
+        textOpacity: 0.6,
         sublabelOpacity: 0.6,
       };
   }
@@ -155,10 +156,34 @@ function renderNode(node: PositionedNode, theme?: string): string {
   const formatLabel = (l: string) => theme === 'white' ? l : l.toUpperCase();
   const nodeStyle = resolveNodeEmphasis(properties.emphasis);
 
+  // Fill-aware text styling: hero → white text + no bg rect; crosshatch → no bg rect; dotgrid → bg rect
+  const effectiveFill = (kind === 'service' && !properties.fill) ? 'hero' : properties.fill;
+  const needsTextBg = effectiveFill === 'dotgrid';
+  if (effectiveFill === 'hero') {
+    nodeStyle.textColor = colors.white;
+    nodeStyle.sublabelColor = colors.white;
+  }
+
   if (kind === 'actor') {
     const cx = x + w / 2;
     const cy = y + 7;
-    return actor({ x: cx, y: cy, label, color: nodeStyle.textColor });
+    let svg = actor({ x: cx, y: cy, label: undefined, color: nodeStyle.textColor });
+    // Render actor label separately so opacity matches sublabel
+    if (label) {
+      const actorFootY = cy + 45; // head(7) + neck(6) + shoulder-hip(16) + hip-foot(16)
+      const opacityAttr = nodeStyle.textOpacity < 1 ? ` opacity="${nodeStyle.textOpacity}"` : '';
+      svg += `<text x="${cx}" y="${actorFootY + 14}" font-family="${fonts.mono}" font-size="${fontSizes.nodeLabel}" fill="${nodeStyle.textColor}"${opacityAttr} text-anchor="middle" letter-spacing="${spacing.letterSpacing}">${escapeXml(formatLabel(label))}</text>`;
+    }
+    if (properties.sublabel) {
+      // Actor label renders at footY+14 = y+66 (central baseline).
+      // Compute sublabel center so the first line starts at y+80 (below label).
+      const sublabelLines = wrapLabel(properties.sublabel, 34);
+      const sublabelLineH = fontSizes.edgeLabel * 1.4;
+      const sublabelBlockH = (sublabelLines.length - 1) * sublabelLineH;
+      const sublabelCenterY = y + 80 + sublabelBlockH / 2;
+      svg += renderSublabel(cx, sublabelCenterY, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
+    }
+    return svg;
   }
 
   if (kind === 'circle') {
@@ -178,38 +203,50 @@ function renderNode(node: PositionedNode, theme?: string): string {
   if (useDoubleBorder) {
     const dbFill = kind === 'service' && !properties.fill ? 'url(#hero)' : fill;
     let svg = doubleBorder({ x, y, w, h, label: undefined, fill: dbFill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth });
-    const dbHasPattern = dbFill.startsWith('url(');
     if (label) {
-      if (dbHasPattern) {
+      if (needsTextBg) {
         svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
       }
       svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
     }
     if (properties.sublabel) {
-      if (dbHasPattern) {
-        svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
+      const labelLines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+      const labelLineH = fontSizes.nodeLabel * 1.4;
+      const lastLineCenter = (labelLines.length - 1) * labelLineH / 2;
+      const labelVisualBottom = h / 2 + labelOffsetY + lastLineCenter + fontSizes.nodeLabel / 2;
+      const sublabelLines = wrapLabel(properties.sublabel, 34);
+      const sublabelLineH = fontSizes.edgeLabel * 1.4;
+      const sublabelAnchorY = y + labelVisualBottom + SUBLABEL_GAP + ((sublabelLines.length - 1) * sublabelLineH / 2);
+      if (needsTextBg) {
+        svg += sublabelBgRect(x + w / 2, sublabelAnchorY, properties.sublabel);
       }
-      svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
+      svg += renderSublabel(x + w / 2, sublabelAnchorY, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
     }
     return svg;
   }
 
   if (kind === 'datastore') {
     let svg = cylinder({ x, y, w, h, label: undefined, fill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth });
-    const dsHasPattern = rawFill.startsWith('url(');
     const rimY = 10; // must match shapes.ts cylinder ry
     const bodyCenterY = y + rimY + (h - rimY * 2) / 2;
     if (label) {
-      if (dsHasPattern) {
+      if (needsTextBg) {
         svg += wrappedLabelBg(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);
       }
       svg += renderWrappedLabel(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
     }
     if (properties.sublabel) {
-      if (dsHasPattern) {
-        svg += sublabelBgRect(x + w / 2, bodyCenterY + 12, properties.sublabel);
+      const labelLines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+      const labelLineH = fontSizes.nodeLabel * 1.4;
+      const lastLineCenter = (labelLines.length - 1) * labelLineH / 2;
+      const dsLabelVisualBottom = labelOffsetY + lastLineCenter + fontSizes.nodeLabel / 2;
+      const sublabelLines = wrapLabel(properties.sublabel, 34);
+      const sublabelLineH = fontSizes.edgeLabel * 1.4;
+      const dsSublabelAnchorY = bodyCenterY + dsLabelVisualBottom + SUBLABEL_GAP + ((sublabelLines.length - 1) * sublabelLineH / 2);
+      if (needsTextBg) {
+        svg += sublabelBgRect(x + w / 2, dsSublabelAnchorY, properties.sublabel);
       }
-      svg += renderSublabel(x + w / 2, bodyCenterY + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
+      svg += renderSublabel(x + w / 2, dsSublabelAnchorY, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
     }
     return svg;
   }
@@ -218,18 +255,24 @@ function renderNode(node: PositionedNode, theme?: string): string {
   // Pill = rectangle with rx = height/2 (fully semicircular ends), NOT an ellipse
   const rx = properties.shape === 'pill' ? h / 2 : undefined;
   let svg = rect({ x, y, w, h, label: undefined, fill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth, ...(rx !== undefined ? { rx } : {}) });
-  const hasPatternFill = rawFill.startsWith('url(');
   if (label) {
-    if (hasPatternFill) {
+    if (needsTextBg) {
       svg += wrappedLabelBg(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY);
     }
     svg += renderWrappedLabel(x + w / 2, y + h / 2, label, formatLabel, labelOffsetY, nodeStyle.textColor, nodeStyle.textOpacity);
   }
   if (properties.sublabel) {
-    if (hasPatternFill) {
-      svg += sublabelBgRect(x + w / 2, y + h / 2 + 12, properties.sublabel);
+    const labelLines = wrapLabel(label, MAX_NODE_LABEL_CHARS);
+    const labelLineH = fontSizes.nodeLabel * 1.4;
+    const lastLineCenter = (labelLines.length - 1) * labelLineH / 2;
+    const labelVisualBottom = h / 2 + labelOffsetY + lastLineCenter + fontSizes.nodeLabel / 2;
+    const sublabelLines = wrapLabel(properties.sublabel, 34);
+    const sublabelLineH = fontSizes.edgeLabel * 1.4;
+    const sublabelAnchorY = y + labelVisualBottom + SUBLABEL_GAP + ((sublabelLines.length - 1) * sublabelLineH / 2);
+    if (needsTextBg) {
+      svg += sublabelBgRect(x + w / 2, sublabelAnchorY, properties.sublabel);
     }
-    svg += renderSublabel(x + w / 2, y + h / 2 + 12, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
+    svg += renderSublabel(x + w / 2, sublabelAnchorY, properties.sublabel, nodeStyle.sublabelColor, nodeStyle.sublabelOpacity);
   }
   return svg;
 }
@@ -950,21 +993,26 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     }
   }
 
-  // Node-overlap resolution for all pending labels
+  // Multi-pass node-overlap resolution for edge labels
   const labelClearance = 8;
-  for (const label of pendingLabels) {
-    for (const [, node] of nodeById) {
-      const hOverlap = label.x - label.halfW < node.x + node.w + labelClearance && label.x + label.halfW > node.x - labelClearance;
-      const vOverlap = label.y - label.halfH < node.y + node.h + labelClearance && label.y + label.halfH > node.y - labelClearance;
-      if (hOverlap && vOverlap) {
-        const nc = nodeCenter(node);
-        if (label.y <= nc.y) {
-          label.y = node.y - label.halfH - labelClearance;
-        } else {
-          label.y = node.y + node.h + label.halfH + labelClearance;
+  for (let nodePass = 0; nodePass < 5; nodePass++) {
+    let changed = false;
+    for (const label of pendingLabels) {
+      for (const [, node] of nodeById) {
+        const hOverlap = label.x - label.halfW < node.x + node.w + labelClearance && label.x + label.halfW > node.x - labelClearance;
+        const vOverlap = label.y - label.halfH < node.y + node.h + labelClearance && label.y + label.halfH > node.y - labelClearance;
+        if (hOverlap && vOverlap) {
+          const nc = nodeCenter(node);
+          if (label.y <= nc.y) {
+            label.y = node.y - label.halfH - labelClearance;
+          } else {
+            label.y = node.y + node.h + label.halfH + labelClearance;
+          }
+          changed = true;
         }
       }
     }
+    if (!changed) break;
   }
 
   // Push edge labels away from occupied rects (subgraph headers, annotations)
@@ -1245,8 +1293,13 @@ export function renderFlow(layout: FlowLayout): string {
         h: fontSizes.nodeLabel + 10,
       });
     }
-    // Sublabel bounding boxes — sublabels render below node center
-    if (node.properties.sublabel) {
+    // Sublabel bounding boxes — dynamic position matching renderNode's formula
+    if (node.properties.sublabel && node.kind !== 'actor') {
+      const labelLines = wrapLabel(node.label, MAX_NODE_LABEL_CHARS);
+      const labelLineH = fontSizes.nodeLabel * 1.4;
+      const lastLineCenter = (labelLines.length - 1) * labelLineH / 2;
+      const labelVisualBottom = -8 + lastLineCenter + fontSizes.nodeLabel / 2;
+      const sublabelCenterY = node.y + node.h / 2 + labelVisualBottom + SUBLABEL_GAP;
       const sublabelLines = wrapLabel(node.properties.sublabel, 34);
       const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
       const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono')
@@ -1254,10 +1307,9 @@ export function renderFlow(layout: FlowLayout): string {
       const lineH = fontSizes.edgeLabel * 1.4;
       const totalH = sublabelLines.length * lineH + 6;
       const cx = node.x + node.w / 2;
-      const sy = node.y + node.h / 2 + 12 - totalH / 2;
       actorLabelBoxes.push({
         x: cx - sublabelW / 2,
-        y: sy,
+        y: sublabelCenterY - totalH / 2,
         w: sublabelW,
         h: totalH,
       });

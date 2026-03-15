@@ -1,0 +1,16 @@
+type flow
+title "Text overflow stress: wrapped labels with multi-line sublabels"
+direction TB
+
+service "Auth Gateway" {fill: hero, sublabel: "Handles OAuth 2.0 + SAML\nRate limiting enabled\nJWT validation"}
+service "API Router" {fill: hero, sublabel: "GraphQL federation\nREST fallback"}
+datastore "Time-Series DB" {fill: crosshatch, sublabel: "InfluxDB v2\nRetention: 30 days\n10M writes/sec"}
+datastore "Config Store" {fill: crosshatch, sublabel: "etcd v3.5\nRaft consensus\nWatch API"}
+component "Notification Service with Long Name" {fill: dotgrid, sublabel: "Email + SMS + Push\nTemplate engine v3\nDelivery tracking"}
+component "Billing Engine" {fill: dotgrid, sublabel: "Stripe integration\nInvoice generation\nTax calculation\nMulti-currency support"}
+
+AUTH_GATEWAY --> API_ROUTER : validate token
+API_ROUTER --> TIME_SERIES_DB : write metrics
+API_ROUTER --> CONFIG_STORE : read config
+API_ROUTER --> NOTIFICATION_SERVICE_WITH_LONG_NAME : trigger alert
+NOTIFICATION_SERVICE_WITH_LONG_NAME --> BILLING_ENGINE : usage events
