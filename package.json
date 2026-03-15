@@ -6,8 +6,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "n9tgraph": "dist/cli.js"
+    "n9tgraph": "dist/mcp-server.js",
+    "n9tgraph-cli": "dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -15,7 +19,9 @@
     "test:watch": "vitest",
     "render": "tsx src/cli.ts",
     "render:all": "tsx src/render-all.ts",
-    "mcp": "tsx src/mcp-server.ts"
+    "mcp": "tsx src/mcp-server.ts",
+    "prepare": "tsc",
+    "prepublishOnly": "tsc"
   },
   "keywords": [
     "diagram",

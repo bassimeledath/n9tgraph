@@ -34,57 +34,26 @@ n9tgraph includes an MCP (Model Context Protocol) server that exposes three tool
 | `n9t.validate` | Validate `.n9` source without rendering. Returns parse errors, warnings, and diagram statistics. |
 | `n9t.grammar` | Get the full `.n9` DSL grammar reference, examples, node kinds, fill patterns, arrow types, and properties. |
 
-### Claude Desktop
+### Quick Install (npx)
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-
-```json
-{
-  "mcpServers": {
-    "n9tgraph": {
-      "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/absolute/path/to/n9tgraph"
-    }
-  }
-}
-```
-
-### Claude Code
-
-Add to `.mcp.json` in your project root (or `~/.claude/mcp.json` for global):
+No clone needed — install directly from GitHub:
 
 ```json
 {
   "mcpServers": {
     "n9tgraph": {
       "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/absolute/path/to/n9tgraph"
+      "args": ["-y", "github:bassimeledath/n9tgraph"]
     }
   }
 }
 ```
 
-### Cursor
-
-Add to `.cursor/mcp.json` in your project root:
-
-```json
-{
-  "mcpServers": {
-    "n9tgraph": {
-      "command": "npx",
-      "args": ["tsx", "src/mcp-server.ts"],
-      "cwd": "/absolute/path/to/n9tgraph"
-    }
-  }
-}
-```
+This works in **Claude Desktop** (`claude_desktop_config.json`), **Claude Code** (`.mcp.json` or `~/.claude/mcp.json`), and **Cursor** (`.cursor/mcp.json`).
 
 ### Generic MCP Client (stdio)
 
-The server uses stdio transport. Run it directly:
+Run directly after cloning:
 
 ```bash
 npx tsx src/mcp-server.ts
