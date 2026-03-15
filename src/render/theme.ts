@@ -15,6 +15,12 @@ export const colors = {
   gray: '#888888',
   dimGray: '#555555',
   annotationColor: '#b4f079',
+  edgeDim: '#7aa84f',
+  edgeMuted: '#555555',
+  subgraphLabelBg: '#000000',
+  subgraphLabelText: '#ffffff',
+  subgraphBadgeFill: '#b4f079',
+  subgraphBadgeText: '#000000',
 } as const;
 
 export const opacity = {

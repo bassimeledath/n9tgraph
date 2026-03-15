@@ -55,10 +55,10 @@ export function cylinder(opts: ShapeOpts): string {
 
 /** Double-border node — two nested rectangles with gap */
 export function doubleBorder(opts: ShapeOpts): string {
-  const { x, y, w, h, label, fill = 'transparent', borderColor = colors.nodeBorder, rx = spacing.borderRadius } = opts;
+  const { x, y, w, h, label, fill = 'transparent', borderColor = colors.nodeBorder, strokeWidth = stroke.nodeDouble, rx = spacing.borderRadius } = opts;
   const gap = spacing.doubleBorderGap;
-  const outerStroke = stroke.nodeDouble;
-  const innerStroke = stroke.nodeDoubleInner;
+  const outerStroke = strokeWidth;
+  const innerStroke = Math.max(1, strokeWidth - 1);
   let svg = '';
   // outer rect
   svg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="${borderColor}" stroke-width="${outerStroke}"/>`;

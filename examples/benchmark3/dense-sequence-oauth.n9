@@ -1,0 +1,65 @@
+type sequence
+title "CI/CD pipeline: build, test, scan, stage, canary, promote — with rollback branches"
+message-step 34
+participant-gap 100
+
+participant "Developer" {fill: none}
+participant "Git Server" {fill: dotgrid}
+participant "CI Runner" {fill: crosshatch}
+participant "Artifact Registry" {fill: dotgrid}
+participant "Security Scanner" {fill: dotgrid}
+participant "Staging Env" {fill: crosshatch}
+participant "Canary Env" {fill: hero}
+participant "Production" {fill: hero}
+
+Developer -> GIT_SERVER : git push origin feature/PROJ-1234-refactor-auth-middleware
+GIT_SERVER -> CI_RUNNER : Webhook: push event {ref: "refs/heads/feature/PROJ-1234", commits: 3}
+
+CI_RUNNER -> CI_RUNNER : Checkout + install deps (npm ci --frozen-lockfile)
+
+par BUILD + LINT + TYPECHECK
+  CI_RUNNER -> CI_RUNNER : TypeScript compile: tsc --noEmit --strict (247 files)
+  CI_RUNNER -> CI_RUNNER : ESLint: 1,847 files checked, 0 errors, 12 warnings
+  CI_RUNNER -> CI_RUNNER : Build: esbuild bundle (entry: 4 chunks, 2.3MB total)
+end
+
+CI_RUNNER -> CI_RUNNER : Unit tests: jest --coverage (342 tests, 98.7% coverage)
+CI_RUNNER -> CI_RUNNER : Integration tests: playwright (89 scenarios across 4 browsers)
+
+CI_RUNNER -> ARTIFACT_REGISTRY : docker push registry.internal/auth-service:sha-a1b2c3d
+
+CI_RUNNER -> SECURITY_SCANNER : Scan image: trivy + Snyk + SAST analysis
+SECURITY_SCANNER -> SECURITY_SCANNER : CVE database lookup (NVD + OSV + GitHub Advisory)
+SECURITY_SCANNER -> CI_RUNNER : Results: 0 critical, 2 high (known + accepted), 14 medium
+
+alt ALL CHECKS PASS
+  CI_RUNNER -> STAGING_ENV : Deploy to staging: helm upgrade --set image.tag=sha-a1b2c3d
+  STAGING_ENV -> STAGING_ENV : Health check: readiness probe passes after 12s
+  STAGING_ENV -> CI_RUNNER : Staging smoke tests: 24/24 passed
+
+  CI_RUNNER -> CANARY_ENV : Canary deploy: 5% traffic split via Istio VirtualService
+  CANARY_ENV -> CANARY_ENV : Monitor: P99 latency, error rate, saturation for 15 minutes
+  CANARY_ENV -> CI_RUNNER : Canary metrics: P99=142ms (baseline: 138ms), errors=0.01%
+
+  alt CANARY HEALTHY
+    CI_RUNNER -> PRODUCTION : Progressive rollout: 5% → 25% → 50% → 100% over 30 minutes
+    PRODUCTION -> CI_RUNNER : Deployment complete: all pods healthy, zero downtime
+    CI_RUNNER -> GIT_SERVER : Tag release: v2.14.7-sha-a1b2c3d
+    CI_RUNNER -> Developer : Slack notification: deployment successful
+  end
+
+  alt CANARY DEGRADED
+    CANARY_ENV -> CI_RUNNER : Alert: error rate > 0.5% threshold
+    CI_RUNNER -> CANARY_ENV : Automatic rollback: revert to previous stable image
+    CI_RUNNER -> Developer : Slack alert: canary failed, rollback executed, logs attached
+  end
+end
+
+alt SECURITY GATE FAIL
+  SECURITY_SCANNER -> CI_RUNNER : Block: critical CVE found in base image
+  CI_RUNNER -> Developer : Pipeline blocked: fix CVE-2024-XXXX before merge
+end
+
+note over Developer: Full pipeline: push → production in ~45 minutes (happy path)
+note over SECURITY_SCANNER: Shift-left security: scan runs before any deployment
+note over CANARY_ENV: Canary analysis uses statistical comparison against baseline window

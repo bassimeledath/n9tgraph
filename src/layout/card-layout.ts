@@ -202,23 +202,49 @@ export function layoutCard(diagram: CardDiagram): CardLayout {
     const nodePos = elementPositions.get(hanging.target);
     if (!nodePos) continue;
 
-    const connStartY = nodePos.y + nodePos.h;
-    const connEndY = connStartY + HANGING_CONNECTOR_LEN;
-
+    let connFrom: { x: number; y: number };
+    let connTo: { x: number; y: number };
+    let textX: number, textY: number;
     const labelW = measureLineWidth(hanging.label, fontSizes.subtitle, 'sans');
     const iconW = hanging.icon ? spacing.iconSize + 6 : 0;
-    const totalW = iconW + labelW;
+
+    switch (hanging.side) {
+      case 'right': {
+        const midY = nodePos.y + nodePos.h / 2;
+        connFrom = { x: nodePos.x + nodePos.w, y: midY };
+        connTo = { x: connFrom.x + HANGING_CONNECTOR_LEN, y: midY };
+        textX = connTo.x + 8 + iconW;
+        textY = midY + 4;
+        break;
+      }
+      case 'left': {
+        const midY = nodePos.y + nodePos.h / 2;
+        connFrom = { x: nodePos.x, y: midY };
+        connTo = { x: connFrom.x - HANGING_CONNECTOR_LEN, y: midY };
+        textX = connTo.x - labelW - 8;
+        textY = midY + 4;
+        break;
+      }
+      default: { // 'bottom' or 'top'
+        const midX = nodePos.x + nodePos.w / 2;
+        connFrom = { x: midX, y: nodePos.y + nodePos.h };
+        connTo = { x: midX, y: connFrom.y + HANGING_CONNECTOR_LEN };
+        textX = midX - (iconW + labelW) / 2 + iconW;
+        textY = connTo.y + 18;
+        break;
+      }
+    }
 
     posHanging.push({
-      connectorFrom: { x: centerX, y: connStartY },
-      connectorTo: { x: centerX, y: connEndY },
+      connectorFrom: connFrom,
+      connectorTo: connTo,
       label: hanging.label,
       icon: hanging.icon,
-      textX: centerX - totalW / 2 + iconW,
-      textY: connEndY + 18,
+      textX,
+      textY,
     });
 
-    curY = connEndY + 40;
+    curY = Math.max(curY, connTo.y + 40);
   }
 
   // Gap before containers
@@ -251,6 +277,8 @@ export function layoutCard(diagram: CardDiagram): CardLayout {
         w: cl.w,
         h: maxCardH,
       });
+      // Register card positions so edge_in, hanging, and edges can reference them
+      elementPositions.set(cl.card.id, { x: cardX, y: cardY, w: cl.w, h: maxCardH });
       cardX += cl.w + CARD_GAP;
     }
 

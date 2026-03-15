@@ -31,6 +31,10 @@ export interface PositionedAnnotation {
   text: string;
   x: number;
   y: number;
+  originX: number;
+  originY: number;
+  anchorX: number;
+  anchorY: number;
   properties?: import('../parser/ast.js').Properties;
 }
 
@@ -103,6 +107,9 @@ const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
 const MAX_NODE_LABEL_CHARS = 28;  // Wrap labels longer than this
 const MAX_ASPECT_RATIO = 3.0;     // Fold chains when ratio exceeds this
+const HUB_EDGE_THRESHOLD = 4;
+const HUB_PORT_SPACING = 12;
+const HUB_PORT_PADDING = 16;
 const MAX_NODES_PER_COL = 6;      // Grid fan-out threshold
 
 // ─── Main entry ──────────────────────────────────────────
@@ -302,7 +309,18 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         ? measureLineWidth(n.label.toUpperCase(), fontSizes.nodeLabel, 'mono')
           + n.label.length * 0.12 * fontSizes.nodeLabel
         : 0;
-      nodeSizes.set(n.id, { w: Math.max(ACTOR_W, labelW + 8), h: ACTOR_H });
+      let actorH = ACTOR_H;
+      let actorW = Math.max(ACTOR_W, labelW + 8);
+      if (n.properties.sublabel) {
+        const sublabelLines = wrapLabel(n.properties.sublabel, MAX_NODE_LABEL_CHARS + 6);
+        const sublabelLineH = Math.ceil(fontSizes.edgeLabel * 1.4);
+        // Sublabel starts at y+80 and spans sublabelLines * sublabelLineH
+        actorH = Math.max(actorH, 80 + sublabelLines.length * sublabelLineH + 4);
+        const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
+        const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + 16;
+        actorW = Math.max(actorW, sublabelW);
+      }
+      nodeSizes.set(n.id, { w: actorW, h: actorH });
     } else if (n.kind === 'circle') {
       // Size circle to fit label text (with letter-spacing)
       const labelW = n.label ? measureLineWidth(n.label, fontSizes.nodeLabel, 'mono') + n.label.length * 0.12 * fontSizes.nodeLabel + 16 : 0;
@@ -343,13 +361,15 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         // Wrap sublabel too to prevent nodes from becoming excessively wide
         const sublabelWrapped = wrapLabel(sublabel, MAX_NODE_LABEL_CHARS + 6);
         const maxSubLine = sublabelWrapped.reduce((a, b) => a.length > b.length ? a : b, '');
-        // Sublabel renders at y + h/2 + 12, each line at edgeLabel*1.4 = 15.4px
-        // Ensure node height accommodates all sublabel lines without clipping:
-        // h/2 >= 12 + sublabelLines * ceil(edgeLabel * 1.4) + 4px margin
+        // Compute sublabel extent from last label line's visual bottom (matches renderNode)
+        const labelLineH = fontSizes.nodeLabel * 1.4;
+        const lastLineCenter = (wrappedLines.length - 1) * labelLineH / 2;
+        const labelVisualBottom = (-8) + lastLineCenter + fontSizes.nodeLabel / 2;
+        const SUBLABEL_GAP = 10;
         const sublabelLineH = Math.ceil(fontSizes.edgeLabel * 1.4);
-        const sublabelExtent = 12 + sublabelWrapped.length * sublabelLineH + 4;
-        // Also need space above center for main label (offset -8 when sublabel present)
-        const neededH = Math.max(h + 18 * sublabelWrapped.length, sublabelExtent * 2 + 16);
+        const sublabelStart = labelVisualBottom + SUBLABEL_GAP + ((sublabelWrapped.length - 1) * sublabelLineH / 2); // sublabel center (offset for multi-line)
+        const sublabelExtent = sublabelStart + sublabelWrapped.length * sublabelLineH;
+        const neededH = Math.max(h, (sublabelExtent + 4) * 2);
         h = neededH;
         const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + padX * 2;
         if (sublabelW > size.w) {
@@ -367,9 +387,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         }
         const multiPairGroups = [...pairCounts.values()].filter(c => c >= 2).length;
         if (multiPairGroups >= 2) {
-          h = Math.max(h, multiPairGroups * 40 + (multiPairGroups - 1) * 18);
+          h = Math.max(h, multiPairGroups * 28 + (multiPairGroups - 1) * 12);
         } else {
-          h = Math.max(h, 65);
+          h = Math.max(h, 50);
         }
       }
       // Boost height for non-service nodes with labeled multi-edge pairs (skip subgraph children)
@@ -383,8 +403,15 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
         }
         const multiPairGroups = [...labeledPairCounts.values()].filter(c => c >= 2).length;
         if (multiPairGroups >= 1) {
-          h = Math.max(h, multiPairGroups * 65 + 8);
+          h = Math.max(h, multiPairGroups * 45 + 8);
         }
+      }
+      // C-2: Hub node sizing based on total edge count
+      const totalEdgeCount = allEdges.filter(e => e.from === n.id || e.to === n.id).length;
+      if (totalEdgeCount >= HUB_EDGE_THRESHOLD) {
+        const hubMinSide = totalEdgeCount * HUB_PORT_SPACING + HUB_PORT_PADDING;
+        h = Math.max(h, hubMinSide);
+        size.w = Math.max(size.w, hubMinSide);
       }
       // Apply DSL min-height / min-width overrides
       const dslMinH = parseInt(n.properties['min-height'] || '', 10);
@@ -499,7 +526,6 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Account for backward edge routing clearance (must match renderer's BASE_CLEARANCE + PER_EDGE_OFFSET)
   if (direction === 'TB') {
     let backwardEdgeCount = 0;
-    let hasRightRouted = false;
     for (const e of allEdges) {
       const src = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
       const tgt = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
@@ -510,11 +536,6 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       const tgtSz = nodeSizes.get(tgt);
       if (!srcSz || !tgtSz) continue;
       if (tgtPos.y + tgtSz.h <= srcPos.y + 5) {
-        const srcCx = srcPos.x + srcSz.w / 2;
-        const tgtCx = tgtPos.x + tgtSz.w / 2;
-        if (srcCx > tgtCx) {
-          hasRightRouted = true;
-        }
         backwardEdgeCount++;
       }
     }
@@ -522,9 +543,6 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       // Left-side clearance: 40px base + 20px per additional edge
       const leftClearance = 40 + Math.max(0, backwardEdgeCount - 1) * 20;
       minContentX = Math.min(minContentX, minContentX - leftClearance);
-    }
-    if (hasRightRouted) {
-      // Right-side clearance for right-routed backward edges (handled in finalWidth below)
     }
   }
 
@@ -580,21 +598,37 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   if (title) {
     // Bold text (font-weight:700) renders ~5% wider than regular measurement
     const BOLD_CORRECTION = 1.05;
-    titleMaxWidth = Math.max(finalWidth - 60, 300);
+    // C-4: Compute content width to cap title wrapping
+    const leftCandidates: number[] = [];
+    const rightCandidates: number[] = [];
+    for (const n of posNodes) {
+      leftCandidates.push(n.x);
+      rightCandidates.push(n.x + n.w);
+    }
+    for (const cb of posCodeblocks) {
+      leftCandidates.push(cb.x);
+      rightCandidates.push(cb.x + cb.w);
+    }
+    for (const sg of posSubgraphs) {
+      leftCandidates.push(sg.x);
+      rightCandidates.push(sg.x + sg.w);
+    }
+    const contentWidth = leftCandidates.length > 0
+      ? Math.max(...rightCandidates) - Math.min(...leftCandidates)
+      : finalWidth;
+
+    titleMaxWidth = Math.max(300, Math.min(finalWidth - 60, contentWidth * 0.6));
     const rawLines = title.split('\n');
-    let widestWrappedLine = 0;
     for (const line of rawLines) {
       const lineW = measureLineWidth(line, fontSizes.title, 'sans') * BOLD_CORRECTION;
       if (lineW <= titleMaxWidth) {
         wrappedTitleLineCount++;
-        widestWrappedLine = Math.max(widestWrappedLine, lineW);
       } else {
         const words = line.split(/\s+/);
         let cur = '';
         for (const word of words) {
           const test = cur ? cur + ' ' + word : word;
           if (measureLineWidth(test, fontSizes.title, 'sans') * BOLD_CORRECTION > titleMaxWidth && cur) {
-            widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans') * BOLD_CORRECTION);
             wrappedTitleLineCount++;
             cur = word;
           } else {
@@ -602,17 +636,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
           }
         }
         if (cur) {
-          widestWrappedLine = Math.max(widestWrappedLine, measureLineWidth(cur, fontSizes.title, 'sans') * BOLD_CORRECTION);
           wrappedTitleLineCount++;
         }
       }
-    }
-    // Ensure canvas is wide enough for the widest wrapped title line (+ margins)
-    const titleNeededWidth = widestWrappedLine + 60; // 30px left margin + 30px right margin
-    if (titleNeededWidth > finalWidth) {
-      finalWidth = titleNeededWidth;
-      // Recompute titleMaxWidth with the expanded width
-      titleMaxWidth = Math.max(finalWidth - 60, 300);
     }
   }
   let finalHeight = positioned.height;
@@ -668,10 +694,11 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     let nodeBottom = n.y + n.h;
     let nodeRight = n.x + n.w;
     let nodeLeft = n.x;
-    // Sublabels render ~12px below node center and may extend further
+    // Sublabels render below node center; account for multi-line centering offset
     if (n.properties.sublabel) {
       const sublabelLines = wrapLabel(n.properties.sublabel, 34);
-      nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + sublabelLines.length * fontSizes.edgeLabel * 1.4);
+      const sublabelLineH = fontSizes.edgeLabel * 1.4;
+      nodeBottom = Math.max(nodeBottom, n.y + n.h / 2 + 12 + (sublabelLines.length - 1) * sublabelLineH / 2 + sublabelLines.length * sublabelLineH);
       // Sublabel may also extend wider than the node
       const maxSubLine = sublabelLines.reduce((a, b) => a.length > b.length ? a : b, '');
       const sublabelW = measureLineWidth(maxSubLine, fontSizes.edgeLabel, 'mono') + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
@@ -736,9 +763,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     finalHeight = maxContentBottom + MARGIN_TOP;
   }
 
-  // Universal safety margin for rounding and stroke widths
-  finalWidth += 10;
-  finalHeight += 10;
+  // Safety margin for rounding and stroke widths
+  finalWidth += 4;
+  finalHeight += 4;
 
   return {
     width: finalWidth,
@@ -1632,10 +1659,31 @@ function positionAnnotations(
     return false;
   }
 
+  // E: Compute anchor point for a given side of a node
+  function anchorForSide(
+    npos: { x: number; y: number },
+    nsz: { w: number; h: number },
+    side: 'top' | 'bottom' | 'left' | 'right',
+  ): { x: number; y: number } {
+    switch (side) {
+      case 'left':
+        return { x: npos.x, y: npos.y + nsz.h / 2 };
+      case 'top':
+        return { x: npos.x + nsz.w / 2, y: npos.y };
+      case 'bottom':
+        return { x: npos.x + nsz.w / 2, y: npos.y + nsz.h };
+      case 'right':
+      default:
+        return { x: npos.x + nsz.w, y: npos.y + nsz.h / 2 };
+    }
+  }
+
   return annotations.map(a => {
     const pos = nodePositions.get(a.near);
     const sz = nodeSizes.get(a.near);
-    if (!pos || !sz) return { text: a.text, x: 100, y: 100, properties: a.properties };
+    if (!pos || !sz) {
+      return { text: a.text, x: 100, y: 100, originX: 100, originY: 100, anchorX: 100, anchorY: 100, properties: a.properties };
+    }
 
     const lines = a.text.split('\n');
     const isMultiline = lines.length > 1;
@@ -1681,12 +1729,26 @@ function positionAnnotations(
       const cand = candidates[trySide as keyof typeof candidates];
       if (!cand) continue;
       if (!checkOverlap(cand.x, cand.y, maxLineW, annH, a.near)) {
-        return { text: a.text, x: cand.x, y: cand.y, properties: a.properties };
+        const anchor = anchorForSide(pos, sz, trySide as 'top' | 'bottom' | 'left' | 'right');
+        return {
+          text: a.text,
+          x: cand.x, y: cand.y,
+          originX: cand.x, originY: cand.y,
+          anchorX: anchor.x, anchorY: anchor.y,
+          properties: a.properties,
+        };
       }
     }
 
     // Last resort: place at diagram right margin, near the target node's y
-    return { text: a.text, x: maxContentRight + 24, y: pos.y + sz.h / 2, properties: a.properties };
+    const anchor = anchorForSide(pos, sz, 'right');
+    return {
+      text: a.text,
+      x: maxContentRight + 24, y: pos.y + sz.h / 2,
+      originX: maxContentRight + 24, originY: pos.y + sz.h / 2,
+      anchorX: anchor.x, anchorY: anchor.y,
+      properties: a.properties,
+    };
   });
 }
 
@@ -2011,7 +2073,10 @@ function checkTextCollisions(
         + maxSubLine.length * 0.12 * fontSizes.edgeLabel;
       const subLineH = fontSizes.edgeLabel * 1.4;
       const sublabelH = sublabelLines.length * subLineH;
-      const subCy = pos.y + sz.h / 2 + 12;
+      // Dynamic sublabel center: matches renderNode's formula with multi-line offset
+      const lastLineCenter = (wrappedLines.length - 1) * lineH / 2;
+      const labelVisualBottom = -8 + lastLineCenter + fontSizes.nodeLabel / 2;
+      const subCy = pos.y + sz.h / 2 + labelVisualBottom + 10 + ((sublabelLines.length - 1) * subLineH / 2);
       textBoxes.push({
         x: cx - sublabelW / 2, y: subCy - sublabelH / 2,
         w: sublabelW, h: sublabelH,

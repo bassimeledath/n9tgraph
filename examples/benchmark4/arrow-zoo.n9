@@ -1,0 +1,19 @@
+type flow
+title "Arrow zoo: edge label collision stress test"
+direction TB
+
+service "Server" {fill: hero, sublabel: "Central hub"}
+component "Client" {sublabel: "Browser app"}
+datastore "Cache" {fill: crosshatch, sublabel: "Redis cluster"}
+component "CDN" {sublabel: "CloudFront"}
+component "Queue" {sublabel: "SQS FIFO"}
+
+CLIENT --> SERVER : request
+SERVER --> CLIENT : response
+SERVER --> CACHE : read cache
+CACHE --> SERVER : cache hit
+SERVER --> CDN : static assets
+CDN --> CLIENT : cached content
+SERVER --> QUEUE : enqueue job
+QUEUE --> SERVER : job result
+CLIENT --> CACHE : invalidate

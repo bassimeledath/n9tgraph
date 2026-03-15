@@ -1,0 +1,86 @@
+type flow
+title "Kubernetes cluster: 4 namespaces with cross-boundary service mesh routing"
+direction TB
+spacing balanced
+
+# Namespace 1 — ingress layer
+subgraph "Namespace: ingress-system" {fill: crosshatch, badge: "INGRESS", border-style: dashed}
+  service "NGINX Ingress" {fill: hero, emphasis: primary, sublabel: "TLS termination\nPath-based routing\nRate limiting"}
+  component "Cert Manager" {fill: dotgrid, emphasis: muted, sublabel: "Let's Encrypt\nAuto-renewal"}
+  component "WAF" {fill: dotgrid, emphasis: muted, sublabel: "ModSecurity\nOWASP Core Rules"}
+  NGINX_INGRESS --> CERT_MANAGER : TLS cert request {color: dim}
+  NGINX_INGRESS --> WAF : Filter request
+end
+
+# Namespace 2 — application workloads
+subgraph "Namespace: app-production" {fill: dotgrid, badge: "APP"}
+  component "Frontend Pod" {fill: dotgrid, sublabel: "React SSR\n3 replicas\nHPA: 3-10"}
+  component "API Pod" {fill: dotgrid, emphasis: primary, sublabel: "Node.js\n5 replicas\nHPA: 5-20"}
+  component "Worker Pod" {fill: dotgrid, sublabel: "Background jobs\n2 replicas\nQueue consumer"}
+  component "Sidecar Proxy" {fill: crosshatch, emphasis: secondary, sublabel: "Envoy\nmTLS + tracing"}
+  component "Config Sidecar" {fill: crosshatch, emphasis: muted, sublabel: "Consul agent\nService discovery"}
+  FRONTEND_POD --> SIDECAR_PROXY
+  API_POD --> SIDECAR_PROXY
+  WORKER_POD --> SIDECAR_PROXY
+  SIDECAR_PROXY --> CONFIG_SIDECAR {color: dim}
+end
+
+# Namespace 3 — data layer
+subgraph "Namespace: data-production" {fill: crosshatch, badge: "DATA"}
+  datastore "PostgreSQL Primary" {fill: crosshatch, emphasis: primary, sublabel: "v16, WAL streaming\n500 connections max"}
+  datastore "PostgreSQL Replica" {fill: crosshatch, emphasis: muted, sublabel: "Read replica\nAsync replication"}
+  datastore "Redis Cluster" {fill: crosshatch, sublabel: "6 nodes\nSession + cache"}
+  datastore "Kafka" {fill: crosshatch, emphasis: secondary, sublabel: "3 brokers\nEvent streaming\n7-day retention"}
+  component "PgBouncer" {fill: dotgrid, sublabel: "Connection pooling\nMax 200 connections"}
+  PGBOUNCER --> POSTGRESQL_PRIMARY
+  POSTGRESQL_PRIMARY --> POSTGRESQL_REPLICA : WAL replication {color: dim}
+end
+
+# Namespace 4 — observability
+subgraph "Namespace: monitoring" {fill: dotgrid, badge: "OBS", border-style: dashed}
+  component "Prometheus" {fill: dotgrid, sublabel: "Metrics scrape\n15s interval"}
+  component "Grafana" {fill: dotgrid, emphasis: secondary, sublabel: "Dashboards\nAlerting rules"}
+  component "Loki" {fill: dotgrid, emphasis: muted, sublabel: "Log aggregation\nLogQL queries"}
+  component "Tempo" {fill: dotgrid, emphasis: muted, sublabel: "Distributed tracing\nTrace-to-logs"}
+  PROMETHEUS --> GRAFANA : Metrics source
+  LOKI --> GRAFANA : Log source {color: dim}
+  TEMPO --> GRAFANA : Trace source {color: dim}
+end
+
+external "CloudFlare CDN" {fill: none}
+external "PagerDuty" {fill: none, emphasis: muted}
+external "Vault" {fill: none}
+
+# External → ingress
+CLOUDFLARE_CDN --> NGINX_INGRESS : HTTPS traffic
+
+# Ingress → app cross-namespace
+NGINX_INGRESS --> FRONTEND_POD : /app/*
+NGINX_INGRESS --> API_POD : /api/*
+
+# App → Data cross-namespace
+SIDECAR_PROXY --> PGBOUNCER : SQL queries (mTLS)
+SIDECAR_PROXY --> REDIS_CLUSTER : Cache ops (mTLS)
+API_POD --> KAFKA : Publish events
+WORKER_POD --> KAFKA : Consume events
+KAFKA --> REDIS_CLUSTER : Cache invalidation {color: dim}
+API_POD --> POSTGRESQL_REPLICA : Read-only queries {color: dim}
+
+# Config + secrets
+VAULT -.-> CONFIG_SIDECAR : Inject secrets
+VAULT -.-> PGBOUNCER : DB credentials
+
+# Monitoring cross-namespace (many dashed edges)
+PROMETHEUS -.-> NGINX_INGRESS : Scrape /metrics {color: dim}
+PROMETHEUS -.-> API_POD : Scrape /metrics {color: dim}
+PROMETHEUS -.-> FRONTEND_POD : Scrape /metrics {color: dim}
+PROMETHEUS -.-> POSTGRESQL_PRIMARY : Scrape pg_exporter {color: dim}
+PROMETHEUS -.-> KAFKA : Scrape JMX {color: dim}
+PROMETHEUS -.-> REDIS_CLUSTER : Scrape redis_exporter {color: dim}
+GRAFANA -.-> PAGERDUTY : Alert notification {color: dim}
+SIDECAR_PROXY -.-> TEMPO : Emit traces {color: dim}
+
+annotation "Cross-namespace traffic:\nmTLS enforced by service mesh\nNetworkPolicy whitelists" near SIDECAR_PROXY side right
+annotation "Data isolation:\nnamespace boundary enforces\nRBAC + resource quotas" near POSTGRESQL_PRIMARY side left
+annotation "4 separate namespaces:\ningress, app, data, monitoring\n22 nodes, 30+ edges" near NGINX_INGRESS side top
+annotation "HPA scales pods:\nCPU > 70% triggers scale-up\nmin/max bounds per deployment" near API_POD side bottom

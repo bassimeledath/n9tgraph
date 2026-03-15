@@ -1,0 +1,30 @@
+type card
+title "Card layout edges: edge_in, hanging, and inter-card edges"
+
+node "Platform Engineering" {border: double}
+
+edge_in PLATFORM_ENGINEERING top : team requests
+
+container "Deployment Pipeline"
+  card "Build And Test" {icon: brain, body: "GitHub Actions\nUnit + integration tests\nDocker build\nSecurity scan"}
+  card "Staging Deploy" {icon: doc, body: "Canary rollout\nSmoke tests\nPerf benchmarks"}
+  card "Production" {icon: brain, body: "Blue-green deploy\nHealth checks\nRollback ready"}
+end
+
+container "Observability Stack"
+  card "Monitoring" {icon: brain, body: "Prometheus + Grafana\nCustom dashboards\nSLA tracking"}
+  card "Alerting" {icon: doc, body: "PagerDuty integration\nEscalation policies\nRunbook links"}
+  card "Logging" {icon: doc, body: "ELK stack\nStructured logs\nRetention: 30 days"}
+end
+
+edge_in BUILD_AND_TEST left : deploy trigger
+edge_in MONITORING right : metrics feed
+
+hanging MONITORING right : alerts
+hanging BUILD_AND_TEST bottom : artifacts
+
+BUILD_AND_TEST --> STAGING_DEPLOY : promote
+STAGING_DEPLOY --> PRODUCTION : release
+MONITORING --> BUILD_AND_TEST : rollback signal
+MONITORING --> ALERTING : threshold breach
+ALERTING --> LOGGING : incident correlation
