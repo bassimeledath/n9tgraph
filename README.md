@@ -4,29 +4,45 @@ A beautiful, opinionated diagramming DSL and renderer. Write `.n9` diagram sourc
 
 Supports **flow**, **sequence**, and **card** diagram types with automatic layout, subgraphs, annotations, and dark/white themes.
 
-## Install
+## MCP Server Install
+
+### Claude Code (recommended)
 
 ```bash
-npm install
-npm run build
+claude mcp add --scope user --transport stdio n9tgraph -- npx -y n9tgraph
 ```
 
-## CLI Usage
+### Claude Desktop
 
-```bash
-# Render .n9 file to SVG (stdout)
-npx n9tgraph examples/layered-architecture.n9
+Add to your `claude_desktop_config.json`:
 
-# Render to PNG file
-npx n9tgraph examples/layered-architecture.n9 -f png -o output.png
-
-# Watch mode
-npx n9tgraph examples/layered-architecture.n9 -o output.svg --watch
+```json
+{
+  "mcpServers": {
+    "n9tgraph": {
+      "command": "npx",
+      "args": ["-y", "n9tgraph"]
+    }
+  }
+}
 ```
 
-## MCP Server
+### Cursor
 
-n9tgraph includes an MCP (Model Context Protocol) server that exposes three tools over stdio:
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "n9tgraph": {
+      "command": "npx",
+      "args": ["-y", "n9tgraph"]
+    }
+  }
+}
+```
+
+### MCP Tools
 
 | Tool | Description |
 |------|-------------|
@@ -34,35 +50,17 @@ n9tgraph includes an MCP (Model Context Protocol) server that exposes three tool
 | `n9t.validate` | Validate `.n9` source without rendering. Returns parse errors, warnings, and diagram statistics. |
 | `n9t.grammar` | Get the full `.n9` DSL grammar reference, examples, node kinds, fill patterns, arrow types, and properties. |
 
-### Quick Install (npx)
-
-No clone needed — install directly from GitHub:
-
-```json
-{
-  "mcpServers": {
-    "n9tgraph": {
-      "command": "npx",
-      "args": ["-y", "github:bassimeledath/n9tgraph"]
-    }
-  }
-}
-```
-
-This works in **Claude Desktop** (`claude_desktop_config.json`), **Claude Code** (`.mcp.json` or `~/.claude/mcp.json`), and **Cursor** (`.cursor/mcp.json`).
-
-### Generic MCP Client (stdio)
-
-Run directly after cloning:
+## CLI Usage
 
 ```bash
-npx tsx src/mcp-server.ts
-```
+# Render .n9 file to SVG (stdout)
+npx n9tgraph-cli examples/layered-architecture.n9
 
-Or after building:
+# Render to PNG file
+npx n9tgraph-cli examples/layered-architecture.n9 -f png -o output.png
 
-```bash
-node dist/mcp-server.js
+# Watch mode
+npx n9tgraph-cli examples/layered-architecture.n9 -o output.svg --watch
 ```
 
 ## Quick DSL Example
@@ -81,6 +79,13 @@ AUTH_SERVICE --> USER_DB : lookup user
 ```
 
 See the `examples/` directory for more.
+
+## Development
+
+```bash
+npm install
+npm run build
+```
 
 ## License
 

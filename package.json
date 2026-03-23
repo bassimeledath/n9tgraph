@@ -10,23 +10,25 @@
     "n9tgraph-cli": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/parser/grammar.pegjs"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/parser/grammar.pegjs dist/parser/grammar.pegjs",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "render": "tsx src/cli.ts",
     "render:all": "tsx src/render-all.ts",
     "mcp": "tsx src/mcp-server.ts",
-    "prepare": "tsc",
-    "prepublishOnly": "tsc"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "diagram",
     "dsl",
     "svg",
+    "mcp",
     "mermaid",
     "architecture"
   ],
