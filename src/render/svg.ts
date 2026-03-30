@@ -4,6 +4,7 @@ import { colors } from './theme.js';
 import { allDefs } from './patterns.js';
 import { layoutSequence } from '../layout/sequence-layout.js';
 import { renderSequence } from './sequence-renderer.js';
+import type { FlowLayout } from '../layout/flow-layout.js';
 import { layoutFlow } from '../layout/flow-layout.js';
 import { renderFlow } from './flow-renderer.js';
 import { layoutCard } from '../layout/card-layout.js';
@@ -98,8 +99,8 @@ ${content}
 </svg>`;
 }
 
-export function renderFromGrid(input: AsciiGuidedInput): string {
-  const layout = layoutFromGrid(input);
+export function renderFromGrid(input: AsciiGuidedInput, precomputedLayout?: FlowLayout): string {
+  const layout = precomputedLayout ?? layoutFromGrid(input);
   const content = renderFlow(layout);
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.width} ${layout.height}" width="${layout.width}" height="${layout.height}">

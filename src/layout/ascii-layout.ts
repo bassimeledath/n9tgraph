@@ -195,12 +195,16 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     }
   }
 
-  // Step 4: Compute column widths and row heights
+  // Step 4: Compute column widths/heights and row widths/heights
   const colWidths: number[] = new Array(numCols).fill(0);
+  const colHeights: number[] = new Array(numCols).fill(0);
+  const rowWidths: number[] = new Array(numRows).fill(0);
   const rowHeights: number[] = new Array(numRows).fill(0);
   for (const [id, pos] of boxGridPos) {
     const size = nodeSizes.get(id)!;
     colWidths[pos.col] = Math.max(colWidths[pos.col], size.w);
+    colHeights[pos.col] = Math.max(colHeights[pos.col], size.h);
+    rowWidths[pos.row] = Math.max(rowWidths[pos.row], size.w);
     rowHeights[pos.row] = Math.max(rowHeights[pos.row], size.h);
   }
 
@@ -229,18 +233,18 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
       y += rowHeights[r] + gapMajor;
     }
   } else {
-    // LR: grid rows become columns (left-to-right layers), grid cols become rows (vertical positions)
+    // LR: grid rows become horizontal layers, grid cols become vertical lanes
     colX = [];
     let x = MARGIN_X;
     for (let r = 0; r < numRows; r++) {
       colX[r] = x;
-      x += rowHeights[r] + gapMajor; // "row heights" become column widths in LR (use layer sizes)
+      x += rowWidths[r] + gapMajor; // layer width = max node WIDTH in that row
     }
     rowY = [];
     let y = MARGIN_TOP + titleOffset;
     for (let c = 0; c < numCols; c++) {
       rowY[c] = y;
-      y += colWidths[c] + gapMinor; // "col widths" become row heights in LR
+      y += colHeights[c] + gapMinor; // lane height = max node HEIGHT in that column
     }
   }
 
@@ -259,9 +263,9 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
       nx = colX[pos.col] + (colWidths[pos.col] - size.w) / 2;
       ny = rowY[pos.row] + (rowHeights[pos.row] - size.h) / 2;
     } else {
-      // LR: grid row → horizontal layer, grid col → vertical position
-      nx = colX[pos.row] + (rowHeights[pos.row] - size.w) / 2;
-      ny = rowY[pos.col] + (colWidths[pos.col] - size.h) / 2;
+      // LR: grid row → horizontal layer, grid col → vertical lane
+      nx = colX[pos.row] + (rowWidths[pos.row] - size.w) / 2;
+      ny = rowY[pos.col] + (colHeights[pos.col] - size.h) / 2;
     }
 
     const node: PositionedNode = {
@@ -343,14 +347,40 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     });
   }
 
-  // Step 10: Compute canvas dimensions
+  // Step 10: Shift all elements if any coords are negative (e.g. subgraph padding)
+  const allMinX = [
+    ...nodes.map(n => n.x),
+    ...subgraphs.map(s => s.x),
+    ...annotations.map(a => a.x),
+  ];
+  const allMinY = [
+    ...nodes.map(n => n.y),
+    ...subgraphs.map(s => s.y),
+    ...annotations.map(a => a.y),
+  ];
+  const globalMinX = allMinX.length > 0 ? Math.min(...allMinX) : 0;
+  const globalMinY = allMinY.length > 0 ? Math.min(...allMinY) : 0;
+  const shiftX = globalMinX < MARGIN_X ? MARGIN_X - globalMinX : 0;
+  const shiftY = globalMinY < MARGIN_TOP ? MARGIN_TOP - globalMinY : 0;
+
+  if (shiftX !== 0 || shiftY !== 0) {
+    for (const n of nodes) { n.x += shiftX; n.y += shiftY; }
+    for (const s of subgraphs) { s.x += shiftX; s.y += shiftY; }
+    for (const a of annotations) {
+      a.x += shiftX; a.y += shiftY;
+      a.originX += shiftX; a.originY += shiftY;
+      a.anchorX += shiftX; a.anchorY += shiftY;
+    }
+  }
+
+  // Step 11: Compute canvas dimensions
   const allX = [...nodes.map(n => n.x + n.w), ...subgraphs.map(s => s.x + s.w)];
   const allY = [...nodes.map(n => n.y + n.h), ...subgraphs.map(s => s.y + s.h)];
   const width = (allX.length > 0 ? Math.max(...allX) : 200) + MARGIN_X;
   const height = (allY.length > 0 ? Math.max(...allY) : 100) + MARGIN_TOP;
   const titleMaxWidth = width - 2 * MARGIN_X;
 
-  // Step 11: Return FlowLayout
+  // Step 12: Return FlowLayout
   return {
     width,
     height,

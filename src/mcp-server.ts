@@ -815,7 +815,7 @@ server.tool(
     try {
       const parsed = JSON.parse(inputStr) as AsciiGuidedInput;
       const layout = layoutFromGrid(parsed);
-      const svg = renderFromGrid(parsed);
+      const svg = renderFromGrid(parsed, layout);
       const { width, height } = { width: layout.width, height: layout.height };
       const aspectRatio = height > 0 ? Math.round((width / height) * 100) / 100 : 0;
 

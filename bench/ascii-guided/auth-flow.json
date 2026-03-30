@@ -1,0 +1,28 @@
+{
+  "diagram": {
+    "title": "Authentication Flow",
+    "boxes": [
+      { "id": "client", "label": "Client App" },
+      { "id": "idp", "label": "Identity Provider", "kind": "service" },
+      { "id": "token", "label": "Token Service", "kind": "service" },
+      { "id": "api", "label": "Protected API" },
+      { "id": "cache", "label": "Token Cache", "kind": "datastore" }
+    ],
+    "grid": [
+      ["client", "idp", "token", "cache"],
+      [null,     null,  "api",   null]
+    ],
+    "connectors": [
+      { "from": "client", "to": "idp", "arrow": "-->", "label": "1. login" },
+      { "from": "idp", "to": "token", "arrow": "-->", "label": "2. issue JWT" },
+      { "from": "token", "to": "cache", "arrow": "-->", "label": "3. store" },
+      { "from": "client", "to": "api", "arrow": "-->", "label": "4. request + JWT" },
+      { "from": "api", "to": "cache", "arrow": "-.->" , "label": "5. validate" }
+    ],
+    "annotations": [
+      { "text": "OAuth 2.0 / OIDC", "near": "idp", "side": "top" }
+    ],
+    "direction": "LR",
+    "theme": "dark"
+  }
+}

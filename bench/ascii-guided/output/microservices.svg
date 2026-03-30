@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 665 457" width="665" height="457">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">Microservices Architecture</text>
+<rect x="36" y="113" width="593" height="122" rx="12" fill="transparent" stroke="#b4f079" stroke-width="1" opacity="0.35"/><rect x="36" y="113" width="593" height="122" rx="12" fill="none" stroke="#b4f079" stroke-width="1" opacity="0.5"/>
+<rect x="55" y="223" width="555.5" height="122" rx="12" fill="transparent" stroke="#b4f079" stroke-width="1" opacity="0.35"/><rect x="55" y="223" width="555.5" height="122" rx="12" fill="none" stroke="#b4f079" stroke-width="1" opacity="0.5"/>
+<polyline points="328,109 328,155 128.5,155 128.5,169" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="328" y1="109" x2="328" y2="169" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="328,109 328,155 532,155 532,169" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="328,219 328,265 128.5,265 128.5,279" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="532" y1="219" x2="532" y2="279" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="532,219 532,265 328,265 328,287" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="328" y1="321" x2="328" y2="389" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="304.5" y="344" width="47" height="22" rx="4" fill="#000000"/>
+<rect x="262.5" y="126" width="140" height="24" fill="#000000" rx="3"/><text x="332.5" y="139" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Backend Services</text>
+<rect x="285.25" y="236" width="95" height="24" fill="#000000" rx="3"/><text x="332.75" y="249" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Data Layer</text>
+<rect x="256.5" y="50" width="143" height="59" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="261.25" y="54.75" width="133.5" height="49.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="328" y="71.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">API GATEWAY</text><text x="328" y="88" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Kong / Nginx</text>
+<rect x="52" y="169" width="153" height="50" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="56.75" y="173.75" width="143.5" height="40.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="128.5" y="194" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">AUTH SERVICE</text>
+<rect x="251.5" y="169" width="153" height="50" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="256.25" y="173.75" width="143.5" height="40.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="328" y="194" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">USER SERVICE</text>
+<rect x="451" y="169" width="162" height="50" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="455.75" y="173.75" width="152.5" height="40.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="532" y="194" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ORDER SERVICE</text>
+<rect x="251.5" y="389" width="153" height="50" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="256.25" y="393.75" width="143.5" height="40.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="328" y="414" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">NOTIFICATION</text>
+<rect x="71" y="289" width="115" height="30" fill="#000000" stroke="none"/><line x1="71" y1="289" x2="71" y2="319" stroke="#b4f079" stroke-width="1.5"/><line x1="186" y1="289" x2="186" y2="319" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="128.5" cy="289" rx="57.5" ry="10" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><path d="M71,319 A57.5,10 0 0,0 186,319" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="128.5" y="304" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">USERS DB</text>
+<rect x="469.5" y="289" width="125" height="30" fill="#000000" stroke="none"/><line x1="469.5" y1="289" x2="469.5" y2="319" stroke="#b4f079" stroke-width="1.5"/><line x1="594.5" y1="289" x2="594.5" y2="319" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="532" cy="289" rx="62.5" ry="10" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><path d="M469.5,319 A62.5,10 0 0,0 594.5,319" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="532" y="304" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ORDERS DB</text>
+<rect x="235" y="287" width="186" height="34" rx="17" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="328" y="304" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">MESSAGE QUEUE</text>
+<text x="328" y="359" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">async</text>
+</g>
+</svg>
