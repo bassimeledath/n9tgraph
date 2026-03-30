@@ -1,0 +1,11 @@
+iteration=1 candidate=1 total=97/125 status=keep
+
+simple-3node: spacing=5 overlap=5 proportions=4 edges=5 quality=5 subtotal=24/25 (baseline=22, delta=+2)
+auth-flow: spacing=4 overlap=4 proportions=3 edges=3 quality=3 subtotal=17/25 (baseline=7, delta=+10)
+checkout-flow: spacing=4 overlap=3 proportions=3 edges=2 quality=3 subtotal=15/25 (baseline=12, delta=+3)
+microservices: spacing=4 overlap=5 proportions=4 edges=4 quality=4 subtotal=21/25 (baseline=16, delta=+5)
+data-pipeline: spacing=4 overlap=4 proportions=4 edges=4 quality=4 subtotal=20/25 (baseline=16, delta=+4)
+
+improvement: 73->97 (+24 points, +33%)
+
+top_remaining_issue: checkout-flow edge-through-node collision (ORDER CONFIRMATION->INVENTORY DB passes through SEND EMAIL) — routing issue, not spacing

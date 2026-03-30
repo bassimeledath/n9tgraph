@@ -50,21 +50,21 @@ const MARGIN_X = 36;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const DEFAULT_LAYER_GAP = 24;
-const DEFAULT_TB_LAYER_GAP = 38;
-const DEFAULT_NODE_GAP = 20;
+const DEFAULT_TB_LAYER_GAP = 50;
+const DEFAULT_NODE_GAP = 50;
 const ACTOR_W = 42;
 const ACTOR_H = 72;
 const MIN_NODE_W = 72;
 const CIRCLE_R = 32;
-const SUBGRAPH_PAD_X = 16;
-const SUBGRAPH_PAD_TOP = 56;
-const SUBGRAPH_PAD_BOTTOM = 16;
+const SUBGRAPH_PAD_X = 28;
+const SUBGRAPH_PAD_TOP = 64;
+const SUBGRAPH_PAD_BOTTOM = 28;
 const MAX_NODE_LABEL_CHARS = 28;
 
 function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: number; tbLayerGap: number } {
   switch (preset) {
-    case 'compact':  return { nodeGap: 12, layerGap: 18, tbLayerGap: 28 };
-    case 'spacious': return { nodeGap: 30, layerGap: 50, tbLayerGap: 60 };
+    case 'compact':  return { nodeGap: 24, layerGap: 18, tbLayerGap: 40 };
+    case 'spacious': return { nodeGap: 60, layerGap: 50, tbLayerGap: 80 };
     default:         return { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP };
   }
 }
@@ -208,6 +208,22 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     rowHeights[pos.row] = Math.max(rowHeights[pos.row], size.h);
   }
 
+  // Step 4b: Identify row gaps that contain labeled connectors (TB only)
+  const labeledRowGaps = new Set<number>();
+  if (isTB) {
+    for (const conn of diagram.connectors) {
+      if (!conn.label) continue;
+      const fromPos = boxGridPos.get(conn.from);
+      const toPos = boxGridPos.get(conn.to);
+      if (!fromPos || !toPos) continue;
+      const minRow = Math.min(fromPos.row, toPos.row);
+      const maxRow = Math.max(fromPos.row, toPos.row);
+      for (let r = minRow; r < maxRow; r++) {
+        labeledRowGaps.add(r);
+      }
+    }
+  }
+
   // Step 5: Grid→pixel coordinate mapping
   const sp = resolveSpacing(diagram.spacing);
   const gapMajor = isTB ? sp.tbLayerGap : sp.layerGap; // gap between rows (TB) or cols (LR)
@@ -230,7 +246,8 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     let y = MARGIN_TOP + titleOffset;
     for (let r = 0; r < numRows; r++) {
       rowY[r] = y;
-      y += rowHeights[r] + gapMajor;
+      const labelExtra = labeledRowGaps.has(r) ? 30 : 0;
+      y += rowHeights[r] + gapMajor + labelExtra;
     }
   } else {
     // LR: grid rows become horizontal layers, grid cols become vertical lanes
@@ -315,6 +332,30 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
       h: maxY - minY,
       childIds: sg.childIds,
     });
+  }
+
+  // Step 8b: Ensure minimum 30px margin between vertically adjacent subgraphs
+  const SUBGRAPH_MARGIN = 30;
+  if (subgraphs.length > 1) {
+    subgraphs.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < subgraphs.length; i++) {
+      const prev = subgraphs[i - 1];
+      const curr = subgraphs[i];
+      // Only apply to subgraphs with horizontal overlap
+      const hOverlap = prev.x < curr.x + curr.w && curr.x < prev.x + prev.w;
+      if (!hOverlap) continue;
+      const gap = curr.y - (prev.y + prev.h);
+      if (gap < SUBGRAPH_MARGIN) {
+        const shift = SUBGRAPH_MARGIN - gap;
+        const yThreshold = curr.y - 1;
+        for (const n of nodes) {
+          if (n.y > yThreshold) n.y += shift;
+        }
+        for (let j = i; j < subgraphs.length; j++) {
+          subgraphs[j].y += shift;
+        }
+      }
+    }
   }
 
   // Step 9: Build PositionedAnnotation[]
