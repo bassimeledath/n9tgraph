@@ -334,8 +334,8 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     });
   }
 
-  // Step 8a: Ensure subgraph labels have ≥5px clearance from non-child node borders
-  const LABEL_CLEARANCE = 5;
+  // Step 8a: Ensure subgraph labels have ≥10px clearance from non-child node borders
+  const LABEL_CLEARANCE = 10;
   // Label bg rect spans from sg.y + 13 to sg.y + 37 (fontSizes.subtitle=14, textH=24)
   const LABEL_ZONE_TOP = 13;
   const LABEL_ZONE_BOTTOM = 37;
@@ -361,6 +361,30 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
           for (const s of subgraphs) {
             if (s.y > yThreshold) s.y += shift;
           }
+        }
+      }
+    }
+  }
+
+  // Step 8a2: Ensure ≥30px between non-child node bottom and subgraph top
+  const NODE_SUBGRAPH_MARGIN = 30;
+  for (const sg of subgraphs) {
+    for (const n of nodes) {
+      if (sg.childIds.includes(n.id)) continue;
+      // Check horizontal overlap
+      if (n.x + n.w < sg.x || n.x > sg.x + sg.w) continue;
+      const nodeBottom = n.y + n.h;
+      // Only check nodes above the subgraph
+      if (nodeBottom > sg.y) continue;
+      const gap = sg.y - nodeBottom;
+      if (gap < NODE_SUBGRAPH_MARGIN) {
+        const shift = NODE_SUBGRAPH_MARGIN - gap;
+        const yThreshold = sg.y - 1;
+        for (const nd of nodes) {
+          if (nd.y > yThreshold) nd.y += shift;
+        }
+        for (const s of subgraphs) {
+          if (s.y > yThreshold) s.y += shift;
         }
       }
     }
@@ -446,11 +470,27 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     }
   }
 
-  // Step 11: Compute canvas dimensions
+  // Step 11: Compute canvas dimensions and center content horizontally
   const allX = [...nodes.map(n => n.x + n.w), ...subgraphs.map(s => s.x + s.w)];
   const allY = [...nodes.map(n => n.y + n.h), ...subgraphs.map(s => s.y + s.h)];
-  const width = (allX.length > 0 ? Math.max(...allX) : 200) + MARGIN_X;
+  const allLeftX = [...nodes.map(n => n.x), ...subgraphs.map(s => s.x)];
+  const contentLeft = allLeftX.length > 0 ? Math.min(...allLeftX) : MARGIN_X;
+  const contentRight = allX.length > 0 ? Math.max(...allX) : 200;
+  const width = contentRight + MARGIN_X;
   const height = (allY.length > 0 ? Math.max(...allY) : 100) + MARGIN_TOP;
+  // Center content horizontally: ensure equal left and right margins
+  const contentWidth = contentRight - contentLeft;
+  const idealLeft = (width - contentWidth) / 2;
+  const centerShift = idealLeft - contentLeft;
+  if (Math.abs(centerShift) > 1) {
+    for (const n of nodes) { n.x += centerShift; }
+    for (const s of subgraphs) { s.x += centerShift; }
+    for (const a of annotations) {
+      a.x += centerShift;
+      a.originX += centerShift;
+      a.anchorX += centerShift;
+    }
+  }
   const titleMaxWidth = width - 2 * MARGIN_X;
 
   // Step 12: Return FlowLayout

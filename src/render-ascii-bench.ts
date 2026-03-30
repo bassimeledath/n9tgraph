@@ -43,8 +43,9 @@ for (const file of files) {
   writeFileSync(pngPath, pngData.asPng());
   console.log(`  → ${pngPath}`);
 
-  // Copy PNG to Downloads
-  const dlPath = join(DOWNLOADS_DIR, `${name}.png`);
+  // Copy PNG to Downloads with iteration prefix
+  const iterPrefix = process.env.BENCH_ITER_PREFIX || '';
+  const dlPath = join(DOWNLOADS_DIR, `${iterPrefix}${name}.png`);
   copyFileSync(pngPath, dlPath);
   console.log(`  → ${dlPath}`);
 }

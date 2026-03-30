@@ -764,9 +764,26 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (sameRowBlocking) {
           const nc = nodeCenter(sameRowBlocking as any);
           // For horizontal same-row edges, route above or below the blocking node
-          const midY = fromPt.y <= nc.y
+          let midY = fromPt.y <= nc.y
             ? sameRowBlocking.y - SAME_ROW_CLEARANCE
             : sameRowBlocking.y + sameRowBlocking.h + SAME_ROW_CLEARANCE;
+          // Also ensure the route clears any pending edge labels in the path
+          const routeGoesAbove = fromPt.y <= nc.y;
+          const routeMinX = Math.min(fromPt.x, toPt.x);
+          const routeMaxX = Math.max(fromPt.x, toPt.x);
+          for (const pl of pendingLabels) {
+            const lLeft = pl.x - pl.halfW;
+            const lRight = pl.x + pl.halfW;
+            const lTop = pl.y - pl.halfH;
+            const lBottom = pl.y + pl.halfH;
+            // Check horizontal overlap with the route segment
+            if (lRight < routeMinX || lLeft > routeMaxX) continue;
+            if (routeGoesAbove && midY > lTop - SAME_ROW_CLEARANCE && midY < lBottom + SAME_ROW_CLEARANCE) {
+              midY = lTop - SAME_ROW_CLEARANCE;
+            } else if (!routeGoesAbove && midY < lBottom + SAME_ROW_CLEARANCE && midY > lTop - SAME_ROW_CLEARANCE) {
+              midY = lBottom + SAME_ROW_CLEARANCE;
+            }
+          }
           waypoints = [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }];
           parts.push(polylineEdge({
             from: fromPt, to: toPt, waypoints,
