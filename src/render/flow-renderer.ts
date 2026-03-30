@@ -743,18 +743,49 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
         }
       } else {
-        // Same row: standard routing
+        // Same row: standard routing with obstacle avoidance
         fromPt = connectionPoint(fromNode, tc.x, tc.y);
         toPt = connectionPoint(toNode, fc.x, fc.y);
         // C: Apply distributed target port
         const distributedTo = targetPortSlots.get(edgeIndex);
         if (distributedTo) toPt = distributedTo;
-        const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: edgeColor };
-        parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
-        if (edge.label) {
-          const eLabel = escapeXml(edge.label);
-          const dims = labelDims(eLabel, 30);
-          pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+
+        // Check for obstacle nodes blocking the same-row edge
+        const SAME_ROW_CLEARANCE = 12;
+        let sameRowBlocking: (PositionedNode | PositionedCodeBlock) | undefined;
+        for (const [, node] of nodeById) {
+          if (node === fromNode || node === toNode) continue;
+          if (lineSegmentIntersectsAABB(fromPt, toPt, node, SAME_ROW_CLEARANCE)) {
+            sameRowBlocking = node as PositionedNode | PositionedCodeBlock;
+            break;
+          }
+        }
+
+        if (sameRowBlocking) {
+          const nc = nodeCenter(sameRowBlocking as any);
+          // For horizontal same-row edges, route above or below the blocking node
+          const midY = fromPt.y <= nc.y
+            ? sameRowBlocking.y - SAME_ROW_CLEARANCE
+            : sameRowBlocking.y + sameRowBlocking.h + SAME_ROW_CLEARANCE;
+          waypoints = [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }];
+          parts.push(polylineEdge({
+            from: fromPt, to: toPt, waypoints,
+            dashed: edge.dashed, color: edgeColor,
+            ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
+          }));
+          if (edge.label) {
+            const eLabel = escapeXml(edge.label);
+            const dims = labelDims(eLabel, 30);
+            pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: midY, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+          }
+        } else {
+          const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: edgeColor };
+          parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
+          if (edge.label) {
+            const eLabel = escapeXml(edge.label);
+            const dims = labelDims(eLabel, 30);
+            pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+          }
         }
       }
 

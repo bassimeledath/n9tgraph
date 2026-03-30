@@ -334,6 +334,38 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     });
   }
 
+  // Step 8a: Ensure subgraph labels have ≥5px clearance from non-child node borders
+  const LABEL_CLEARANCE = 5;
+  // Label bg rect spans from sg.y + 13 to sg.y + 37 (fontSizes.subtitle=14, textH=24)
+  const LABEL_ZONE_TOP = 13;
+  const LABEL_ZONE_BOTTOM = 37;
+  for (const sg of subgraphs) {
+    if (!sg.label) continue;
+    const labelTop = sg.y + LABEL_ZONE_TOP;
+    const labelBottom = sg.y + LABEL_ZONE_BOTTOM;
+
+    for (const n of nodes) {
+      if (sg.childIds.includes(n.id)) continue;
+      // Check horizontal overlap
+      if (n.x + n.w < sg.x || n.x > sg.x + sg.w) continue;
+      const nodeBottom = n.y + n.h;
+      // Node bottom intrudes into or too close to label zone
+      if (nodeBottom > labelTop - LABEL_CLEARANCE && nodeBottom < labelBottom + LABEL_CLEARANCE) {
+        const shift = nodeBottom + LABEL_CLEARANCE - labelTop;
+        if (shift > 0) {
+          // Push subgraph and all children + nodes below the threshold down
+          const yThreshold = sg.y - 1;
+          for (const nd of nodes) {
+            if (nd.y > yThreshold) nd.y += shift;
+          }
+          for (const s of subgraphs) {
+            if (s.y > yThreshold) s.y += shift;
+          }
+        }
+      }
+    }
+  }
+
   // Step 8b: Ensure minimum 30px margin between vertically adjacent subgraphs
   const SUBGRAPH_MARGIN = 30;
   if (subgraphs.length > 1) {
