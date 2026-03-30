@@ -8,6 +8,8 @@ import { layoutFlow } from '../layout/flow-layout.js';
 import { renderFlow } from './flow-renderer.js';
 import { layoutCard } from '../layout/card-layout.js';
 import { renderCardDiagram } from './card-renderer.js';
+import type { AsciiGuidedInput } from '../layout/ascii-layout.js';
+import { layoutFromGrid } from '../layout/ascii-layout.js';
 
 export function render(ast: DiagramAST): string {
   switch (ast.type) {
@@ -94,4 +96,23 @@ ${allDefs()}
 ${content}
 </g>
 </svg>`;
+}
+
+export function renderFromGrid(input: AsciiGuidedInput): string {
+  const layout = layoutFromGrid(input);
+  const content = renderFlow(layout);
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.width} ${layout.height}" width="${layout.width}" height="${layout.height}">
+${allDefs()}
+<rect width="100%" height="100%" fill="${colors.bg}"/>
+<g class="diagram">
+${content}
+</g>
+</svg>`;
+
+  if (input.diagram.theme === 'white') {
+    svg = applyWhiteTheme(svg);
+  }
+
+  return svg;
 }

@@ -7,10 +7,12 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { Resvg } from "@resvg/resvg-js";
 import { parse } from "./parser/parser.js";
-import { render } from "./render/svg.js";
+import { render, renderFromGrid } from "./render/svg.js";
 import type { DiagramAST, FlowDiagram, SequenceDiagram, CardDiagram } from "./parser/ast.js";
 import { layoutFlow } from "./layout/flow-layout.js";
 import type { FlowLayout } from "./layout/flow-layout.js";
+import { layoutFromGrid } from "./layout/ascii-layout.js";
+import type { AsciiGuidedInput } from "./layout/ascii-layout.js";
 import { wrapLabel, measureLineWidth } from "./layout/text-measure.js";
 import { fontSizes } from "./render/theme.js";
 
@@ -664,7 +666,54 @@ annotation "Each layer depends only on\\nthe layer directly below it" near API_S
     'min-height', 'min-width',
   ];
 
-  return { syntax, examples, nodeKinds, fillPatterns, arrowTypes, properties };
+  const asciiGridFormat = `# ASCII-Guided Grid Layout (JSON Input for n9t.render-ascii)
+
+Use n9t.render-ascii when you need precise control over node positioning.
+Design the layout as a 2D grid, add n9tgraph styling, and get themed SVG output.
+
+## JSON Structure
+{
+  "diagram": {
+    "title": "optional title",
+    "direction": "TB" | "LR",           // default: "TB"
+    "theme": "default" | "white",       // default: "default"
+    "spacing": "compact" | "balanced" | "spacious",
+    "boxes": [
+      {
+        "id": "unique_id",
+        "label": "Display Name",
+        "kind": "service" | "component" | "external" | "actor" | "datastore" | "circle" | "label",
+        "properties": { "fill": "hero", "sublabel": "secondary text", ... }
+      }
+    ],
+    "grid": [                           // 2D array — row-major, box IDs or null
+      ["box1", null, "box2"],
+      [null, "box3", null]
+    ],
+    "connectors": [
+      {
+        "from": "box1", "to": "box2",
+        "label": "edge label",
+        "arrow": "-->" | "<--" | "<-->" | "-.->" | "<-.-",
+        "properties": { "color": "dim", "step": "1" }
+      }
+    ],
+    "subgraphs": [
+      { "id": "sg1", "label": "Group", "childIds": ["box2", "box3"], "properties": { "fill": "dotgrid" } }
+    ],
+    "annotations": [
+      { "text": "note", "near": "box1", "side": "right" }
+    ]
+  }
+}
+
+## Grid Rules
+- Each row is a layer (TB) or vertical slice (LR)
+- null = empty cell, string = box ID
+- Column widths and row heights auto-size to fit the largest node in each column/row
+- Nodes are centered within their grid cell`;
+
+  return { syntax, asciiGridFormat, examples, nodeKinds, fillPatterns, arrowTypes, properties };
 }
 
 // ─── MCP Server Setup ───────────────────────────────────
@@ -728,6 +777,77 @@ server.tool(
             nodeCount,
             edgeCount,
             warnings,
+            ...(format === "svg" ? { svg } : {}),
+          }, null, 2),
+        },
+      ];
+
+      if (format === "png" && result.png) {
+        content.push({
+          type: "image" as const,
+          data: result.png as string,
+          mimeType: "image/png",
+        });
+      }
+
+      return { content };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text" as const, text: `Parse/render error: ${message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// ─── n9t.render-ascii ──────────────────────────────────
+
+server.tool(
+  "n9t.render-ascii",
+  "Render a diagram from augmented perfect-ascii JSON (grid-based layout with n9tgraph styling). Use this when you need precise control over spatial arrangement — design the layout as a grid, add n9tgraph styling metadata, and get beautiful themed SVG output.",
+  {
+    input: z.string().describe("Augmented perfect-ascii JSON string (diagram mode with n9tgraph extensions: kind, properties, direction, theme, spacing, subgraphs, annotations)"),
+    format: z.enum(["svg", "png"]).default("svg").describe("Output format"),
+    scale: z.number().optional().default(2).describe("PNG scale factor (default: 2)"),
+  },
+  async ({ input: inputStr, format, scale }) => {
+    try {
+      const parsed = JSON.parse(inputStr) as AsciiGuidedInput;
+      const layout = layoutFromGrid(parsed);
+      const svg = renderFromGrid(parsed);
+      const { width, height } = { width: layout.width, height: layout.height };
+      const aspectRatio = height > 0 ? Math.round((width / height) * 100) / 100 : 0;
+
+      const result: Record<string, unknown> = {
+        svg,
+        width,
+        height,
+        aspectRatio,
+        nodeCount: parsed.diagram.boxes.length,
+        edgeCount: parsed.diagram.connectors.length,
+      };
+
+      if (format === "png") {
+        const bg = parsed.diagram.theme === 'white' ? "#ffffff" : "#000000";
+        const pngWidth = Math.max(800, Math.round(width * 0.75)) * scale;
+        const resvg = new Resvg(svg, {
+          fitTo: { mode: "width", value: pngWidth },
+          background: bg,
+        });
+        const pngBuffer = resvg.render().asPng();
+        result.png = Buffer.from(pngBuffer).toString("base64");
+      }
+
+      const content: Array<{ type: "text"; text: string } | { type: "image"; data: string; mimeType: string }> = [
+        {
+          type: "text" as const,
+          text: JSON.stringify({
+            width,
+            height,
+            aspectRatio,
+            nodeCount: parsed.diagram.boxes.length,
+            edgeCount: parsed.diagram.connectors.length,
             ...(format === "svg" ? { svg } : {}),
           }, null, 2),
         },
