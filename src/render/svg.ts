@@ -1,6 +1,7 @@
 // Main render dispatcher — AST → SVG string
 import type { DiagramAST, SequenceDiagram, FlowDiagram, CardDiagram } from '../parser/ast.js';
-import { colors } from './theme.js';
+import { colors, buildColors } from './theme.js';
+import type { Colors } from './theme.js';
 import { allDefs } from './patterns.js';
 import { layoutSequence } from '../layout/sequence-layout.js';
 import { renderSequence } from './sequence-renderer.js';
@@ -38,20 +39,20 @@ ${content}
 </svg>`;
 }
 
-function applyWhiteTheme(svg: string): string {
+function applyWhiteTheme(svg: string, palette: Colors): string {
   // Two-phase replacement to avoid circular color conflicts
   // Phase 1: existing colors → placeholders
   svg = svg
-    .replace(/#000000/g, '\x00BG\x00')
-    .replace(/#ffffff/g, '\x00WH\x00')
-    .replace(/#b4f079/g, '\x00AC\x00')
-    .replace(/#7aa84f/g, '\x00AD\x00')
-    .replace(/#3d6b23/g, '\x00HF\x00')
-    .replace(/#5a9a35/g, '\x00HD\x00')
-    .replace(/#111111/g, '\x00CB\x00')
-    .replace(/#333333/g, '\x00CR\x00')
-    .replace(/#888888/g, '\x00GR\x00')
-    .replace(/#555555/g, '\x00DG\x00');
+    .replace(new RegExp(escapeForRegex(palette.bg), 'g'), '\x00BG\x00')
+    .replace(new RegExp(escapeForRegex(palette.white), 'g'), '\x00WH\x00')
+    .replace(new RegExp(escapeForRegex(palette.accent), 'g'), '\x00AC\x00')
+    .replace(new RegExp(escapeForRegex(palette.accentDim), 'g'), '\x00AD\x00')
+    .replace(new RegExp(escapeForRegex(palette.heroFill), 'g'), '\x00HF\x00')
+    .replace(new RegExp(escapeForRegex(palette.heroDot), 'g'), '\x00HD\x00')
+    .replace(new RegExp(escapeForRegex(palette.cardBg), 'g'), '\x00CB\x00')
+    .replace(new RegExp(escapeForRegex(palette.cardBorder), 'g'), '\x00CR\x00')
+    .replace(new RegExp(escapeForRegex(palette.gray), 'g'), '\x00GR\x00')
+    .replace(new RegExp(escapeForRegex(palette.dimGray), 'g'), '\x00DG\x00');
   // Phase 2: placeholders → white-theme colors
   svg = svg
     .replace(/\x00BG\x00/g, '#ffffff')       // bg → white
@@ -67,6 +68,10 @@ function applyWhiteTheme(svg: string): string {
   return svg;
 }
 
+function escapeForRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function renderFlowDiagram(diagram: FlowDiagram): string {
   const layout = layoutFlow(diagram);
   const content = renderFlow(layout);
@@ -80,7 +85,7 @@ ${content}
 </svg>`;
 
   if (diagram.theme === 'white') {
-    svg = applyWhiteTheme(svg);
+    svg = applyWhiteTheme(svg, colors);
   }
 
   return svg;
@@ -100,20 +105,30 @@ ${content}
 }
 
 export function renderFromGrid(input: AsciiGuidedInput, precomputedLayout?: FlowLayout): string {
-  const layout = precomputedLayout ?? layoutFromGrid(input);
-  const content = renderFlow(layout);
+  const accentColor = (input as any).accentColor as string | undefined;
+  const palette = buildColors(accentColor);
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.width} ${layout.height}" width="${layout.width}" height="${layout.height}">
+  // Temporarily swap the global colors for render
+  const prev = Object.assign({}, colors);
+  Object.assign(colors, palette);
+  try {
+    const layout = precomputedLayout ?? layoutFromGrid(input);
+    const content = renderFlow(layout);
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.width} ${layout.height}" width="${layout.width}" height="${layout.height}">
 ${allDefs()}
-<rect width="100%" height="100%" fill="${colors.bg}"/>
+<rect width="100%" height="100%" fill="${palette.bg}"/>
 <g class="diagram">
 ${content}
 </g>
 </svg>`;
 
-  if (input.diagram.theme === 'white') {
-    svg = applyWhiteTheme(svg);
-  }
+    if (input.diagram.theme === 'white') {
+      svg = applyWhiteTheme(svg, palette);
+    }
 
-  return svg;
+    return svg;
+  } finally {
+    Object.assign(colors, prev);
+  }
 }

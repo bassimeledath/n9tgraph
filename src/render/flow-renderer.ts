@@ -554,6 +554,7 @@ function nudgeAnnotation(ann: PositionedAnnotation, obstacles: { x: number; y: n
 }
 
 function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblocks: PositionedCodeBlock[], direction?: string, subgraphs?: PositionedSubgraph[], occupiedRects?: { x: number; y: number; w: number; h: number }[]): { lines: string; labelBgs: string; labels: string; labelBoxes: { x: number; y: number; w: number; h: number }[] } {
+  const EDGE_CLEARANCE = 12;
   const nodeById = new Map<string, PositionedNode | PositionedCodeBlock>();
   for (const n of nodes) nodeById.set(n.id, n);
   for (const cb of codeblocks) nodeById.set(cb.id, cb);
@@ -613,7 +614,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         // C: Apply distributed target port
         const distributedTo = targetPortSlots.get(edgeIndex);
         if (distributedTo) toPt = distributedTo;
-        const EDGE_CLEARANCE = 12;
         if (Math.abs(fc.x - tc.x) < 80) {
           let blocked = false;
           for (const [, node] of nodeById) {
@@ -751,11 +751,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (distributedTo) toPt = distributedTo;
 
         // Check for obstacle nodes blocking the same-row edge
-        const SAME_ROW_CLEARANCE = 12;
         let sameRowBlocking: (PositionedNode | PositionedCodeBlock) | undefined;
         for (const [, node] of nodeById) {
           if (node === fromNode || node === toNode) continue;
-          if (lineSegmentIntersectsAABB(fromPt, toPt, node, SAME_ROW_CLEARANCE)) {
+          if (lineSegmentIntersectsAABB(fromPt, toPt, node, EDGE_CLEARANCE)) {
             sameRowBlocking = node as PositionedNode | PositionedCodeBlock;
             break;
           }
@@ -765,8 +764,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           const nc = nodeCenter(sameRowBlocking as any);
           // For horizontal same-row edges, route above or below the blocking node
           let midY = fromPt.y <= nc.y
-            ? sameRowBlocking.y - SAME_ROW_CLEARANCE
-            : sameRowBlocking.y + sameRowBlocking.h + SAME_ROW_CLEARANCE;
+            ? sameRowBlocking.y - EDGE_CLEARANCE
+            : sameRowBlocking.y + sameRowBlocking.h + EDGE_CLEARANCE;
           // Also ensure the route clears any pending edge labels in the path
           const routeGoesAbove = fromPt.y <= nc.y;
           const routeMinX = Math.min(fromPt.x, toPt.x);
@@ -778,10 +777,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
             const lBottom = pl.y + pl.halfH;
             // Check horizontal overlap with the route segment
             if (lRight < routeMinX || lLeft > routeMaxX) continue;
-            if (routeGoesAbove && midY > lTop - SAME_ROW_CLEARANCE && midY < lBottom + SAME_ROW_CLEARANCE) {
-              midY = lTop - SAME_ROW_CLEARANCE;
-            } else if (!routeGoesAbove && midY < lBottom + SAME_ROW_CLEARANCE && midY > lTop - SAME_ROW_CLEARANCE) {
-              midY = lBottom + SAME_ROW_CLEARANCE;
+            if (routeGoesAbove && midY > lTop - EDGE_CLEARANCE && midY < lBottom + EDGE_CLEARANCE) {
+              midY = lTop - EDGE_CLEARANCE;
+            } else if (!routeGoesAbove && midY < lBottom + EDGE_CLEARANCE && midY > lTop - EDGE_CLEARANCE) {
+              midY = lBottom + EDGE_CLEARANCE;
             }
           }
           waypoints = [{ x: fromPt.x, y: midY }, { x: toPt.x, y: midY }];
@@ -873,7 +872,6 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     // Check for obstacle nodes blocking straight non-TB edges
     let obstacleRouted = false;
     if (siblings.length === 1) {
-      const EDGE_CLEARANCE = 12;
       let blockingNode: (PositionedNode | PositionedCodeBlock) | undefined;
       for (const [, node] of nodeById) {
         if (node === fromNode || node === toNode) continue;

@@ -673,6 +673,7 @@ Design the layout as a 2D grid, add n9tgraph styling, and get themed SVG output.
 
 ## JSON Structure
 {
+  "accentColor": "#hex",                 // optional custom accent color (e.g. "#3b82f6" for blue)
   "diagram": {
     "title": "optional title",
     "direction": "TB" | "LR",           // default: "TB"

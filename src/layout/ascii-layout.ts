@@ -7,6 +7,7 @@ import { fontSizes } from '../render/theme.js';
 // ─── Input types ────────────────────────────────────────
 
 export interface AsciiGuidedInput {
+  accentColor?: string;
   diagram: {
     title?: string;
     boxes: Array<{
@@ -44,21 +45,21 @@ export interface AsciiGuidedInput {
   };
 }
 
-// ─── Constants (mirrored from flow-layout.ts) ───────────
+// ─── Constants (based on flow-layout.ts, intentionally divergent where noted) ─
 
 const MARGIN_X = 36;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const DEFAULT_LAYER_GAP = 24;
-const DEFAULT_TB_LAYER_GAP = 50;
-const DEFAULT_NODE_GAP = 50;
+const DEFAULT_TB_LAYER_GAP = 50;   // flow-layout: 38 — wider for ASCII grid clarity
+const DEFAULT_NODE_GAP = 50;       // flow-layout: 20 — wider for ASCII grid clarity
 const ACTOR_W = 42;
 const ACTOR_H = 72;
 const MIN_NODE_W = 72;
 const CIRCLE_R = 32;
-const SUBGRAPH_PAD_X = 28;
-const SUBGRAPH_PAD_TOP = 64;
-const SUBGRAPH_PAD_BOTTOM = 28;
+const SUBGRAPH_PAD_X = 28;        // flow-layout: 16
+const SUBGRAPH_PAD_TOP = 64;      // flow-layout: 56
+const SUBGRAPH_PAD_BOTTOM = 28;   // flow-layout: 16
 const MAX_NODE_LABEL_CHARS = 28;
 
 function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: number; tbLayerGap: number } {
@@ -153,6 +154,31 @@ function computeNodeSize(box: BoxDef): { w: number; h: number } {
   if (!isNaN(dslMinW)) finalW = Math.max(finalW, dslMinW);
 
   return { w: finalW, h };
+}
+
+// ─── Shift helpers ──────────────────────────────────────
+
+function shiftBelowY(
+  yThreshold: number, dy: number,
+  nodes: { y: number }[], subgraphs: { y: number }[],
+): void {
+  for (const n of nodes) { if (n.y > yThreshold) n.y += dy; }
+  for (const s of subgraphs) { if (s.y > yThreshold) s.y += dy; }
+}
+
+function shiftAll(
+  dx: number, dy: number,
+  nodes: { x: number; y: number }[],
+  subgraphs: { x: number; y: number }[],
+  annotations: { x: number; y: number; originX: number; originY: number; anchorX: number; anchorY: number }[],
+): void {
+  for (const n of nodes) { n.x += dx; n.y += dy; }
+  for (const s of subgraphs) { s.x += dx; s.y += dy; }
+  for (const a of annotations) {
+    a.x += dx; a.y += dy;
+    a.originX += dx; a.originY += dy;
+    a.anchorX += dx; a.anchorY += dy;
+  }
 }
 
 // ─── Main layout function ───────────────────────────────
@@ -334,58 +360,46 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     });
   }
 
-  // Step 8a: Ensure subgraph labels have ≥10px clearance from non-child node borders
+  // Step 8a: Ensure vertical clearance between non-child nodes and subgraphs
+  // (label zone clearance + node-to-subgraph top margin in a single pass)
   const LABEL_CLEARANCE = 10;
-  // Label bg rect spans from sg.y + 13 to sg.y + 37 (fontSizes.subtitle=14, textH=24)
-  const LABEL_ZONE_TOP = 13;
+  const LABEL_ZONE_TOP = 13;   // label bg rect top offset (derived from fontSizes.subtitle)
   const LABEL_ZONE_BOTTOM = 37;
-  for (const sg of subgraphs) {
-    if (!sg.label) continue;
-    const labelTop = sg.y + LABEL_ZONE_TOP;
-    const labelBottom = sg.y + LABEL_ZONE_BOTTOM;
+  const NODE_SUBGRAPH_MARGIN = 30;
 
-    for (const n of nodes) {
-      if (sg.childIds.includes(n.id)) continue;
-      // Check horizontal overlap
-      if (n.x + n.w < sg.x || n.x > sg.x + sg.w) continue;
-      const nodeBottom = n.y + n.h;
-      // Node bottom intrudes into or too close to label zone
-      if (nodeBottom > labelTop - LABEL_CLEARANCE && nodeBottom < labelBottom + LABEL_CLEARANCE) {
-        const shift = nodeBottom + LABEL_CLEARANCE - labelTop;
-        if (shift > 0) {
-          // Push subgraph and all children + nodes below the threshold down
-          const yThreshold = sg.y - 1;
-          for (const nd of nodes) {
-            if (nd.y > yThreshold) nd.y += shift;
-          }
-          for (const s of subgraphs) {
-            if (s.y > yThreshold) s.y += shift;
-          }
-        }
-      }
-    }
+  // Pre-compute child sets for O(1) membership checks
+  const sgChildSets = new Map<string, Set<string>>();
+  for (const sg of subgraphs) {
+    sgChildSets.set(sg.id, new Set(sg.childIds));
   }
 
-  // Step 8a2: Ensure ≥30px between non-child node bottom and subgraph top
-  const NODE_SUBGRAPH_MARGIN = 30;
   for (const sg of subgraphs) {
+    const childSet = sgChildSets.get(sg.id)!;
     for (const n of nodes) {
-      if (sg.childIds.includes(n.id)) continue;
-      // Check horizontal overlap
+      if (childSet.has(n.id)) continue;
       if (n.x + n.w < sg.x || n.x > sg.x + sg.w) continue;
       const nodeBottom = n.y + n.h;
-      // Only check nodes above the subgraph
-      if (nodeBottom > sg.y) continue;
-      const gap = sg.y - nodeBottom;
-      if (gap < NODE_SUBGRAPH_MARGIN) {
-        const shift = NODE_SUBGRAPH_MARGIN - gap;
-        const yThreshold = sg.y - 1;
-        for (const nd of nodes) {
-          if (nd.y > yThreshold) nd.y += shift;
+      let shift = 0;
+
+      // Label zone clearance (only for labeled subgraphs)
+      if (sg.label) {
+        const labelTop = sg.y + LABEL_ZONE_TOP;
+        const labelBottom = sg.y + LABEL_ZONE_BOTTOM;
+        if (nodeBottom > labelTop - LABEL_CLEARANCE && nodeBottom < labelBottom + LABEL_CLEARANCE) {
+          shift = Math.max(shift, nodeBottom + LABEL_CLEARANCE - labelTop);
         }
-        for (const s of subgraphs) {
-          if (s.y > yThreshold) s.y += shift;
+      }
+
+      // Node-to-subgraph top margin
+      if (nodeBottom <= sg.y) {
+        const gap = sg.y - nodeBottom;
+        if (gap < NODE_SUBGRAPH_MARGIN) {
+          shift = Math.max(shift, NODE_SUBGRAPH_MARGIN - gap);
         }
+      }
+
+      if (shift > 0) {
+        shiftBelowY(sg.y - 1, shift, nodes, subgraphs);
       }
     }
   }
@@ -402,14 +416,7 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
       if (!hOverlap) continue;
       const gap = curr.y - (prev.y + prev.h);
       if (gap < SUBGRAPH_MARGIN) {
-        const shift = SUBGRAPH_MARGIN - gap;
-        const yThreshold = curr.y - 1;
-        for (const n of nodes) {
-          if (n.y > yThreshold) n.y += shift;
-        }
-        for (let j = i; j < subgraphs.length; j++) {
-          subgraphs[j].y += shift;
-        }
+        shiftBelowY(curr.y - 1, SUBGRAPH_MARGIN - gap, nodes, subgraphs);
       }
     }
   }
@@ -444,52 +451,30 @@ export function layoutFromGrid(input: AsciiGuidedInput): FlowLayout {
     });
   }
 
-  // Step 10: Shift all elements if any coords are negative (e.g. subgraph padding)
-  const allMinX = [
-    ...nodes.map(n => n.x),
-    ...subgraphs.map(s => s.x),
-    ...annotations.map(a => a.x),
-  ];
-  const allMinY = [
-    ...nodes.map(n => n.y),
-    ...subgraphs.map(s => s.y),
-    ...annotations.map(a => a.y),
-  ];
-  const globalMinX = allMinX.length > 0 ? Math.min(...allMinX) : 0;
-  const globalMinY = allMinY.length > 0 ? Math.min(...allMinY) : 0;
-  const shiftX = globalMinX < MARGIN_X ? MARGIN_X - globalMinX : 0;
-  const shiftY = globalMinY < MARGIN_TOP ? MARGIN_TOP - globalMinY : 0;
+  // Step 10: Normalize position (fix negatives) and center content in one pass
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of nodes)      { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + n.w); maxY = Math.max(maxY, n.y + n.h); }
+  for (const s of subgraphs)  { minX = Math.min(minX, s.x); minY = Math.min(minY, s.y); maxX = Math.max(maxX, s.x + s.w); maxY = Math.max(maxY, s.y + s.h); }
+  for (const a of annotations) { minX = Math.min(minX, a.x); minY = Math.min(minY, a.y); }
 
-  if (shiftX !== 0 || shiftY !== 0) {
-    for (const n of nodes) { n.x += shiftX; n.y += shiftY; }
-    for (const s of subgraphs) { s.x += shiftX; s.y += shiftY; }
-    for (const a of annotations) {
-      a.x += shiftX; a.y += shiftY;
-      a.originX += shiftX; a.originY += shiftY;
-      a.anchorX += shiftX; a.anchorY += shiftY;
-    }
+  if (!isFinite(minX)) { minX = MARGIN_X; maxX = 200; minY = MARGIN_TOP; maxY = 100; }
+
+  // Shift to ensure minimum margins
+  const fixX = minX < MARGIN_X ? MARGIN_X - minX : 0;
+  const fixY = minY < MARGIN_TOP ? MARGIN_TOP - minY : 0;
+  if (fixX !== 0 || fixY !== 0) {
+    shiftAll(fixX, fixY, nodes, subgraphs, annotations);
+    minX += fixX; maxX += fixX; minY += fixY; maxY += fixY;
   }
 
-  // Step 11: Compute canvas dimensions and center content horizontally
-  const allX = [...nodes.map(n => n.x + n.w), ...subgraphs.map(s => s.x + s.w)];
-  const allY = [...nodes.map(n => n.y + n.h), ...subgraphs.map(s => s.y + s.h)];
-  const allLeftX = [...nodes.map(n => n.x), ...subgraphs.map(s => s.x)];
-  const contentLeft = allLeftX.length > 0 ? Math.min(...allLeftX) : MARGIN_X;
-  const contentRight = allX.length > 0 ? Math.max(...allX) : 200;
-  const width = contentRight + MARGIN_X;
-  const height = (allY.length > 0 ? Math.max(...allY) : 100) + MARGIN_TOP;
-  // Center content horizontally: ensure equal left and right margins
-  const contentWidth = contentRight - contentLeft;
+  // Center content horizontally
+  const width = maxX + MARGIN_X;
+  const height = maxY + MARGIN_TOP;
+  const contentWidth = maxX - minX;
   const idealLeft = (width - contentWidth) / 2;
-  const centerShift = idealLeft - contentLeft;
+  const centerShift = idealLeft - minX;
   if (Math.abs(centerShift) > 1) {
-    for (const n of nodes) { n.x += centerShift; }
-    for (const s of subgraphs) { s.x += centerShift; }
-    for (const a of annotations) {
-      a.x += centerShift;
-      a.originX += centerShift;
-      a.anchorX += centerShift;
-    }
+    shiftAll(centerShift, 0, nodes, subgraphs, annotations);
   }
   const titleMaxWidth = width - 2 * MARGIN_X;
 
