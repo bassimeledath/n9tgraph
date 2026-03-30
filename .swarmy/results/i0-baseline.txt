@@ -1,0 +1,6 @@
+simple-3node: spacing=4 overlap=5 proportions=4 edges=5 quality=4 subtotal=22/25
+checkout-flow: spacing=3 overlap=2 proportions=3 edges=2 quality=2 subtotal=12/25
+microservices: spacing=3 overlap=3 proportions=4 edges=3 quality=3 subtotal=16/25
+auth-flow: spacing=1 overlap=1 proportions=2 edges=2 quality=1 subtotal=7/25
+data-pipeline: spacing=3 overlap=3 proportions=4 edges=3 quality=3 subtotal=16/25
+total score=73/125
