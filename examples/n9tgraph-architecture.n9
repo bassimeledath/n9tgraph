@@ -1,27 +1,14 @@
 type flow
 direction TB
+spacing spacious
 
-actor "Developer" {sublabel: "writes .n9 source"}
-service "CLI" {fill: hero, sublabel: "npx n9tgraph"}
-service "MCP Server" {fill: hero, sublabel: "stdio transport"}
-component "PEG Parser" {fill: dotgrid}
-component "AST"
-component "Sugiyama Layout" {fill: crosshatch, sublabel: "layering + ordering"}
-component "Flow Renderer" {fill: dotgrid}
-external "SVG / PNG" {fill: hero}
+component "Input (.n9)" {fill: dotgrid}
+component "PEG Parser"
+component "Layout Engine" {fill: hero, sublabel: "Sugiyama layering"}
+component "SVG Renderer" {fill: dotgrid}
+external "Output (SVG / PNG)"
 
-subgraph "Core Pipeline" {fill: dotgrid, border-style: dashed}
-  component "PEG Parser"
-  component "AST"
-  component "Sugiyama Layout"
-  component "Flow Renderer"
-end
-
-DEVELOPER --> CLI : n9 file
-DEVELOPER --> MCP_SERVER : tool call
-CLI --> PEG_PARSER : source text
-MCP_SERVER --> PEG_PARSER : source text
-PEG_PARSER --> AST : parse tree
-AST --> SUGIYAMA_LAYOUT : nodes + edges
-SUGIYAMA_LAYOUT --> FLOW_RENDERER : positioned layout
-FLOW_RENDERER --> SVG_PNG : render output
+INPUT_N9 --> PEG_PARSER : parse
+PEG_PARSER --> LAYOUT_ENGINE : AST
+LAYOUT_ENGINE --> SVG_RENDERER : positioned nodes
+SVG_RENDERER --> OUTPUT_SVG_PNG : render
