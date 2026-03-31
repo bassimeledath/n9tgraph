@@ -6,68 +6,19 @@ Supports **flow**, **sequence**, and **card** diagram types with automatic layou
 
 ## Examples
 
-### CI / CD Pipeline (dark theme, top-to-bottom)
+### n9tgraph Architecture
 
-![CI / CD Pipeline](examples/output/ci-deploy-pipeline.png)
+![n9tgraph Architecture](examples/output/n9tgraph-architecture.png)
 
-```
-type flow
-title "CI / CD Pipeline"
-direction TB
+### Event-Driven Order System
 
-actor Developer
-service "CI Server" {fill: hero, sublabel: "GitHub Actions"}
-component "Build & Test" {fill: dotgrid}
-component "Security Scan"
-component "Stage Deploy" {fill: crosshatch}
-external "Production" {fill: hero}
-datastore "Artifact Registry"
+![Event-Driven Order System](examples/output/event-driven-system.png)
 
-subgraph "Quality Gates" {fill: dotgrid, border-style: dashed}
-  component Lint
-  component "Unit Tests"
-  component "Integration Tests"
-end
+## Themes & Colors
 
-DEVELOPER --> CI_SERVER : git push
-CI_SERVER --> BUILD_TEST
-BUILD_TEST --> LINT
-BUILD_TEST --> UNIT_TESTS
-BUILD_TEST --> INTEGRATION_TESTS
-LINT --> SECURITY_SCAN
-UNIT_TESTS --> SECURITY_SCAN
-INTEGRATION_TESTS --> SECURITY_SCAN
-SECURITY_SCAN --> ARTIFACT_REGISTRY : publish image
-ARTIFACT_REGISTRY --> STAGE_DEPLOY : pull & deploy
-STAGE_DEPLOY --> PRODUCTION : promote
-```
+Built-in white theme and custom accent colors via `accentColor`.
 
-### Payment Processing (white theme, left-to-right)
-
-![Payment Processing](examples/output/payment-flow.png)
-
-```
-type flow
-title "Payment Processing"
-theme white
-direction LR
-
-actor Customer
-service "Checkout API" {fill: hero, sublabel: "REST + GraphQL"}
-component "Fraud Engine" {fill: dotgrid}
-external "Stripe" {fill: crosshatch}
-datastore "Orders DB"
-component "Notification Svc"
-
-CUSTOMER --> CHECKOUT_API : submit order
-CHECKOUT_API --> FRAUD_ENGINE : risk check
-FRAUD_ENGINE --> CHECKOUT_API : score
-CHECKOUT_API --> STRIPE : charge card
-STRIPE --> CHECKOUT_API : payment confirm
-CHECKOUT_API --> ORDERS_DB : persist order
-CHECKOUT_API --> NOTIFICATION_SVC : send receipt
-NOTIFICATION_SVC --> CUSTOMER : email + SMS
-```
+![Themes & Accent Colors](examples/output/theme-accent-composite.png)
 
 ## MCP Server Install
 

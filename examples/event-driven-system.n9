@@ -1,0 +1,17 @@
+type flow
+direction LR
+
+actor "Mobile App"
+actor "Web Client"
+service "API Gateway" {fill: hero, sublabel: "auth + rate limit"}
+component "Order Service" {fill: dotgrid}
+datastore "Event Bus" {sublabel: "Kafka"}
+external "Stripe" {fill: crosshatch}
+external "Email / SMS"
+
+MOBILE_APP --> API_GATEWAY : REST
+WEB_CLIENT --> API_GATEWAY : GraphQL
+API_GATEWAY --> ORDER_SERVICE : place order
+ORDER_SERVICE --> STRIPE : charge
+ORDER_SERVICE --> EVENT_BUS : order.created
+EVENT_BUS --> EMAIL_SMS : notify

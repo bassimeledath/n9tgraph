@@ -1,0 +1,12 @@
+type flow
+theme white
+direction LR
+
+actor Client
+service "API Gateway" {fill: hero}
+component "Auth Service" {fill: dotgrid}
+datastore "Users DB"
+
+CLIENT --> API_GATEWAY : request
+API_GATEWAY --> AUTH_SERVICE : validate
+AUTH_SERVICE --> USERS_DB : lookup
