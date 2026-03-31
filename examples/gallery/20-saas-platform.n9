@@ -1,0 +1,54 @@
+type flow
+title "SaaS Platform Architecture"
+theme white
+direction TB
+spacing balanced
+
+actor "End Users"
+actor "Admin"
+
+service "API Gateway" {fill: hero, emphasis: primary, sublabel: "Kong\nRate limiting\nJWT auth"}
+
+subgraph "Application Layer" {fill: dotgrid, badge: "APP"}
+  component "Auth Service" {fill: dotgrid, emphasis: primary, sublabel: "OIDC + SAML\nSession management"}
+  component "Core API" {fill: dotgrid, emphasis: primary, sublabel: "REST + WebSocket\nBusiness logic"}
+  component "Worker Pool" {fill: dotgrid, emphasis: secondary, sublabel: "Background jobs\n16 threads"}
+  component "Search Service" {fill: dotgrid, emphasis: muted, sublabel: "Elasticsearch\nFull-text + facets"}
+end
+
+subgraph "Data Layer" {fill: crosshatch, badge: "DATA", border-style: dashed}
+  datastore "Primary DB" {fill: crosshatch, emphasis: primary, sublabel: "PostgreSQL 16\nPgBouncer pool"}
+  datastore "Cache" {fill: crosshatch, emphasis: secondary, sublabel: "Redis Cluster\nSession + query cache"}
+  datastore "Object Store" {fill: crosshatch, emphasis: muted, sublabel: "S3\nUser uploads"}
+  datastore "Message Queue" {fill: crosshatch, sublabel: "SQS FIFO\nAt-least-once"}
+end
+
+external "Stripe" {fill: none}
+external "SendGrid" {fill: none, emphasis: muted}
+external "Datadog" {fill: none, emphasis: muted}
+
+END_USERS --> API_GATEWAY : HTTPS
+ADMIN --> API_GATEWAY : HTTPS
+API_GATEWAY --> AUTH_SERVICE : validate
+API_GATEWAY --> CORE_API : route
+AUTH_SERVICE --> PRIMARY_DB : users + sessions
+CORE_API --> PRIMARY_DB : read/write
+CORE_API --> CACHE : read-through
+CORE_API --> SEARCH_SERVICE : query
+CORE_API --> MESSAGE_QUEUE : enqueue
+MESSAGE_QUEUE --> WORKER_POOL : consume
+WORKER_POOL --> PRIMARY_DB : batch write
+WORKER_POOL --> OBJECT_STORE : upload
+WORKER_POOL --> STRIPE : charge
+WORKER_POOL -.-> SENDGRID : send email {color: dim}
+CORE_API -.-> DATADOG : metrics {color: dim}
+WORKER_POOL -.-> DATADOG : job metrics {color: dim}
+API_GATEWAY -.-> DATADOG : request logs {color: dim}
+SEARCH_SERVICE --> PRIMARY_DB : index sync
+CACHE --> PRIMARY_DB : invalidation
+
+codeblock "Health Check" {language: typescript, body: "app.get('/health', async (req, res) => {\n  const checks = await Promise.allSettled([\n    db.query('SELECT 1'),\n    redis.ping(),\n    sqs.getQueueAttributes({}),\n  ]);\n  const healthy = checks.every(\n    c => c.status === 'fulfilled'\n  );\n  res.status(healthy ? 200 : 503).json({\n    status: healthy ? 'ok' : 'degraded',\n  });\n});"}
+
+annotation "All traffic TLS-encrypted\nZero-trust network\nNo VPN required" near API_GATEWAY side top
+annotation "Write-through cache:\ninvalidate on mutation\n< 5ms P99 reads" near CACHE side right
+annotation "Job retry policy:\n3 attempts, exponential backoff\nDead-letter after failure" near WORKER_POOL side left

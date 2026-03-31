@@ -1,0 +1,40 @@
+type sequence
+title "gRPC Bidirectional Streaming"
+message-step 45
+participant-gap 200
+
+participant "Client" {fill: none}
+participant "gRPC Gateway" {fill: hero}
+participant "Stream Processor" {fill: dotgrid}
+participant "State Store" {fill: crosshatch}
+
+CLIENT -> GRPC_GATEWAY : Open stream (HTTP/2) | content-type: application/grpc
+
+GRPC_GATEWAY -> STREAM_PROCESSOR : Initialize session | session_id: sess_8f3a
+
+STREAM_PROCESSOR -> STATE_STORE : Load checkpoint | offset: 0
+
+loop Bidirectional streaming
+  CLIENT -> GRPC_GATEWAY : StreamRequest (batch) | 100 events per frame
+  GRPC_GATEWAY -> STREAM_PROCESSOR : Forward batch
+
+  STREAM_PROCESSOR -> STATE_STORE : Write batch | atomic commit
+
+  STREAM_PROCESSOR -> GRPC_GATEWAY : StreamResponse | ack: batch_42, watermark: 1711900000
+  GRPC_GATEWAY -> CLIENT : StreamResponse
+
+  alt Backpressure detected
+    STREAM_PROCESSOR -> GRPC_GATEWAY : WINDOW_UPDATE | reduce to 10 events/frame
+    GRPC_GATEWAY -> CLIENT : Flow control signal
+    CLIENT -> GRPC_GATEWAY : Throttled batch | 10 events per frame
+  end
+end
+
+CLIENT -> GRPC_GATEWAY : Half-close (client done)
+GRPC_GATEWAY -> STREAM_PROCESSOR : Client EOF
+STREAM_PROCESSOR -> STATE_STORE : Final checkpoint
+STREAM_PROCESSOR -> GRPC_GATEWAY : Trailers | grpc-status: 0
+GRPC_GATEWAY -> CLIENT : Trailers + RST_STREAM
+
+note over CLIENT : Client manages backoff: exponential retry with jitter on UNAVAILABLE
+note over STATE_STORE : Exactly-once via idempotency keys embedded in each event

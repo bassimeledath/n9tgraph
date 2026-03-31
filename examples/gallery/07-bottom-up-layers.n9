@@ -1,0 +1,18 @@
+type flow
+title "Build from Foundation Up"
+direction BT
+
+datastore "PostgreSQL" {fill: crosshatch, sublabel: "Primary + replica"}
+datastore "Redis" {fill: crosshatch, sublabel: "Session cache"}
+component "ORM Layer" {fill: dotgrid}
+component "Business Logic" {fill: dotgrid}
+service "REST API" {fill: hero, sublabel: "Express.js"}
+service "GraphQL API" {fill: hero, sublabel: "Apollo Server"}
+actor "Client Apps"
+
+POSTGRESQL --> ORM_LAYER
+REDIS --> ORM_LAYER
+ORM_LAYER --> BUSINESS_LOGIC
+BUSINESS_LOGIC --> REST_API
+BUSINESS_LOGIC --> GRAPHQL_API
+REST_API --> CLIENT_APPS

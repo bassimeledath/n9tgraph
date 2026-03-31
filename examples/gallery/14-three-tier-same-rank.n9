@@ -1,0 +1,44 @@
+type flow
+title "Three-Tier Web Architecture"
+direction TB
+spacing balanced
+aspect portrait
+
+same-rank [WEB_BROWSER, MOBILE_APP, CLI_TOOL]
+same-rank [LOAD_BALANCER, WAF]
+same-rank [API_SERVER, WORKER, SCHEDULER]
+same-rank [POSTGRES, REDIS, S3]
+
+# Tier 0 — Clients
+actor "Web Browser"
+actor "Mobile App"
+actor "CLI Tool"
+
+# Tier 1 — Edge
+service "Load Balancer" {fill: hero, sublabel: "nginx\nL7 routing"}
+component "WAF" {fill: crosshatch, sublabel: "ModSecurity"}
+
+# Tier 2 — Application
+component "API Server" {fill: dotgrid, sublabel: "Node.js\nPort 3000"}
+component "Worker" {fill: dotgrid, sublabel: "Bull queues\n8 concurrency"}
+component "Scheduler" {fill: dotgrid, sublabel: "node-cron\n12 jobs"}
+
+# Tier 3 — Data
+datastore "Postgres" {fill: crosshatch, sublabel: "v16\nPrimary"}
+datastore "Redis" {fill: crosshatch, sublabel: "v7\nCluster"}
+datastore "S3" {fill: crosshatch, sublabel: "us-east-1\nVersioned"}
+
+label "Data Layer"
+
+WEB_BROWSER --> LOAD_BALANCER
+MOBILE_APP --> LOAD_BALANCER
+CLI_TOOL --> LOAD_BALANCER
+LOAD_BALANCER --> WAF
+WAF --> API_SERVER
+API_SERVER --> WORKER : enqueue
+API_SERVER --> POSTGRES : read/write
+API_SERVER --> REDIS : cache
+WORKER --> POSTGRES : batch write
+WORKER --> S3 : upload
+SCHEDULER --> WORKER : trigger
+SCHEDULER --> REDIS : lock

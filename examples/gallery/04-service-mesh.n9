@@ -1,0 +1,37 @@
+type flow
+title "Service Mesh Architecture"
+direction LR
+spacing balanced
+
+actor "Mobile App"
+actor "Web App"
+
+service "Envoy Gateway" {fill: hero, sublabel: "TLS termination\nRate limiting"}
+
+subgraph "Mesh Control Plane"
+  component "Istio Pilot" {shape: pill, fill: dotgrid, sublabel: "Config distribution"}
+  component "Citadel" {shape: pill, fill: dotgrid, sublabel: "mTLS certs"}
+  component "Mixer" {shape: pill, fill: dotgrid, sublabel: "Telemetry + policy"}
+end
+
+component "Order Service" {fill: dotgrid}
+component "Inventory Service" {fill: dotgrid}
+datastore "Orders DB" {fill: crosshatch}
+datastore "Inventory DB" {fill: crosshatch}
+external "Payment Gateway" {fill: none}
+
+MOBILE_APP --> ENVOY_GATEWAY : REST
+WEB_APP --> ENVOY_GATEWAY : GraphQL
+ENVOY_GATEWAY --> ORDER_SERVICE
+ENVOY_GATEWAY --> INVENTORY_SERVICE
+ORDER_SERVICE --> ORDERS_DB
+INVENTORY_SERVICE --> INVENTORY_DB
+ORDER_SERVICE --> PAYMENT_GATEWAY : charge
+ORDER_SERVICE --> INVENTORY_SERVICE : reserve stock
+ISTIO_PILOT -.-> ENVOY_GATEWAY : push config
+CITADEL -.-> ORDER_SERVICE : rotate certs
+CITADEL -.-> INVENTORY_SERVICE : rotate certs
+MIXER -.-> ORDER_SERVICE : collect telemetry
+
+annotation "All inter-service calls\nrouted through sidecars\nwith mTLS encryption" near ENVOY_GATEWAY side top
+annotation "Control plane manages\ncerts, routing rules,\nand observability" near ISTIO_PILOT side bottom

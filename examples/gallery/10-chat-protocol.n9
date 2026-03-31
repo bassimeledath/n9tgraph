@@ -1,0 +1,31 @@
+type sequence
+title "Real-Time Chat Protocol"
+
+participant "Alice" {fill: none}
+participant "Chat Server" {fill: hero}
+participant "Bob" {fill: none}
+participant "Message Store" {fill: crosshatch}
+
+ALICE -> CHAT_SERVER : Connect (WebSocket)
+BOB -> CHAT_SERVER : Connect (WebSocket)
+
+ALICE <-> CHAT_SERVER : Subscribe to room #general
+
+par Concurrent delivery
+  ALICE -> CHAT_SERVER : Send "Hello everyone!"
+  CHAT_SERVER -> MESSAGE_STORE : Persist message
+  CHAT_SERVER -> BOB : Push message
+  CHAT_SERVER -> ALICE : Delivery receipt
+end
+
+BOB -> CHAT_SERVER : Send "Hey Alice!"
+CHAT_SERVER -> MESSAGE_STORE : Persist message
+CHAT_SERVER -> ALICE : Push message
+
+loop Heartbeat every 30s
+  ALICE <-> CHAT_SERVER : ping / pong
+  BOB <-> CHAT_SERVER : ping / pong
+end
+
+note over ALICE, BOB : Messages delivered in < 50ms P99 within same region
+note over MESSAGE_STORE : 90-day retention, then archived to cold storage

@@ -1,0 +1,39 @@
+type flow
+title "Event Sourcing Architecture"
+direction LR
+
+actor "API Client"
+
+service "Command API" {fill: hero, emphasis: primary, sublabel: "Accepts writes\nValidation + auth"}
+
+subgraph "Write Side" {fill: dotgrid, badge: "WRITE", border-style: dashed}
+  component "Command Handler" {fill: dotgrid, emphasis: primary, sublabel: "Domain logic"}
+  component "Aggregate Root" {fill: dotgrid, emphasis: secondary, sublabel: "State machine"}
+  datastore "Event Store" {fill: crosshatch, emphasis: primary, sublabel: "Append-only\nImmutable log"}
+  COMMAND_HANDLER --> AGGREGATE_ROOT : load + apply
+  AGGREGATE_ROOT --> EVENT_STORE : append events
+end
+
+subgraph "Event Bus" {fill: crosshatch, badge: "BUS"}
+  component "Kafka" {shape: pill, fill: crosshatch, sublabel: "Partitioned\nOrdered delivery"}
+  component "Schema Registry" {shape: pill, fill: crosshatch, emphasis: muted, sublabel: "Avro schemas"}
+  KAFKA --> SCHEMA_REGISTRY : validate {color: dim}
+  overflow
+end
+
+subgraph "Read Side" {fill: dotgrid, badge: "READ", border-style: dashed}
+  component "Projection Builder" {fill: dotgrid, emphasis: secondary, sublabel: "Event handler"}
+  datastore "Read DB" {fill: crosshatch, emphasis: muted, sublabel: "Denormalized\nQuery-optimized"}
+  PROJECTION_BUILDER --> READ_DB : upsert views
+end
+
+service "Query API" {fill: hero, emphasis: primary, sublabel: "Serves reads\nCached + fast"}
+external "Analytics" {fill: none, emphasis: muted}
+
+API_CLIENT --> COMMAND_API : POST /commands
+COMMAND_API --> COMMAND_HANDLER : dispatch
+EVENT_STORE --> KAFKA : publish events
+KAFKA --> PROJECTION_BUILDER : consume events
+KAFKA -.-> ANALYTICS : stream to data lake {color: dim}
+READ_DB --> QUERY_API : materialized views
+QUERY_API --> API_CLIENT : GET /queries

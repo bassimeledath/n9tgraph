@@ -1,0 +1,20 @@
+type flow
+title "Edge Style Reference"
+direction LR
+
+service "Hub" {fill: hero, sublabel: "Central node"}
+component "Forward" {fill: dotgrid}
+component "Backward" {fill: dotgrid}
+component "Bidirectional" {fill: dotgrid}
+component "Dashed Forward" {fill: crosshatch}
+component "Dashed Backward" {fill: crosshatch}
+circle "Junction"
+external "External"
+
+HUB --> FORWARD : solid forward
+HUB <-- BACKWARD : solid backward
+HUB <--> BIDIRECTIONAL : two-way
+HUB -.-> DASHED_FORWARD : dashed {color: dim}
+HUB <-.- DASHED_BACKWARD : dashed back {color: muted}
+FORWARD --> JUNCTION : accent edge {color: accent}
+JUNCTION --> EXTERNAL : to external

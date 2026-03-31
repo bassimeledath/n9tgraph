@@ -1,0 +1,34 @@
+type sequence
+title "OAuth2 Authorization Code Flow"
+
+participant "Browser" {fill: none}
+participant "App Server" {fill: dotgrid}
+participant "Auth Provider" {fill: hero}
+participant "Token Store" {fill: crosshatch}
+
+BROWSER -> APP_SERVER : GET /login
+APP_SERVER -> BROWSER : 302 Redirect to Auth Provider
+BROWSER -> AUTH_PROVIDER : Authorize (client_id, scope, redirect_uri)
+AUTH_PROVIDER -> BROWSER : Login page
+BROWSER -> AUTH_PROVIDER : Credentials | username + password
+AUTH_PROVIDER -> BROWSER : 302 Redirect with authorization code
+
+BROWSER -> APP_SERVER : GET /callback?code=abc123
+
+APP_SERVER -> AUTH_PROVIDER : POST /token | code + client_secret
+AUTH_PROVIDER -> APP_SERVER : access_token + refresh_token
+
+APP_SERVER -> TOKEN_STORE : Store refresh_token
+
+alt Token expired
+  APP_SERVER -> AUTH_PROVIDER : POST /token (refresh) | refresh_token
+  AUTH_PROVIDER -> APP_SERVER : New access_token
+
+  loop Retry on 503 (max 3)
+    APP_SERVER -> AUTH_PROVIDER : POST /token (retry)
+  end
+end
+
+APP_SERVER -> BROWSER : Set session cookie + redirect to dashboard
+
+note over APP_SERVER : Never expose tokens to the browser — server-side exchange only

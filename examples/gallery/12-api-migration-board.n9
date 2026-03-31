@@ -1,0 +1,35 @@
+type card
+title "API Surface: v2 Migration"
+
+node "API v2" {fill: hero, border: double}
+node "Legacy v1" {fill: crosshatch}
+
+edge_in API_V2 top : Frontend clients
+edge_in API_V2 left : Mobile SDK {icon: person}
+edge_in API_V2 right : Partner integrations {icon: doc}
+
+hanging API_V2 bottom : Breaking changes: 3 endpoints {icon: "chain-broken"}
+hanging LEGACY_V1 bottom : Sunset date: 2026-06-01 {icon: doc}
+
+container "New Endpoints" {fill: dotgrid}
+  card "POST /orders/v2" {icon: brain, body: "Idempotency key required\nAsync processing\nWebhook callbacks"}
+  card "GET /products/search" {icon: brain, body: "Full-text search\nFaceted filtering\nCursor pagination"}
+  card "PATCH /users/:id" {icon: person, body: "Partial updates\nJSON Merge Patch\nETag concurrency"}
+end
+
+container "Deprecated Endpoints"
+  card "POST /orders (v1)" {icon: "chain-broken", body: "Synchronous only\nNo idempotency\nRemoved 2026-06"}
+  card "GET /products (v1)" {icon: "chain-broken", body: "Offset pagination\nNo filtering\nRate: 10 req/s"}
+  card "PUT /users/:id (v1)" {icon: "chain-broken", body: "Full replacement only\nNo concurrency control"}
+end
+
+container "Shared Infrastructure"
+  card "Rate Limiter" {icon: brain, body: "Token bucket\nPer-client quotas\nBurst: 50 req/s"}
+  card "Auth Middleware" {icon: person, body: "JWT validation\nScope-based access\nAudit logging"}
+  card "Response Cache" {icon: doc, body: "CDN integration\nETags + stale-while-revalidate\nTTL: 5 min"}
+end
+
+API_V2 --> NEW_ENDPOINTS
+LEGACY_V1 --> DEPRECATED_ENDPOINTS
+API_V2 --> SHARED_INFRASTRUCTURE
+LEGACY_V1 --> SHARED_INFRASTRUCTURE : via adapter

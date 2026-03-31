@@ -1,0 +1,22 @@
+type flow
+title "ETL Data Pipeline"
+direction TB
+spacing compact
+
+actor "Data Engineer"
+service "Airflow" {fill: hero, sublabel: "Orchestrator\nDAG scheduler"}
+datastore "Raw S3" {fill: crosshatch, sublabel: "Landing zone"}
+component "Spark Cluster" {fill: dotgrid, sublabel: "EMR 6.x\n100 executors"}
+component "dbt Transform" {fill: dotgrid, sublabel: "SQL models\n340 models"}
+datastore "Warehouse" {fill: crosshatch, sublabel: "Snowflake"}
+component "Quality Gate" {fill: dotgrid, sublabel: "Great Expectations"}
+service "BI Dashboard" {fill: hero, sublabel: "Looker"}
+
+DATA_ENGINEER --> AIRFLOW : trigger DAG
+AIRFLOW --> RAW_S3 : extract
+RAW_S3 --> SPARK_CLUSTER : load raw
+SPARK_CLUSTER --> QUALITY_GATE : validate
+QUALITY_GATE --> DBT_TRANSFORM : clean data
+DBT_TRANSFORM --> WAREHOUSE : load
+WAREHOUSE --> BI_DASHBOARD : query
+BI_DASHBOARD --> DATA_ENGINEER : insights

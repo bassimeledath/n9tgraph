@@ -1,0 +1,34 @@
+type card
+title "Sprint 42 Board"
+
+node "Sprint Goal" {fill: hero}
+
+container "Backlog"
+  card "User Preferences API" {icon: brain, body: "Design REST endpoints\nfor user settings CRUD"}
+  card "Rate Limit Middleware" {icon: brain, body: "Token bucket algorithm\n100 req/min default"}
+  card "Deprecate v1 Endpoints" {icon: doc, body: "Mark 12 routes deprecated\nAdd sunset headers"}
+  overflow
+end
+
+container "In Progress" {fill: dotgrid}
+  card "Search Indexing" {icon: brain, body: "Elasticsearch reindex\n2.3M documents"}
+  card "Auth Token Rotation" {icon: person, body: "Auto-rotate JWT signing keys\nZero-downtime migration"}
+end
+
+container "In Review" {fill: crosshatch}
+  card "Cache Invalidation" {icon: brain, body: "Event-driven purge\nRedis pub/sub"}
+  card "Error Page Redesign" {icon: doc, body: "Custom 404 and 500 pages\nBrand-consistent"}
+end
+
+container "Done"
+  card "Health Check Endpoint" {icon: brain, body: "Liveness + readiness\nDependency checks"}
+  card "Log Rotation Setup" {icon: doc, body: "logrotate config\n30-day retention"}
+  card "API Docs Update" {icon: doc, body: "OpenAPI 3.1 spec\nExamples for all endpoints"}
+  card "Sentry Integration" {icon: "chain-broken", body: "Error tracking\nSource maps uploaded"}
+  overflow
+end
+
+SPRINT_GOAL --> BACKLOG
+SPRINT_GOAL --> IN_PROGRESS
+SPRINT_GOAL --> IN_REVIEW
+SPRINT_GOAL --> DONE

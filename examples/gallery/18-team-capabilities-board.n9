@@ -1,0 +1,37 @@
+type card
+title "Engineering Team Capabilities"
+
+node "Engineering Org" {fill: hero}
+node "Hiring Pipeline" {fill: crosshatch}
+
+edge_in ENGINEERING_ORG top : Product roadmap requests
+edge_in ENGINEERING_ORG left : Customer escalations {icon: person}
+edge_in ENGINEERING_ORG right : Security audit findings {icon: "chain-broken"}
+edge_in HIRING_PIPELINE bottom : University recruiting {icon: person}
+
+hanging ENGINEERING_ORG bottom : Head count: 42 engineers {icon: person}
+hanging HIRING_PIPELINE top : Open roles: 8 {icon: doc}
+
+container "Backend Team" {fill: dotgrid}
+  card "API Development" {icon: brain, body: "REST + GraphQL\nGo and Node.js\n4 senior engineers"}
+  card "Data Engineering" {icon: brain, body: "Spark + Airflow\nSnowflake pipelines\n3 engineers"}
+  card "Infrastructure" {icon: doc, body: "Terraform + K8s\nMulti-cloud setup\n2 SREs"}
+  overflow
+end
+
+container "Frontend Team" {fill: dotgrid}
+  card "Web Platform" {icon: brain, body: "React + Next.js\nDesign system\n3 engineers"}
+  card "Mobile" {icon: brain, body: "React Native\niOS + Android\n2 engineers"}
+end
+
+container "Platform Team" {fill: crosshatch}
+  card "Developer Experience" {icon: doc, body: "CI/CD tooling\nInternal docs\n2 engineers"}
+  card "Observability" {icon: brain, body: "Monitoring + alerting\nIncident response\n2 SREs"}
+  card "Security" {icon: "chain-broken", body: "AppSec reviews\nPen testing\n1 engineer"}
+  overflow
+end
+
+ENGINEERING_ORG --> BACKEND_TEAM
+ENGINEERING_ORG --> FRONTEND_TEAM
+ENGINEERING_ORG --> PLATFORM_TEAM
+HIRING_PIPELINE --> ENGINEERING_ORG : new hires

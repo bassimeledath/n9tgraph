@@ -1,0 +1,11 @@
+type flow
+title "Hello World"
+direction LR
+
+actor User
+service "My API" {fill: hero, sublabel: "REST"}
+external "Stripe"
+
+USER --> MY_API : request
+MY_API --> STRIPE : charge
+STRIPE --> USER : receipt

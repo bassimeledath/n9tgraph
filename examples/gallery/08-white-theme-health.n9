@@ -1,0 +1,28 @@
+type flow
+title "System Health Overview"
+theme white
+direction LR
+spacing spacious
+
+actor "SRE Team"
+
+service "Load Balancer" {fill: hero, emphasis: primary, sublabel: "HAProxy\n10k conn/s"}
+component "App Tier" {fill: dotgrid, emphasis: primary, sublabel: "12 pods\nHPA active"}
+component "Cache Layer" {fill: dotgrid, emphasis: secondary, sublabel: "Redis sentinel\n99.8% hit rate"}
+datastore "Primary DB" {fill: crosshatch, emphasis: primary, sublabel: "PostgreSQL 16\n4TB data"}
+datastore "Read Replica" {fill: crosshatch, emphasis: muted, sublabel: "Async replication\n< 50ms lag"}
+external "CDN" {fill: none, emphasis: secondary, sublabel: "CloudFront\n40 edge locations"}
+external "Monitoring" {fill: none, emphasis: muted, sublabel: "Datadog\nCustom dashboards"}
+
+SRE_TEAM --> LOAD_BALANCER : manage
+LOAD_BALANCER --> APP_TIER : distribute
+APP_TIER --> CACHE_LAYER : read-through
+CACHE_LAYER --> PRIMARY_DB : cache miss
+PRIMARY_DB --> READ_REPLICA : replicate
+APP_TIER --> PRIMARY_DB : write
+CDN --> LOAD_BALANCER : origin pull
+APP_TIER --> MONITORING : emit metrics
+MONITORING --> SRE_TEAM : alert
+
+annotation "Hot path:\n< 15ms P99 latency\nfrom LB to cache" near CACHE_LAYER side top
+annotation "Write path:\nall writes to primary\nasync replication" near PRIMARY_DB side bottom

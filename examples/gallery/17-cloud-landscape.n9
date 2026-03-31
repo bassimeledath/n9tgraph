@@ -1,0 +1,33 @@
+type flow
+title "Cloud Infrastructure Landscape"
+theme white
+direction LR
+spacing spacious
+aspect landscape
+wrap auto
+
+actor "DevOps Team"
+
+service "Terraform" {fill: hero, sublabel: "IaC\nState in S3"}
+component "VPC" {sublabel: "10.0.0.0/16\n3 AZs"}
+component "EKS Cluster" {sublabel: "v1.29\n6 nodes"}
+component "RDS Instance" {sublabel: "PostgreSQL 16\nMulti-AZ"}
+component "ElastiCache" {sublabel: "Redis 7\nCluster mode"}
+external "CloudWatch" {fill: none, sublabel: "Metrics + Logs"}
+external "Route 53" {fill: none, sublabel: "DNS\nHealth checks"}
+external "S3 Buckets" {fill: none, sublabel: "Assets + backups"}
+external "CloudFront" {fill: none, sublabel: "CDN\n50 edge locations"}
+
+DEVOPS_TEAM --> TERRAFORM : apply
+TERRAFORM --> VPC : provision
+VPC --> EKS_CLUSTER : host
+VPC --> RDS_INSTANCE : host
+VPC --> ELASTICACHE : host
+EKS_CLUSTER --> CLOUDWATCH : emit
+RDS_INSTANCE --> CLOUDWATCH : emit
+ROUTE_53 --> CLOUDFRONT : DNS
+CLOUDFRONT --> EKS_CLUSTER : origin
+EKS_CLUSTER --> S3_BUCKETS : store
+
+annotation "All resources tagged:\nenv=prod, team=platform\ncost-center=engineering" near TERRAFORM side top
+annotation "Multi-AZ deployment:\nautomatic failover\nfor RDS and Redis" near RDS_INSTANCE side bottom

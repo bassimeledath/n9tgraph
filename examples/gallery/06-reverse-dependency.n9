@@ -1,0 +1,18 @@
+type flow
+title "Who Depends on Auth Service?"
+direction RL
+
+service "Auth Service" {fill: hero, sublabel: "Central identity\nOIDC provider"}
+component "User Portal" {fill: dotgrid}
+component "Admin Console" {fill: dotgrid}
+component "Mobile BFF" {fill: dotgrid}
+component "Billing Service" {fill: crosshatch}
+external "Partner API"
+external "CI System"
+
+AUTH_SERVICE <-- USER_PORTAL : validate token
+AUTH_SERVICE <-- ADMIN_CONSOLE : check permissions
+AUTH_SERVICE <-- MOBILE_BFF : exchange code
+AUTH_SERVICE <-- BILLING_SERVICE : verify identity
+AUTH_SERVICE <-- PARTNER_API : federated auth
+AUTH_SERVICE <-- CI_SYSTEM : service account

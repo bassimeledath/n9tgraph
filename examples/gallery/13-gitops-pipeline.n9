@@ -1,0 +1,32 @@
+type flow
+title "GitOps Deployment Pipeline"
+direction TB
+
+actor Developer
+
+service "GitHub" {fill: hero, sublabel: "Source of truth"}
+
+subgraph "CI Pipeline" {fill: dotgrid}
+  component "Build" {fill: dotgrid, sublabel: "Docker multi-stage"}
+  component "Test" {fill: dotgrid, sublabel: "Unit + integration"}
+  component "Scan" {fill: dotgrid, sublabel: "Trivy + Semgrep"}
+  BUILD --> TEST {step: 2}
+  BUILD --> SCAN {step: 2}
+end
+
+datastore "Container Registry" {fill: crosshatch, sublabel: "ECR"}
+component "ArgoCD" {fill: hero, sublabel: "GitOps operator"}
+component "Kubernetes" {fill: dotgrid, sublabel: "EKS 1.29"}
+
+DEVELOPER --> GITHUB : git push {step: 1}
+GITHUB --> BUILD {step: 2}
+TEST --> CONTAINER_REGISTRY : push image {step: 3}
+SCAN --> CONTAINER_REGISTRY {step: 3}
+ARGOCD -.-> GITHUB : watch manifests {step: 4}
+ARGOCD --> KUBERNETES : sync {step: 5}
+CONTAINER_REGISTRY --> KUBERNETES : pull image {step: 5}
+
+codeblock "ArgoCD Application" {language: yaml, body: "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: my-app\nspec:\n  source:\n    repoURL: github.com/org/repo\n    path: k8s/overlays/prod\n  destination:\n    server: https://kubernetes.default\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true"}
+
+annotation "Image is signed:\nCosign verification\nbefore deployment" near CONTAINER_REGISTRY side right
+annotation "Drift detection:\nArgoCD auto-syncs\nevery 3 minutes" near ARGOCD side left

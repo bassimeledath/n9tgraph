@@ -1,0 +1,19 @@
+type flow
+title "Shape Catalog"
+direction LR
+spacing compact
+
+component "Default Rect" {fill: dotgrid, sublabel: "shape: rect (default)"}
+component "Pill Shape" {shape: pill, fill: dotgrid, sublabel: "shape: pill"}
+component "Cylinder" {shape: cylinder, fill: crosshatch, sublabel: "shape: cylinder"}
+component "Double Border" {shape: doubleBorder, fill: crosshatch, sublabel: "shape: doubleBorder"}
+circle "Circle Node"
+label "Plain Label"
+actor "Actor Node"
+
+DEFAULT_RECT --> PILL_SHAPE
+PILL_SHAPE --> CYLINDER
+CYLINDER --> DOUBLE_BORDER
+DOUBLE_BORDER --> CIRCLE_NODE
+CIRCLE_NODE --> PLAIN_LABEL
+PLAIN_LABEL --> ACTOR_NODE

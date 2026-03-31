@@ -1,0 +1,46 @@
+type sequence
+title "Incident Response Protocol"
+
+participant "On-Call" {fill: none}
+participant "PagerDuty" {fill: hero}
+participant "Runbook" {fill: dotgrid}
+participant "Cluster" {fill: dotgrid}
+participant "Status Page" {fill: crosshatch}
+
+PAGERDUTY -> ON_CALL : P0 Alert | service: checkout, error_rate > 5%
+ON_CALL -> PAGERDUTY : Acknowledge
+
+ON_CALL -> RUNBOOK : Lookup playbook | service=checkout
+
+alt Known issue — runbook match
+  RUNBOOK -> ON_CALL : Playbook: restart pods + clear cache
+  ON_CALL -> CLUSTER : kubectl rollout restart
+  ON_CALL -> CLUSTER : redis-cli FLUSHDB
+
+  loop Health check (every 30s, max 5min)
+    ON_CALL -> CLUSTER : curl /healthz
+    CLUSTER -> ON_CALL : 200 OK or 503
+
+    opt Still degraded after 3 checks
+      ON_CALL -> CLUSTER : Scale up replicas | from 3 to 10
+      ON_CALL -> STATUS_PAGE : Post update | Investigating, mitigation in progress
+    end
+  end
+end
+
+alt Unknown issue — escalate
+  RUNBOOK -> ON_CALL : No playbook found
+  ON_CALL -> STATUS_PAGE : Post update | Investigating
+
+  par Parallel investigation
+    ON_CALL -> CLUSTER : Collect logs | kubectl logs --since=15m
+    ON_CALL -> CLUSTER : Collect metrics | promql: rate(http_errors[5m])
+  end
+
+  ON_CALL -> PAGERDUTY : Escalate to Tier 2 | Adding senior SRE
+end
+
+ON_CALL -> STATUS_PAGE : Resolved | Root cause: memory leak in checkout v2.3.1
+
+note over ON_CALL : Total MTTR target: < 30 minutes for P0
+note over STATUS_PAGE : All updates auto-posted to #incidents Slack channel
