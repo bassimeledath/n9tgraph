@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 795" width="560" height="795">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <circle cx="4" cy="4" r="0.8" fill="#b4f079" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#000000"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#b4f079" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#3d6b23"/>
+    <circle cx="3" cy="3" r="0.6" fill="#5a9a35" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#b4f079"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#b4f079"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#000000"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#ffffff" font-weight="700">CI / CD Pipeline</text>
+<rect x="36" y="313" width="484" height="112" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1" stroke-dasharray="6 4" opacity="0.35"/><rect x="36" y="313" width="484" height="112" rx="12" fill="none" stroke="#b4f079" stroke-width="1" stroke-dasharray="6 4" opacity="0.5"/>
+<line x1="278" y1="132" x2="278" y2="170" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="261.7882882882883" y1="229" x2="265.0855855855856" y2="223" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="247.5,287 247.5,355 91,355 91,369" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="247.5" y1="287" x2="217" y2="369" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="247.5,287 247.5,355 404,355 404,369" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="91,409 91,430 247.5,430 247.5,451" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="217" y1="409" x2="247.5" y2="451" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="404,409 404,430 247.5,430 247.5,451" fill="none" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="247.5" y1="515" x2="262.75" y2="549" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="262.75" y1="599" x2="270.375" y2="637" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="270.375" y1="677" x2="270.375" y2="715" stroke="#b4f079" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="244" y="144" width="68" height="22" rx="4" fill="#000000"/>
+<rect x="203.625" y="519" width="103" height="22" rx="4" fill="#000000"/>
+<rect x="201.0625" y="607" width="131" height="22" rx="4" fill="#000000"/>
+<rect x="239.875" y="685" width="61" height="22" rx="4" fill="#000000"/>
+<rect x="219.25" y="326" width="117.5" height="24" fill="#000000" rx="3"/><text x="278" y="339" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" fill="#ffffff" opacity="0.9" text-anchor="middle">Quality Gates</text>
+<circle cx="278" cy="67" r="7" fill="none" stroke="#b4f079" stroke-width="1.5"/><line x1="278" y1="74" x2="278" y2="96" stroke="#b4f079" stroke-width="1.5"/><line x1="264" y1="80" x2="292" y2="80" stroke="#b4f079" stroke-width="1.5"/><line x1="278" y1="96" x2="268" y2="112" stroke="#b4f079" stroke-width="1.5"/><line x1="278" y1="96" x2="288" y2="112" stroke="#b4f079" stroke-width="1.5"/><text x="278" y="126" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" letter-spacing="0.12em">DEVELOPER</text>
+<rect x="207.6" y="170" width="140.8" height="59" rx="12" fill="none" stroke="#b4f079" stroke-width="1.5"/><rect x="212.35" y="174.75" width="131.3" height="49.5" rx="8" fill="url(#hero)" stroke="#b4f079" stroke-width="1"/><text x="278" y="191.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">CI SERVER</text><text x="278" y="208" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">GitHub Actions</text>
+<rect x="171" y="223" width="153" height="64" rx="12" fill="url(#dotgrid)" stroke="#b4f079" stroke-width="1.5"/><rect x="191.5" y="243.9" width="112" height="22.2" fill="#000000" rx="2"/><text x="247.5" y="255" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">BUILD &amp; TEST</text>
+<rect x="166.5" y="451" width="162" height="64" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="247.5" y="483" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">SECURITY SCAN</text>
+<rect x="193.875" y="637" width="153" height="40" rx="12" fill="url(#crosshatch)" stroke="#b4f079" stroke-width="1.5"/><text x="270.375" y="657" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">STAGE DEPLOY</text>
+<rect x="203.375" y="715" width="134" height="40" rx="12" fill="url(#hero)" stroke="#b4f079" stroke-width="1.5"/><text x="270.375" y="735" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#ffffff" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">PRODUCTION</text>
+<rect x="162.75" y="559" width="200" height="30" fill="#000000" stroke="none"/><line x1="162.75" y1="559" x2="162.75" y2="589" stroke="#b4f079" stroke-width="1.5"/><line x1="362.75" y1="559" x2="362.75" y2="589" stroke="#b4f079" stroke-width="1.5"/><ellipse cx="262.75" cy="559" rx="100" ry="10" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><path d="M162.75,589 A100,10 0 0,0 362.75,589" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="262.75" y="574" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">ARTIFACT REGISTRY</text>
+<rect x="52" y="369" width="78" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="91" y="389" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">LINT</text>
+<rect x="150" y="369" width="134" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="217" y="389" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">UNIT TESTS</text>
+<rect x="304" y="369" width="200" height="40" rx="12" fill="#000000" stroke="#b4f079" stroke-width="1.5"/><text x="404" y="389" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#b4f079" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">INTEGRATION TESTS</text>
+<text x="278" y="159" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">git push</text>
+<text x="255.125" y="534" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">publish image</text>
+<text x="266.5625" y="622" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">pull &amp; deploy</text>
+<text x="270.375" y="700" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#b4f079" opacity="0.85" text-anchor="middle">promote</text>
+</g>
+</svg>

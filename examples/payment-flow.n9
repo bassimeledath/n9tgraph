@@ -1,0 +1,20 @@
+type flow
+title "Payment Processing"
+theme white
+direction LR
+
+actor Customer
+service "Checkout API" {fill: hero, sublabel: "REST + GraphQL"}
+component "Fraud Engine" {fill: dotgrid}
+external "Stripe" {fill: crosshatch}
+datastore "Orders DB"
+component "Notification Svc"
+
+CUSTOMER --> CHECKOUT_API : submit order
+CHECKOUT_API --> FRAUD_ENGINE : risk check
+FRAUD_ENGINE --> CHECKOUT_API : score
+CHECKOUT_API --> STRIPE : charge card
+STRIPE --> CHECKOUT_API : payment confirm
+CHECKOUT_API --> ORDERS_DB : persist order
+CHECKOUT_API --> NOTIFICATION_SVC : send receipt
+NOTIFICATION_SVC --> CUSTOMER : email + SMS

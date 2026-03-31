@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 725.38 551" width="725.38" height="551">
+<defs>
+  <pattern id="dotgrid" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#ffffff"/>
+    <circle cx="4" cy="4" r="0.8" fill="#1a7a1a" opacity="0.7"/>
+  </pattern>
+  <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#ffffff"/>
+    <path d="M0 8L8 0M-1 1L1 -1M7 9L9 7" stroke="#1a7a1a" stroke-width="0.8" opacity="0.2"/>
+  </pattern>
+  <pattern id="hero" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#d4ecd4"/>
+    <circle cx="3" cy="3" r="0.6" fill="#b0d8b0" opacity="0.5"/>
+  </pattern>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#1a7a1a"/>
+  </marker>
+  <marker id="arrowhead-reverse" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+    <polygon points="10 0, 0 3.5, 10 7" fill="#1a7a1a"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g class="diagram">
+<text x="30" y="34" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" fill="#222222" font-weight="700">Payment Processing</text>
+<line x1="91.44" y1="379.9610120942075" x2="220.88" y2="368.04339819950894" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="373.88" y1="315" x2="513.88" y2="109" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="513.88" y1="109" x2="373.88" y2="347" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="373.88" y1="315" x2="541.88" y2="247" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="541.88" y1="247" x2="373.88" y2="375" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="373.88" y1="361" x2="527.88" y2="361" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<line x1="373.88" y1="394.9419795221843" x2="545.3030769230769" y2="471" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<polyline points="496.90574031890657,471 496.90574031890657,423 91.44,423 91.44,384.24547705384646" fill="none" stroke="#1a7a1a" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<rect x="108.16" y="322.25" width="96" height="22" rx="4" fill="#ffffff"/>
+<rect x="381.88" y="197.2" width="82" height="22" rx="4" fill="#ffffff"/>
+<rect x="392.38" y="248.60000000000002" width="47" height="22" rx="4" fill="#ffffff"/>
+<rect x="381.88" y="284.6" width="89" height="22" rx="4" fill="#ffffff"/>
+<rect x="381.88" y="342.3" width="117" height="22" rx="4" fill="#ffffff"/>
+<rect x="399.38" y="378.3" width="103" height="22" rx="4" fill="#ffffff"/>
+<rect x="411.59153846153845" y="441" width="96" height="22" rx="4" fill="#ffffff"/>
+<rect x="249.67287015945328" y="419" width="89" height="22" rx="4" fill="#ffffff"/>
+<circle cx="77.44" cy="359.25" r="7" fill="none" stroke="#1a7a1a" stroke-width="1.5"/><line x1="77.44" y1="366.25" x2="77.44" y2="388.25" stroke="#1a7a1a" stroke-width="1.5"/><line x1="63.44" y1="372.25" x2="91.44" y2="372.25" stroke="#1a7a1a" stroke-width="1.5"/><line x1="77.44" y1="388.25" x2="67.44" y2="404.25" stroke="#1a7a1a" stroke-width="1.5"/><line x1="77.44" y1="388.25" x2="87.44" y2="404.25" stroke="#1a7a1a" stroke-width="1.5"/><text x="77.44" y="418.25" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#1a7a1a" opacity="0.6" text-anchor="middle" letter-spacing="0.12em">Customer</text>
+<rect x="220.88" y="311" width="153" height="100" rx="12" fill="none" stroke="#1a7a1a" stroke-width="1.5"/><rect x="225.63" y="315.75" width="143.5" height="90.5" rx="8" fill="url(#hero)" stroke="#1a7a1a" stroke-width="1"/><text x="297.38" y="353" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#222222" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Checkout API</text><text x="297.38" y="369.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#222222" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">REST + GraphQL</text>
+<rect x="513.88" y="60" width="153" height="53" rx="12" fill="url(#dotgrid)" stroke="#1a7a1a" stroke-width="1.5"/><rect x="534.38" y="75.4" width="112" height="22.2" fill="#ffffff" rx="2"/><text x="590.38" y="86.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#1a7a1a" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Fraud Engine</text>
+<rect x="541.88" y="198" width="97" height="53" rx="12" fill="url(#crosshatch)" stroke="#1a7a1a" stroke-width="1.5"/><text x="590.38" y="224.5" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#1a7a1a" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Stripe</text>
+<rect x="527.88" y="346" width="125" height="30" fill="#ffffff" stroke="none"/><line x1="527.88" y1="346" x2="527.88" y2="376" stroke="#1a7a1a" stroke-width="1.5"/><line x1="652.88" y1="346" x2="652.88" y2="376" stroke="#1a7a1a" stroke-width="1.5"/><ellipse cx="590.38" cy="346" rx="62.5" ry="10" fill="#ffffff" stroke="#1a7a1a" stroke-width="1.5"/><path d="M527.88,376 A62.5,10 0 0,0 652.88,376" fill="#ffffff" stroke="#1a7a1a" stroke-width="1.5"/><text x="590.38" y="361" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#1a7a1a" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Orders DB</text>
+<rect x="495.38" y="471" width="190" height="40" rx="12" fill="#ffffff" stroke="#1a7a1a" stroke-width="1.5"/><text x="590.38" y="491" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="13" fill="#1a7a1a" opacity="0.6" text-anchor="middle" dominant-baseline="central" letter-spacing="0.12em">Notification Svc</text>
+<text x="156.16" y="337.25" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">submit order</text>
+<text x="422.88" y="212.2" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">risk check</text>
+<text x="415.88" y="263.6" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">score</text>
+<text x="426.38" y="299.6" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">charge card</text>
+<text x="440.38" y="357.3" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">payment confirm</text>
+<text x="450.88" y="393.3" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">persist order</text>
+<text x="459.59153846153845" y="456" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">send receipt</text>
+<text x="294.1728701594533" y="434" font-family="'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace" font-size="12" fill="#1a7a1a" opacity="0.85" text-anchor="middle">email + SMS</text>
+</g>
+</svg>

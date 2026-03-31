@@ -1,0 +1,29 @@
+type flow
+title "CI / CD Pipeline"
+direction TB
+
+actor Developer
+service "CI Server" {fill: hero, sublabel: "GitHub Actions"}
+component "Build & Test" {fill: dotgrid}
+component "Security Scan"
+component "Stage Deploy" {fill: crosshatch}
+external "Production" {fill: hero}
+datastore "Artifact Registry"
+
+subgraph "Quality Gates" {fill: dotgrid, border-style: dashed}
+  component Lint
+  component "Unit Tests"
+  component "Integration Tests"
+end
+
+DEVELOPER --> CI_SERVER : git push
+CI_SERVER --> BUILD_TEST
+BUILD_TEST --> LINT
+BUILD_TEST --> UNIT_TESTS
+BUILD_TEST --> INTEGRATION_TESTS
+LINT --> SECURITY_SCAN
+UNIT_TESTS --> SECURITY_SCAN
+INTEGRATION_TESTS --> SECURITY_SCAN
+SECURITY_SCAN --> ARTIFACT_REGISTRY : publish image
+ARTIFACT_REGISTRY --> STAGE_DEPLOY : pull & deploy
+STAGE_DEPLOY --> PRODUCTION : promote
