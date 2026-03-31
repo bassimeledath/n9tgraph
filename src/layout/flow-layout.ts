@@ -84,7 +84,7 @@ export interface FlowLayout {
 const MARGIN_X = 36;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
-const DEFAULT_LAYER_GAP = 24;
+const DEFAULT_LAYER_GAP = 36;
 const DEFAULT_TB_LAYER_GAP = 48;
 const DEFAULT_NODE_GAP = 30;
 
@@ -111,6 +111,11 @@ const HUB_EDGE_THRESHOLD = 4;
 const HUB_PORT_SPACING = 12;
 const HUB_PORT_PADDING = 16;
 const MAX_NODES_PER_COL = 6;      // Grid fan-out threshold
+const MIN_ANNOTATION_VERTICAL_GAP = 25;
+const MAX_ANNOTATIONS_PER_SIDE = 3;
+const SUBGRAPH_INTERNAL_NODE_GAP_BOOST = 10;
+
+type AnnotationSide = 'top' | 'bottom' | 'left' | 'right';
 
 // ─── Main entry ──────────────────────────────────────────
 
@@ -126,11 +131,13 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   // Flatten all nodes: top-level + subgraph children + codeblocks (as virtual nodes)
   const allNodes: FlowNode[] = [...nodes];
   const subgraphChildIds = new Set<string>();
+  const subgraphByChildId = new Map<string, string>();
 
   for (const sg of subgraphs) {
     for (const n of sg.nodes) {
       allNodes.push(n);
       subgraphChildIds.add(n.id);
+      subgraphByChildId.set(n.id, sg.id);
     }
   }
 
@@ -430,7 +437,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
   }
 
   // Step 5: Coordinate assignment
-  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds, sp, diagram.wrap || 'auto');
+  const positioned = assignCoordinates(ordered, nodeSizes, direction, allEdges, title, annotations, sublabelIds, subgraphChildIds, subgraphByChildId, sp, diagram.wrap || 'auto');
 
   // Step 5a: Apply aspect ratio hint — scale coordinates to hit target W/H ratio
   applyAspectHint(diagram.aspect, positioned);
@@ -953,6 +960,35 @@ function computeLayerGap(layerNodes: string[], allEdges: FlowEdge[], subgraphChi
   return gap;
 }
 
+function subgraphInternalGapBoost(
+  prevId: string | undefined,
+  nextId: string | undefined,
+  subgraphByChildId?: Map<string, string>,
+): number {
+  if (!prevId || !nextId || !subgraphByChildId) return 0;
+  const prevSubgraph = subgraphByChildId.get(prevId);
+  const nextSubgraph = subgraphByChildId.get(nextId);
+  return prevSubgraph && prevSubgraph === nextSubgraph ? SUBGRAPH_INTERNAL_NODE_GAP_BOOST : 0;
+}
+
+function computeStackSpan(
+  ids: string[],
+  nodeSizes: Map<string, { w: number; h: number }>,
+  axis: 'horizontal' | 'vertical',
+  baseGap: number,
+  subgraphByChildId?: Map<string, string>,
+): number {
+  let total = 0;
+  for (let i = 0; i < ids.length; i++) {
+    const sz = nodeSizes.get(ids[i])!;
+    total += axis === 'vertical' ? sz.h : sz.w;
+    if (i < ids.length - 1) {
+      total += baseGap + subgraphInternalGapBoost(ids[i], ids[i + 1], subgraphByChildId);
+    }
+  }
+  return total;
+}
+
 // ─── Aspect ratio adjustment ─────────────────────────────
 // Scales both X and Y coordinates to approach the target aspect ratio.
 // Portrait: target W/H ≈ 0.85, Landscape: W/H ≈ 1.6, Square: W/H ≈ 1.0
@@ -1007,6 +1043,7 @@ function assignCoordinates(
   annotations?: FlowAnnotation[],
   sublabelIds?: Set<string>,
   subgraphChildIds?: Set<string>,
+  subgraphByChildId?: Map<string, string>,
   spacingVals: { nodeGap: number; layerGap: number; tbLayerGap: number } = { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP },
   wrapMode: WrapMode = 'auto',
 ): { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number } {
@@ -1053,14 +1090,13 @@ function assignCoordinates(
       for (const id of layer) {
         const sz = nodeSizes.get(id)!;
         maxW = Math.max(maxW, sz.w);
-        totalH += sz.h;
       }
-      totalH += (layer.length - 1) * gap;
+      totalH = computeStackSpan(layer, nodeSizes, 'vertical', gap, subgraphByChildId);
       layerWidths.push(maxW);
       layerHeights.push(totalH);
     }
 
-    const maxCrossHeight = Math.max(...layerHeights);
+    let maxCrossHeight = Math.max(...layerHeights);
 
     // Compute per-layer horizontal gaps to accommodate edge labels
     // Cap label width since the renderer wraps long labels
@@ -1150,6 +1186,24 @@ function assignCoordinates(
       return { nodePositions: positions, width: totalW, height: totalH };
     }
 
+    if (prelimRatio > MAX_ASPECT_RATIO) {
+      const maxGapSlots = Math.max(...layers.map(layer => Math.max(0, layer.length - 1)));
+      if (maxGapSlots > 0) {
+        const targetCrossHeight = Math.ceil(prelimTotalW / MAX_ASPECT_RATIO) - startY - MARGIN_TOP;
+        const extraCrossHeight = Math.max(0, targetCrossHeight - maxCrossHeight);
+        if (extraCrossHeight > 0) {
+          const gapBoost = Math.ceil(extraCrossHeight / maxGapSlots);
+          for (let li = 0; li < layers.length; li++) {
+            const gapSlots = Math.max(0, layers[li].length - 1);
+            if (gapSlots === 0) continue;
+            layerGaps[li] += gapBoost;
+            layerHeights[li] += gapBoost * gapSlots;
+          }
+          maxCrossHeight = Math.max(...layerHeights);
+        }
+      }
+    }
+
     // ─── Grid fan-out for large layers ──────────────────
     // When a layer has many nodes, split into a grid of sub-columns
     let hasGridLayer = false;
@@ -1175,14 +1229,16 @@ function assignCoordinates(
         for (let c = 0; c < cols; c++) {
           const startIdx = c * perCol;
           const endIdx = Math.min(startIdx + perCol, layer.length);
-          const subColH = (endIdx - startIdx) * (nodeSizes.get(layer[0])!.h + gap) - gap;
+          const subLayer = layer.slice(startIdx, endIdx);
+          const subColH = computeStackSpan(subLayer, nodeSizes, 'vertical', gap, subgraphByChildId);
           let curY = startY + (maxCrossHeight - subColH) / 2;
 
           for (let ni = startIdx; ni < endIdx; ni++) {
             const id = layer[ni];
             const sz = nodeSizes.get(id)!;
             positions.set(id, { x: curX + c * subColGap + (layerW - sz.w) / 2, y: curY });
-            curY += sz.h + gap;
+            const nextId = ni < endIdx - 1 ? layer[ni + 1] : undefined;
+            curY += sz.h + (nextId ? gap + subgraphInternalGapBoost(id, nextId, subgraphByChildId) : 0);
           }
         }
         curX += (cols - 1) * subColGap + layerW + layerHGaps[li];
@@ -1190,10 +1246,12 @@ function assignCoordinates(
         const layerH = layerHeights[li];
         let curY = startY + (maxCrossHeight - layerH) / 2;
 
-        for (const id of layer) {
+        for (let ni = 0; ni < layer.length; ni++) {
+          const id = layer[ni];
           const sz = nodeSizes.get(id)!;
           positions.set(id, { x: curX + (layerW - sz.w) / 2, y: curY });
-          curY += sz.h + gap;
+          const nextId = ni < layer.length - 1 ? layer[ni + 1] : undefined;
+          curY += sz.h + (nextId ? gap + subgraphInternalGapBoost(id, nextId, subgraphByChildId) : 0);
         }
         curX += layerW + layerHGaps[li];
       }
@@ -1215,9 +1273,8 @@ function assignCoordinates(
       for (const id of layer) {
         const sz = nodeSizes.get(id)!;
         maxH = Math.max(maxH, sz.h);
-        totalW += sz.w;
       }
-      totalW += (layer.length - 1) * NODE_GAP;
+      totalW = computeStackSpan(layer, nodeSizes, 'horizontal', NODE_GAP, subgraphByChildId);
       layerHeights.push(maxH);
       layerWidths.push(totalW);
     }
@@ -1231,10 +1288,12 @@ function assignCoordinates(
       const layerW = layerWidths[li];
       let curX = MARGIN_X + (maxCrossWidth - layerW) / 2;
 
-      for (const id of layer) {
+      for (let ni = 0; ni < layer.length; ni++) {
+        const id = layer[ni];
         const sz = nodeSizes.get(id)!;
         positions.set(id, { x: curX, y: curY + (layerH - sz.h) / 2 });
-        curX += sz.w + NODE_GAP;
+        const nextId = ni < layer.length - 1 ? layer[ni + 1] : undefined;
+        curX += sz.w + (nextId ? NODE_GAP + subgraphInternalGapBoost(id, nextId, subgraphByChildId) : 0);
       }
       curY += layerH + TB_LAYER_GAP;
     }
@@ -1629,6 +1688,35 @@ function resolveAnnotationOverlaps(
     }
     if (!changed) break;
   }
+
+  // Final vertical spacing pass for stacked annotations that share horizontal space.
+  for (let pass = 0; pass < 4; pass++) {
+    let changed = false;
+    const stacked = annotations
+      .map((_, i) => i)
+      .sort((a, b) => boxes[a].y - boxes[b].y || boxes[a].x - boxes[b].x);
+
+    for (let i = 0; i < stacked.length; i++) {
+      const ai = stacked[i];
+      const a = boxes[ai];
+      for (let j = i + 1; j < stacked.length; j++) {
+        const bi = stacked[j];
+        const b = boxes[bi];
+        const hOverlap = a.x < b.x + b.w && b.x < a.x + a.w;
+        if (!hOverlap) continue;
+
+        const minY = a.y + a.h + MIN_ANNOTATION_VERTICAL_GAP;
+        if (b.y < minY) {
+          const shift = minY - b.y;
+          annotations[bi].y += shift;
+          boxes[bi].y += shift;
+          changed = true;
+        }
+      }
+    }
+
+    if (!changed) break;
+  }
 }
 
 // ─── Annotation positioning ──────────────────────────────
@@ -1639,6 +1727,8 @@ function positionAnnotations(
   nodeSizes: Map<string, { w: number; h: number }>,
   subgraphChildIds: Set<string>,
 ): PositionedAnnotation[] {
+  type AnnotationPlacement = PositionedAnnotation & { side: AnnotationSide; index: number };
+
   // Compute rightmost content edge for placing right-side annotations at margin
   let maxContentRight = 0;
   for (const [id, pos] of nodePositions) {
@@ -1666,7 +1756,7 @@ function positionAnnotations(
   function anchorForSide(
     npos: { x: number; y: number },
     nsz: { w: number; h: number },
-    side: 'top' | 'bottom' | 'left' | 'right',
+    side: AnnotationSide,
   ): { x: number; y: number } {
     switch (side) {
       case 'left':
@@ -1681,11 +1771,25 @@ function positionAnnotations(
     }
   }
 
-  return annotations.map(a => {
+  function placeAnnotation(
+    a: FlowAnnotation,
+    index: number,
+    preferredSide?: AnnotationSide,
+    allowOverlap = false,
+  ): AnnotationPlacement {
     const pos = nodePositions.get(a.near);
     const sz = nodeSizes.get(a.near);
+    const requestedSide: AnnotationSide = preferredSide || a.side || 'right';
     if (!pos || !sz) {
-      return { text: a.text, x: 100, y: 100, originX: 100, originY: 100, anchorX: 100, anchorY: 100, properties: a.properties };
+      return {
+        text: a.text,
+        x: 100, y: 100,
+        originX: 100, originY: 100,
+        anchorX: 100, anchorY: 100,
+        properties: a.properties,
+        side: requestedSide,
+        index,
+      };
     }
 
     const lines = a.text.split('\n');
@@ -1720,39 +1824,86 @@ function positionAnnotations(
     };
 
     // Try the requested side first, then fallback sides, then margin
-    const side = a.side || 'right';
-    const fallbackOrder: Record<string, string[]> = {
+    const fallbackOrder: Record<AnnotationSide, AnnotationSide[]> = {
       right: ['right', 'top', 'bottom', 'left'],
       left: ['left', 'top', 'bottom', 'right'],
       top: ['top', 'right', 'left', 'bottom'],
       bottom: ['bottom', 'right', 'left', 'top'],
     };
 
-    for (const trySide of fallbackOrder[side] || [side]) {
-      const cand = candidates[trySide as keyof typeof candidates];
+    const tryOrder = allowOverlap ? [requestedSide] : (fallbackOrder[requestedSide] || [requestedSide]);
+    for (const trySide of tryOrder) {
+      const cand = candidates[trySide];
       if (!cand) continue;
-      if (!checkOverlap(cand.x, cand.y, maxLineW, annH, a.near)) {
-        const anchor = anchorForSide(pos, sz, trySide as 'top' | 'bottom' | 'left' | 'right');
+      if (allowOverlap || !checkOverlap(cand.x, cand.y, maxLineW, annH, a.near)) {
+        const anchor = anchorForSide(pos, sz, trySide);
         return {
           text: a.text,
           x: cand.x, y: cand.y,
           originX: cand.x, originY: cand.y,
           anchorX: anchor.x, anchorY: anchor.y,
           properties: a.properties,
+          side: trySide,
+          index,
         };
       }
     }
 
-    // Last resort: place at diagram right margin, near the target node's y
-    const anchor = anchorForSide(pos, sz, 'right');
+    const lastResort = requestedSide === 'right'
+      ? { x: maxContentRight + 24, y: pos.y + sz.h / 2 }
+      : candidates[requestedSide];
+    const anchor = anchorForSide(pos, sz, requestedSide);
     return {
       text: a.text,
-      x: maxContentRight + 24, y: pos.y + sz.h / 2,
-      originX: maxContentRight + 24, originY: pos.y + sz.h / 2,
+      x: lastResort.x, y: lastResort.y,
+      originX: lastResort.x, originY: lastResort.y,
       anchorX: anchor.x, anchorY: anchor.y,
       properties: a.properties,
+      side: requestedSide,
+      index,
     };
-  });
+  }
+
+  const placements = annotations.map((a, index) => placeAnnotation(a, index));
+  const sideOrder: AnnotationSide[] = ['right', 'left', 'top', 'bottom'];
+  const sideCounts = new Map<AnnotationSide, number>(sideOrder.map(side => [side, 0]));
+
+  for (const placement of placements) {
+    sideCounts.set(placement.side, (sideCounts.get(placement.side) || 0) + 1);
+  }
+
+  // Rebalance dense single-side stacks by moving overflow annotations to the sparsest side.
+  while (true) {
+    const sourceSide = sideOrder.reduce((best, side) =>
+      (sideCounts.get(side) || 0) > (sideCounts.get(best) || 0) ? side : best,
+    sideOrder[0]);
+    if ((sideCounts.get(sourceSide) || 0) <= MAX_ANNOTATIONS_PER_SIDE) break;
+
+    const sourcePlacements = placements
+      .filter(placement => placement.side === sourceSide)
+      .sort((a, b) => a.index - b.index);
+    const extraPlacement = sourcePlacements[MAX_ANNOTATIONS_PER_SIDE];
+    if (!extraPlacement) break;
+
+    const targetSide = sideOrder
+      .filter(side => side !== sourceSide)
+      .sort((a, b) => {
+        const countDiff = (sideCounts.get(a) || 0) - (sideCounts.get(b) || 0);
+        return countDiff !== 0 ? countDiff : sideOrder.indexOf(a) - sideOrder.indexOf(b);
+      })[0];
+    if (!targetSide) break;
+
+    placements[extraPlacement.index] = placeAnnotation(
+      annotations[extraPlacement.index],
+      extraPlacement.index,
+      targetSide,
+      true,
+    );
+    sideCounts.set(sourceSide, (sideCounts.get(sourceSide) || 0) - 1);
+    sideCounts.set(targetSide, (sideCounts.get(targetSide) || 0) + 1);
+  }
+
+  return placements.map(({ side, index, ...placement }) => placement);
 }
 
 // ─── TB coordinate refinement ────────────────────────────

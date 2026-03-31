@@ -8,6 +8,10 @@ import { wrapLabel, measureLineWidth } from '../layout/text-measure.js';
 
 const MAX_NODE_LABEL_CHARS = 28;
 const SUBLABEL_GAP = 10;
+const HUB_LABEL_EDGE_THRESHOLD = 4;
+const HUB_LABEL_T_MIN = 0.2;
+const HUB_LABEL_T_MAX = 0.8;
+const MIN_EDGE_LABEL_NODE_CLEARANCE = 20;
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -580,32 +584,48 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   // C: Compute target port distribution slots
   const targetPortSlots = buildTargetPortSlots(edges, nodeById);
 
-  // Hub-aware t-values: spread labels along edge paths for hub nodes (3+ labeled edges)
+  // Hub-aware t-values: spread labels along edge paths for high-degree nodes.
   const hubLabelT = new Map<number, number>();
   {
     const isVertical = direction === 'TB' || direction === 'BT';
-    const sourceLabeledEdges = new Map<string, number[]>();
+    const nodeDegree = new Map<string, number>();
+    const incidentLabeledEdges = new Map<string, number[]>();
     for (let i = 0; i < edges.length; i++) {
       const e = edges[i];
-      if (!e.label) continue;
       const vFrom = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
-      if (!sourceLabeledEdges.has(vFrom)) sourceLabeledEdges.set(vFrom, []);
-      sourceLabeledEdges.get(vFrom)!.push(i);
+      const vTo = (e.arrow === '<--' || e.arrow === '<-.-') ? e.from : e.to;
+      nodeDegree.set(vFrom, (nodeDegree.get(vFrom) || 0) + 1);
+      nodeDegree.set(vTo, (nodeDegree.get(vTo) || 0) + 1);
+      if (!e.label) continue;
+      if (!incidentLabeledEdges.has(vFrom)) incidentLabeledEdges.set(vFrom, []);
+      if (!incidentLabeledEdges.has(vTo)) incidentLabeledEdges.set(vTo, []);
+      incidentLabeledEdges.get(vFrom)!.push(i);
+      incidentLabeledEdges.get(vTo)!.push(i);
     }
-    for (const [, indices] of sourceLabeledEdges) {
-      if (indices.length < 3) continue;
-      // Sort by target node position for spatially coherent distribution
+    const hubLabelScore = new Map<number, number>();
+    for (const [nodeId, indices] of incidentLabeledEdges) {
+      if ((nodeDegree.get(nodeId) || 0) < HUB_LABEL_EDGE_THRESHOLD || indices.length < 2) continue;
+
       indices.sort((a, b) => {
         const eA = edges[a], eB = edges[b];
-        const vToA = (eA.arrow === '<--' || eA.arrow === '<-.-') ? eA.from : eA.to;
-        const vToB = (eB.arrow === '<--' || eB.arrow === '<-.-') ? eB.from : eB.to;
-        const nA = nodeById.get(vToA), nB = nodeById.get(vToB);
+        const aFrom = (eA.arrow === '<--' || eA.arrow === '<-.-') ? eA.to : eA.from;
+        const aTo = (eA.arrow === '<--' || eA.arrow === '<-.-') ? eA.from : eA.to;
+        const bFrom = (eB.arrow === '<--' || eB.arrow === '<-.-') ? eB.to : eB.from;
+        const bTo = (eB.arrow === '<--' || eB.arrow === '<-.-') ? eB.from : eB.to;
+        const otherA = aFrom === nodeId ? aTo : aFrom;
+        const otherB = bFrom === nodeId ? bTo : bFrom;
+        const nA = nodeById.get(otherA), nB = nodeById.get(otherB);
         if (!nA || !nB) return 0;
         return isVertical ? nA.x - nB.x : nA.y - nB.y;
       });
+
+      const score = indices.length * 100 + (nodeDegree.get(nodeId) || 0);
       for (let k = 0; k < indices.length; k++) {
-        const t = 0.3 + (k / Math.max(1, indices.length - 1)) * 0.4;
-        hubLabelT.set(indices[k], t);
+        const t = HUB_LABEL_T_MIN + (k / Math.max(1, indices.length - 1)) * (HUB_LABEL_T_MAX - HUB_LABEL_T_MIN);
+        if ((hubLabelScore.get(indices[k]) || -1) <= score) {
+          hubLabelScore.set(indices[k], score);
+          hubLabelT.set(indices[k], t);
+        }
       }
     }
   }
@@ -959,9 +979,10 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
 
     // Edge label with collision avoidance
     if (edge.label) {
-      const t = siblings.length > 1
-        ? 0.3 + (idx / Math.max(1, siblings.length - 1)) * 0.4
-        : hubLabelT.get(edgeIndex) ?? 0.5;
+      const t = hubLabelT.get(edgeIndex)
+        ?? (siblings.length > 1
+          ? 0.3 + (idx / Math.max(1, siblings.length - 1)) * 0.4
+          : 0.5);
       let lx = fromPt.x + (toPt.x - fromPt.x) * t;
       let ly = fromPt.y + (toPt.y - fromPt.y) * t;
 
@@ -979,7 +1000,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
       const maxLineLen = Math.max(...wrapLines.map(l => l.length));
       const labelHalfW = (maxLineLen * 7.0 + 12) / 2;
       const labelHalfH = (wrapLines.length * 16 + 6) / 2;
-      const clearance = 8;
+      const clearance = MIN_EDGE_LABEL_NODE_CLEARANCE;
 
       // Clamp label horizontally to stay clear of edge endpoints
       const leftX = Math.min(fromPt.x, toPt.x);
@@ -1074,7 +1095,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
 
   // Multi-pass node-overlap resolution for edge labels
-  const labelClearance = 14;
+  const labelClearance = MIN_EDGE_LABEL_NODE_CLEARANCE;
   for (let nodePass = 0; nodePass < 8; nodePass++) {
     let changed = false;
     for (const label of pendingLabels) {
