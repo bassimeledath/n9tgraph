@@ -85,13 +85,13 @@ const MARGIN_X = 36;
 const MARGIN_TOP = 18;
 const TITLE_HEIGHT = 32;
 const DEFAULT_LAYER_GAP = 24;
-const DEFAULT_TB_LAYER_GAP = 38;
-const DEFAULT_NODE_GAP = 20;
+const DEFAULT_TB_LAYER_GAP = 48;
+const DEFAULT_NODE_GAP = 30;
 
 // Spacing presets: compact, balanced (default), spacious
 function resolveSpacing(preset?: SpacingPreset): { nodeGap: number; layerGap: number; tbLayerGap: number } {
   switch (preset) {
-    case 'compact':  return { nodeGap: 12, layerGap: 18, tbLayerGap: 28 };
+    case 'compact':  return { nodeGap: 18, layerGap: 18, tbLayerGap: 32 };
     case 'spacious': return { nodeGap: 30, layerGap: 50, tbLayerGap: 60 };
     default:         return { nodeGap: DEFAULT_NODE_GAP, layerGap: DEFAULT_LAYER_GAP, tbLayerGap: DEFAULT_TB_LAYER_GAP };
   }
@@ -100,9 +100,9 @@ const ACTOR_W = 42;
 const ACTOR_H = 72;
 const MIN_NODE_W = 72;
 const CIRCLE_R = 32;
-const SUBGRAPH_PAD_X = 16;
+const SUBGRAPH_PAD_X = 24;
 const SUBGRAPH_PAD_TOP = 56;
-const SUBGRAPH_PAD_BOTTOM = 16;
+const SUBGRAPH_PAD_BOTTOM = 24;
 const CODEBLOCK_LINE_H = 18;
 const CODEBLOCK_PAD = 12;
 const MAX_NODE_LABEL_CHARS = 28;  // Wrap labels longer than this
