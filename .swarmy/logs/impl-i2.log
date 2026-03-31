@@ -1,7 +1,0 @@
-All done. Here's what was fixed:
-
-**1. Edge-through-node collision** (`flow-renderer.ts`): The renderer's TB same-row routing had no obstacle avoidance — it drew straight lines between nodes on the same grid row. Added `lineSegmentIntersectsAABB` check + polyline routing that goes above (or below) blocking nodes with 12px clearance. The ORDER CONFIRMATION → INVENTORY DB edge now routes above SEND EMAIL at y=352, clearing its top (y=364) by 12px.
-
-**2. Subgraph label clearance** (`ascii-layout.ts`): Added Step 8a post-processing that checks if non-child nodes intrude into the subgraph label zone (sg.y+13 to sg.y+37). When clearance < 5px, it shifts the subgraph and all nodes below it down. The "Checkout Pipeline" label now has exactly 5px clearance from LOGIN/REGISTER's bottom edge (was 1px).
-
-Build is clean, all 5 benchmarks re-rendered, i2 PNGs saved to Downloads.

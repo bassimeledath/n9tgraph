@@ -1,8 +1,0 @@
-simple-3node: spacing=5 overlap=5 proportions=4 edges=5 quality=5 subtotal=24
-checkout-flow: spacing=4 overlap=4 proportions=3 edges=4 quality=4 subtotal=19
-auth-flow: spacing=4 overlap=4 proportions=3 edges=3 quality=3 subtotal=17
-microservices: spacing=4 overlap=5 proportions=4 edges=4 quality=4 subtotal=21
-data-pipeline: spacing=4 overlap=5 proportions=4 edges=4 quality=4 subtotal=21
-total=102/125
-delta_from_i1=+5
-delta_from_baseline=+29

@@ -6,3 +6,5 @@ dist/
 !examples/output/event-driven-system.png
 !examples/output/theme-accent-composite.png
 .DS_Store
+.dispatch/
+.swarmy/
