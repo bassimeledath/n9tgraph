@@ -354,7 +354,7 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
       let h = Math.max(size.h, isPill ? 34 : 36);
       // Datastores (cylinders) have 10px rims top+bottom; add rim to ensure body has room
       if (n.kind === 'datastore') {
-        const CYLINDER_RIM = 10;
+        const CYLINDER_RIM = 20;
         h = Math.max(h, h + CYLINDER_RIM);
       }
       if (sublabel) {

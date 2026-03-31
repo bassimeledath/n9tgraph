@@ -228,7 +228,8 @@ function renderNode(node: PositionedNode, theme?: string): string {
   if (kind === 'datastore') {
     let svg = cylinder({ x, y, w, h, label: undefined, fill, borderColor: nodeStyle.borderColor, strokeWidth: nodeStyle.strokeWidth });
     const rimY = 10; // must match shapes.ts cylinder ry
-    const bodyCenterY = y + rimY + (h - rimY * 2) / 2;
+    // Center text in safe area below top ellipse curve (y+2*rimY to y+h-rimY)
+    const bodyCenterY = y + rimY * 2 + (h - rimY * 3) / 2;
     if (label) {
       if (needsTextBg) {
         svg += wrappedLabelBg(x + w / 2, bodyCenterY, label, formatLabel, labelOffsetY);

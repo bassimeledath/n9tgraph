@@ -48,7 +48,8 @@ export function cylinder(opts: ShapeOpts): string {
   // bottom ellipse (half, only bottom arc)
   svg += `<path d="M${x},${y + ry + bodyH} A${w / 2},${ry} 0 0,0 ${x + w},${y + ry + bodyH}" fill="${fill}" stroke="${borderColor}" stroke-width="${strokeWidth}"/>`;
   if (label) {
-    svg += labelSvg(x + w / 2, y + h / 2, label);
+    // Center text in safe area below top ellipse curve (y+2*ry to y+h-ry)
+    svg += labelSvg(x + w / 2, y + h / 2 + ry / 2, label);
   }
   return svg;
 }
