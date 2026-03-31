@@ -2,4 +2,7 @@ node_modules/
 dist/
 *.png
 !examples/reference/*.png
+!examples/output/n9tgraph-architecture.png
+!examples/output/event-driven-system.png
+!examples/output/theme-accent-composite.png
 .DS_Store
