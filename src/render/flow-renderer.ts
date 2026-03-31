@@ -563,7 +563,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   const labelBgParts: string[] = [];
   const labelParts: string[] = [];
   // Collect label positions for collision resolution
-  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number; color: string; targetId?: string }[] = [];
+  const pendingLabels: { x: number; y: number; text: string; maxChars: number; halfW: number; halfH: number; color: string; targetId?: string; sourceId?: string }[] = [];
 
   // Group edges by node pair
   const pairEdges = new Map<string, PositionedEdge[]>();
@@ -579,6 +579,36 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
 
   // C: Compute target port distribution slots
   const targetPortSlots = buildTargetPortSlots(edges, nodeById);
+
+  // Hub-aware t-values: spread labels along edge paths for hub nodes (3+ labeled edges)
+  const hubLabelT = new Map<number, number>();
+  {
+    const isVertical = direction === 'TB' || direction === 'BT';
+    const sourceLabeledEdges = new Map<string, number[]>();
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      if (!e.label) continue;
+      const vFrom = (e.arrow === '<--' || e.arrow === '<-.-') ? e.to : e.from;
+      if (!sourceLabeledEdges.has(vFrom)) sourceLabeledEdges.set(vFrom, []);
+      sourceLabeledEdges.get(vFrom)!.push(i);
+    }
+    for (const [, indices] of sourceLabeledEdges) {
+      if (indices.length < 3) continue;
+      // Sort by target node position for spatially coherent distribution
+      indices.sort((a, b) => {
+        const eA = edges[a], eB = edges[b];
+        const vToA = (eA.arrow === '<--' || eA.arrow === '<-.-') ? eA.from : eA.to;
+        const vToB = (eB.arrow === '<--' || eB.arrow === '<-.-') ? eB.from : eB.to;
+        const nA = nodeById.get(vToA), nB = nodeById.get(vToB);
+        if (!nA || !nB) return 0;
+        return isVertical ? nA.x - nB.x : nA.y - nB.y;
+      });
+      for (let k = 0; k < indices.length; k++) {
+        const t = 0.3 + (k / Math.max(1, indices.length - 1)) * 0.4;
+        hubLabelT.set(indices[k], t);
+      }
+    }
+  }
 
   for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
     const edge = edges[edgeIndex];
@@ -675,8 +705,9 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           }));
         }
         if (edge.label) {
-          const lx = (fc.x + tc.x) / 2;
-          let ly = (fromPt.y + toPt.y) / 2;
+          const ht = hubLabelT.get(edgeIndex) ?? 0.5;
+          const lx = fc.x + (tc.x - fc.x) * ht;
+          let ly = fromPt.y + (toPt.y - fromPt.y) * ht;
           // Avoid subgraph label areas for edge labels
           if (subgraphs) {
             const labelZoneH = fontSizes.subtitle + 24;
@@ -688,7 +719,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
           }
           const eLabel = escapeXml(edge.label);
           const dims = labelDims(eLabel, 30);
-          pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+          pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo, sourceId: visualFrom });
         }
       } else if (isBackward) {
         const minNodeX = Math.min(...nodes.map(n => n.x), ...codeblocks.map(c => c.x));
@@ -741,7 +772,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         if (edge.label) {
           const eLabel = escapeXml(edge.label);
           const dims = labelDims(eLabel, 30);
-          pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+          pendingLabels.push({ x: routeX, y: (fc.y + belowTarget) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo, sourceId: visualFrom });
         }
       } else {
         // Same row: standard routing with obstacle avoidance
@@ -791,17 +822,19 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
             ...(edge.arrow === '<-->' ? { markerStart: 'url(#arrowhead-reverse)' } : {}),
           }));
           if (edge.label) {
+            const ht = hubLabelT.get(edgeIndex) ?? 0.5;
             const eLabel = escapeXml(edge.label);
             const dims = labelDims(eLabel, 30);
-            pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: midY, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+            pendingLabels.push({ x: fromPt.x + (toPt.x - fromPt.x) * ht, y: midY, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo, sourceId: visualFrom });
           }
         } else {
           const opts = { from: fromPt, to: toPt, dashed: edge.dashed, color: edgeColor };
           parts.push(edge.arrow === '<-->' ? biEdge(opts) : straightEdge(opts));
           if (edge.label) {
+            const ht = hubLabelT.get(edgeIndex) ?? 0.5;
             const eLabel = escapeXml(edge.label);
             const dims = labelDims(eLabel, 30);
-            pendingLabels.push({ x: (fromPt.x + toPt.x) / 2, y: (fromPt.y + toPt.y) / 2, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo });
+            pendingLabels.push({ x: fromPt.x + (toPt.x - fromPt.x) * ht, y: fromPt.y + (toPt.y - fromPt.y) * ht, text: eLabel, maxChars: 30, halfW: dims.halfW, halfH: dims.halfH, color: edgeColor, targetId: visualTo, sourceId: visualFrom });
           }
         }
       }
@@ -928,7 +961,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
     if (edge.label) {
       const t = siblings.length > 1
         ? 0.3 + (idx / Math.max(1, siblings.length - 1)) * 0.4
-        : 0.5;
+        : hubLabelT.get(edgeIndex) ?? 0.5;
       let lx = fromPt.x + (toPt.x - fromPt.x) * t;
       let ly = fromPt.y + (toPt.y - fromPt.y) * t;
 
@@ -957,7 +990,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         lx = Math.max(minLx, Math.min(maxLx, lx));
       }
 
-      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH, color: edgeColor, targetId: visualTo });
+      pendingLabels.push({ x: lx, y: ly, text: eLabel, maxChars, halfW: labelHalfW, halfH: labelHalfH, color: edgeColor, targetId: visualTo, sourceId: visualFrom });
     }
 
     // Numbered step circle on edge
@@ -1041,8 +1074,8 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
 
   // Multi-pass node-overlap resolution for edge labels
-  const labelClearance = 8;
-  for (let nodePass = 0; nodePass < 5; nodePass++) {
+  const labelClearance = 14;
+  for (let nodePass = 0; nodePass < 8; nodePass++) {
     let changed = false;
     for (const label of pendingLabels) {
       for (const [, node] of nodeById) {
@@ -1050,10 +1083,20 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
         const vOverlap = label.y - label.halfH < node.y + node.h + labelClearance && label.y + label.halfH > node.y - labelClearance;
         if (hOverlap && vOverlap) {
           const nc = nodeCenter(node);
-          if (label.y <= nc.y) {
+          // Push in the direction of least displacement
+          const distUp = Math.abs(label.y - (node.y - label.halfH - labelClearance));
+          const distDown = Math.abs((node.y + node.h + label.halfH + labelClearance) - label.y);
+          const distLeft = Math.abs(label.x - (node.x - label.halfW - labelClearance));
+          const distRight = Math.abs((node.x + node.w + label.halfW + labelClearance) - label.x);
+          const minDist = Math.min(distUp, distDown, distLeft, distRight);
+          if (minDist === distUp) {
             label.y = node.y - label.halfH - labelClearance;
-          } else {
+          } else if (minDist === distDown) {
             label.y = node.y + node.h + label.halfH + labelClearance;
+          } else if (minDist === distLeft) {
+            label.x = node.x - label.halfW - labelClearance;
+          } else {
+            label.x = node.x + node.w + label.halfW + labelClearance;
           }
           changed = true;
         }
@@ -1081,7 +1124,7 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
   }
 
   // Resolve label-label collisions (multi-pass for dense convergence zones)
-  const MIN_LABEL_GAP = 10;
+  const MIN_LABEL_GAP = 14;
   for (let pass = 0; pass < 12; pass++) {
     let changed = false;
     for (let i = 0; i < pendingLabels.length; i++) {
@@ -1102,6 +1145,27 @@ function renderEdges(edges: PositionedEdge[], nodes: PositionedNode[], codeblock
             const shift = overlapX / 2 + 2;
             if (a.x <= b.x) { a.x -= shift; b.x += shift; }
             else { a.x += shift; b.x -= shift; }
+          }
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+
+  // Final node-overlap check: label-label resolution may push labels back into nodes
+  for (let finalPass = 0; finalPass < 3; finalPass++) {
+    let changed = false;
+    for (const label of pendingLabels) {
+      for (const [, node] of nodeById) {
+        const hOverlap = label.x - label.halfW < node.x + node.w + labelClearance && label.x + label.halfW > node.x - labelClearance;
+        const vOverlap = label.y - label.halfH < node.y + node.h + labelClearance && label.y + label.halfH > node.y - labelClearance;
+        if (hOverlap && vOverlap) {
+          const nc = nodeCenter(node);
+          if (label.y <= nc.y) {
+            label.y = node.y - label.halfH - labelClearance;
+          } else {
+            label.y = node.y + node.h + label.halfH + labelClearance;
           }
           changed = true;
         }

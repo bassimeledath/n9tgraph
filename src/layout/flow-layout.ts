@@ -443,6 +443,9 @@ export function layoutFlow(diagram: FlowDiagram): FlowLayout {
     refineCoordinatesLR(ordered, positioned.nodePositions, nodeSizes, allEdges);
   }
 
+  // Step 5c: Post-layout collision resolver — guarantee no same-layer overlap
+  resolveLayerCollisions(ordered, positioned, nodeSizes, direction, NODE_GAP);
+
   // Step 6: Compute subgraph bounding boxes
   const posSubgraphs = computeSubgraphBounds(subgraphs, positioned.nodePositions, nodeSizes);
 
@@ -2139,4 +2142,62 @@ function checkTextCollisions(
   }
 
   return changed;
+}
+
+// ─── Post-layout collision resolver ─────────────────────
+// After Sugiyama + refinement, scan each layer and push nodes apart
+// so no bounding boxes overlap. Single rightward (TB) or downward (LR) cascade.
+
+function resolveLayerCollisions(
+  layers: string[][],
+  positioned: { nodePositions: Map<string, { x: number; y: number }>; width: number; height: number },
+  nodeSizes: Map<string, { w: number; h: number }>,
+  direction: FlowDirection,
+  nodeGap: number,
+): void {
+  const isTB = direction === 'TB';
+
+  for (const layer of layers) {
+    // Sort nodes by primary-axis position (x for TB, y for LR)
+    const sorted = layer
+      .filter(id => positioned.nodePositions.has(id) && nodeSizes.has(id))
+      .sort((a, b) => {
+        const pa = positioned.nodePositions.get(a)!;
+        const pb = positioned.nodePositions.get(b)!;
+        return isTB ? pa.x - pb.x : pa.y - pb.y;
+      });
+
+    // Cascade: push each node so it doesn't overlap the previous
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+      const pPrev = positioned.nodePositions.get(prev)!;
+      const sPrev = nodeSizes.get(prev)!;
+      const pCurr = positioned.nodePositions.get(curr)!;
+
+      if (isTB) {
+        const minX = pPrev.x + sPrev.w + nodeGap;
+        if (pCurr.x < minX) {
+          positioned.nodePositions.set(curr, { x: minX, y: pCurr.y });
+        }
+      } else {
+        const minY = pPrev.y + sPrev.h + nodeGap;
+        if (pCurr.y < minY) {
+          positioned.nodePositions.set(curr, { x: pCurr.x, y: minY });
+        }
+      }
+    }
+  }
+
+  // Recompute canvas dimensions to encompass all nodes
+  let maxX = 0, maxY = 0;
+  for (const [id, pos] of positioned.nodePositions) {
+    const sz = nodeSizes.get(id);
+    if (sz) {
+      maxX = Math.max(maxX, pos.x + sz.w);
+      maxY = Math.max(maxY, pos.y + sz.h);
+    }
+  }
+  positioned.width = Math.max(positioned.width, maxX + MARGIN_X * 2);
+  positioned.height = Math.max(positioned.height, maxY + MARGIN_TOP * 2);
 }
