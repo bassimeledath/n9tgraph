@@ -1,0 +1,15 @@
+type flow
+direction TB
+spacing spacious
+
+actor "Claude" {sublabel: "\"render me a diagram\""}
+service "n9tgraph" {fill: hero, sublabel: "MCP server"}
+component "Render Pipeline" {sublabel: "DSL → layout → PNG"}
+circle "This Diagram"
+
+CLAUDE --> N9TGRAPH : .n9 source
+N9TGRAPH --> RENDER_PIPELINE : parse + layout
+RENDER_PIPELINE --> THIS_DIAGRAM : produces
+THIS_DIAGRAM -.-> CLAUDE
+
+annotation "∞ it's turtles all the way up" near THIS_DIAGRAM side right

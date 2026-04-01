@@ -1,0 +1,20 @@
+type flow
+direction LR
+spacing spacious
+
+actor " " {sublabel: "you"}
+service "Claude" {fill: hero, sublabel: "MCP client"}
+
+subgraph "n9tgraph" {fill: dotgrid}
+  component "Parser"
+  component "Layout"
+  component "Renderer"
+end
+
+external "Output" {sublabel: "this diagram"}
+
+__ --> CLAUDE : prompt
+CLAUDE --> PARSER : n9t.render()
+PARSER --> LAYOUT
+LAYOUT --> RENDERER
+RENDERER --> OUTPUT

@@ -1,0 +1,19 @@
+type flow
+direction LR
+spacing spacious
+
+label ".n9 source"
+service CLI {sublabel: "n9t render"}
+service "MCP Server" {fill: hero}
+component Parse
+component Layout
+component Render
+external "SVG / PNG"
+
+N9_SOURCE --> CLI
+N9_SOURCE --> MCP_SERVER
+CLI --> PARSE
+MCP_SERVER --> PARSE
+PARSE --> LAYOUT
+LAYOUT --> RENDER
+RENDER --> SVG_PNG

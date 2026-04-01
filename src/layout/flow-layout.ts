@@ -2340,6 +2340,113 @@ function resolveLayerCollisions(
     }
   }
 
+  // Center single-node layers: if a layer has exactly 1 node, align it to the
+  // vertical (TB) or horizontal (LR) center of the widest/tallest layer.
+  // This prevents linear chains from stair-stepping diagonally.
+  if (!isTB) {
+    // LR: center each layer's nodes on the same y midpoint
+    let maxLayerHeight = 0;
+    for (const layer of layers) {
+      let minY = Infinity, maxYBottom = 0;
+      for (const id of layer) {
+        const pos = positioned.nodePositions.get(id);
+        const sz = nodeSizes.get(id);
+        if (pos && sz) {
+          minY = Math.min(minY, pos.y);
+          maxYBottom = Math.max(maxYBottom, pos.y + sz.h);
+        }
+      }
+      if (minY < Infinity) maxLayerHeight = Math.max(maxLayerHeight, maxYBottom - minY);
+    }
+    // Find global vertical center from the tallest layer
+    let globalMinY = Infinity, globalMaxY = 0;
+    for (const [id, pos] of positioned.nodePositions) {
+      const sz = nodeSizes.get(id);
+      if (sz) {
+        globalMinY = Math.min(globalMinY, pos.y);
+        globalMaxY = Math.max(globalMaxY, pos.y + sz.h);
+      }
+    }
+    const globalCenterY = (globalMinY + globalMaxY) / 2;
+    // Center each single-node layer
+    for (const layer of layers) {
+      if (layer.length === 1) {
+        const id = layer[0];
+        const pos = positioned.nodePositions.get(id);
+        const sz = nodeSizes.get(id);
+        if (pos && sz) {
+          positioned.nodePositions.set(id, { x: pos.x, y: globalCenterY - sz.h / 2 });
+        }
+      }
+    }
+  } else {
+    // TB: center each single-node layer horizontally
+    let globalMinX = Infinity, globalMaxX = 0;
+    for (const [id, pos] of positioned.nodePositions) {
+      const sz = nodeSizes.get(id);
+      if (sz) {
+        globalMinX = Math.min(globalMinX, pos.x);
+        globalMaxX = Math.max(globalMaxX, pos.x + sz.w);
+      }
+    }
+    const globalCenterX = (globalMinX + globalMaxX) / 2;
+    for (const layer of layers) {
+      if (layer.length === 1) {
+        const id = layer[0];
+        const pos = positioned.nodePositions.get(id);
+        const sz = nodeSizes.get(id);
+        if (pos && sz) {
+          positioned.nodePositions.set(id, { x: globalCenterX - sz.w / 2, y: pos.y });
+        }
+      }
+    }
+  }
+
+  // Cross-layer collision resolution: ensure adjacent layers don't overlap
+  // For TB: layers stack vertically, check y-overlap between layers
+  // For LR: layers stack horizontally, check x-overlap between layers
+  for (let li = 1; li < layers.length; li++) {
+    const prevLayer = layers[li - 1];
+    const currLayer = layers[li];
+
+    // Find max extent of previous layer along the stacking axis
+    let prevMaxExtent = 0;
+    for (const id of prevLayer) {
+      const pos = positioned.nodePositions.get(id);
+      const sz = nodeSizes.get(id);
+      if (pos && sz) {
+        prevMaxExtent = Math.max(prevMaxExtent, isTB ? pos.y + sz.h : pos.x + sz.w);
+      }
+    }
+
+    // Find min position of current layer along the stacking axis
+    let currMinPos = Infinity;
+    for (const id of currLayer) {
+      const pos = positioned.nodePositions.get(id);
+      if (pos) {
+        currMinPos = Math.min(currMinPos, isTB ? pos.y : pos.x);
+      }
+    }
+
+    // If they overlap, push entire current layer (and all subsequent) forward
+    const gap = currMinPos - prevMaxExtent;
+    if (gap < nodeGap) {
+      const shift = nodeGap - gap;
+      for (let lj = li; lj < layers.length; lj++) {
+        for (const id of layers[lj]) {
+          const pos = positioned.nodePositions.get(id);
+          if (pos) {
+            if (isTB) {
+              positioned.nodePositions.set(id, { x: pos.x, y: pos.y + shift });
+            } else {
+              positioned.nodePositions.set(id, { x: pos.x + shift, y: pos.y });
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Recompute canvas dimensions to encompass all nodes
   let maxX = 0, maxY = 0;
   for (const [id, pos] of positioned.nodePositions) {
@@ -2349,6 +2456,7 @@ function resolveLayerCollisions(
       maxY = Math.max(maxY, pos.y + sz.h);
     }
   }
-  positioned.width = Math.max(positioned.width, maxX + MARGIN_X * 2);
-  positioned.height = Math.max(positioned.height, maxY + MARGIN_TOP * 2);
+  // Use actual content bounds (centering may have moved nodes, so don't just max)
+  positioned.width = maxX + MARGIN_X * 2;
+  positioned.height = maxY + MARGIN_TOP * 2;
 }

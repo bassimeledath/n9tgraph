@@ -1,0 +1,16 @@
+type flow
+direction TB
+spacing spacious
+
+actor " " {sublabel: "you"}
+service "Claude" {fill: hero, sublabel: "LLM + MCP client"}
+component "PEG Parser" {sublabel: "DSL → AST"}
+component "Layout Engine" {sublabel: "Sugiyama algorithm"}
+component "SVG Renderer" {sublabel: "themed vectors"}
+component "This Diagram" {fill: dotgrid, sublabel: "yes, this one"}
+
+__ --> CLAUDE : prompt
+CLAUDE --> PEG_PARSER : n9t.render()
+PEG_PARSER --> LAYOUT_ENGINE : parse tree
+LAYOUT_ENGINE --> SVG_RENDERER : coordinates
+SVG_RENDERER --> THIS_DIAGRAM
