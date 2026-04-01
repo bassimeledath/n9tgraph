@@ -8,7 +8,7 @@ Supports **flow**, **sequence**, and **card** diagram types with automatic layou
 
 ### n9tgraph Architecture
 
-<img src="examples/output/n9tgraph-architecture.png" alt="n9tgraph Architecture" width="450">
+<img src="examples/output/n9tgraph-architecture.png" alt="n9tgraph Architecture" width="340">
 
 ### Event-Driven Order System
 
