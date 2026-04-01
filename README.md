@@ -22,7 +22,22 @@ Built-in white theme and custom accent colors via `accentColor`.
 
 ## MCP Server Install
 
-### Claude Code (recommended)
+### Codex
+
+Add to your `codex.json` or MCP config:
+
+```json
+{
+  "mcpServers": {
+    "n9tgraph": {
+      "command": "npx",
+      "args": ["-y", "n9tgraph"]
+    }
+  }
+}
+```
+
+### Claude Code
 
 ```bash
 claude mcp add --scope user --transport stdio n9tgraph -- npx -y n9tgraph
