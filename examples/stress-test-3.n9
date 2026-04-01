@@ -1,0 +1,49 @@
+type flow
+title "Stress Test 3: Event-driven mesh with backward dashed edges"
+direction LR
+spacing balanced
+
+actor "Mobile App" {fill: none}
+actor "Storefront" {fill: none}
+service "Billing API" {fill: hero, sublabel: "Invoice events"}
+
+subgraph "Event Backbone" {fill: crosshatch, badge: "BUS"}
+  service "Event Bus" {fill: hero, sublabel: "Kafka topics"}
+  component "Schema Registry" {shape: pill, fill: dotgrid, sublabel: "Contracts"}
+  datastore "Dead Letter Queue" {fill: crosshatch, sublabel: "Poison events"}
+  EVENT_BUS --> SCHEMA_REGISTRY : validate payload
+end
+
+subgraph "Consumers" {fill: dotgrid, badge: "CONSUMERS", border-style: dashed}
+  component "Notification Worker" {fill: dotgrid, sublabel: "Email + push"}
+  component "Fraud Detector" {fill: dotgrid, sublabel: "Risk scoring"}
+  component "Search Indexer" {fill: crosshatch, sublabel: "Catalog sync"}
+  component "Warehouse Sync" {fill: dotgrid, sublabel: "ERP export"}
+  service "Analytics Stream" {fill: hero, sublabel: "Realtime KPIs"}
+  overflow
+end
+
+external "CRM" {fill: none}
+datastore "Feature Store" {fill: crosshatch}
+
+MOBILE_APP --> EVENT_BUS : CartUpdated
+STOREFRONT --> EVENT_BUS : OrderPlaced
+BILLING_API --> EVENT_BUS : InvoicePaid
+
+EVENT_BUS --> NOTIFICATION_WORKER : fan-out notifications
+EVENT_BUS --> FRAUD_DETECTOR : score transaction
+EVENT_BUS --> SEARCH_INDEXER : update catalog view
+EVENT_BUS --> WAREHOUSE_SYNC : emit fulfillment job
+EVENT_BUS --> ANALYTICS_STREAM : aggregate metrics
+
+FEATURE_STORE --> FRAUD_DETECTOR : serve features
+ANALYTICS_STREAM --> CRM : sync audiences
+EVENT_BUS --> DEAD_LETTER_QUEUE : route failures
+
+EVENT_BUS <-.- NOTIFICATION_WORKER : replay request
+EVENT_BUS <-.- FRAUD_DETECTOR : nack high-risk batch
+EVENT_BUS <-.- SEARCH_INDEXER : backfill demand
+EVENT_BUS <-.- WAREHOUSE_SYNC : requeue export
+
+annotation "Producers stay left, the bus stays centered,\nand consumers line up right for LR pressure." near EVENT_BUS side top
+annotation "Backward dashed edges force right-to-left routing\nwithout collapsing the consumer fan-out." near FRAUD_DETECTOR side bottom

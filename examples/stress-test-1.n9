@@ -1,0 +1,59 @@
+type flow
+title "Stress Test 1: Service mesh fan-out and fan-in"
+direction LR
+spacing balanced
+
+actor "Web Client"
+actor "Ops Console"
+
+service "API Gateway" {fill: hero, emphasis: primary, sublabel: "JWT auth\nRate limits\nTraffic split"}
+
+subgraph "Platform Edge" {fill: dotgrid, badge: "EDGE", border-style: dashed}
+  component "WAF" {shape: pill, fill: dotgrid, sublabel: "Managed rules"}
+  component "Traffic Manager" {shape: pill, fill: dotgrid, sublabel: "Canary routes"}
+  WAF --> TRAFFIC_MANAGER : inspect
+end
+
+subgraph "Service Mesh" {fill: dotgrid, badge: "MESH"}
+  service "Auth Service" {fill: dotgrid, sublabel: "Token exchange"}
+  component "Catalog Service" {fill: dotgrid, sublabel: "Product search"}
+  component "Cart Service" {fill: dotgrid, sublabel: "Session carts"}
+  service "Order Service" {fill: dotgrid, sublabel: "Checkout orchestration"}
+  component "Payment Service" {fill: dotgrid, sublabel: "Capture + refund"}
+  component "Notification Service" {fill: dotgrid, sublabel: "Email + SMS"}
+  overflow
+end
+
+subgraph "State Stores" {fill: crosshatch, badge: "DATA"}
+  datastore "Customer DB" {fill: crosshatch, sublabel: "Profiles + auth"}
+  datastore "Commerce DB" {fill: crosshatch, sublabel: "Orders + carts + catalog"}
+end
+
+external "Stripe" {fill: none}
+external "Twilio" {fill: none}
+
+WEB_CLIENT --> WAF : HTTPS
+OPS_CONSOLE --> WAF : Admin API
+TRAFFIC_MANAGER --> API_GATEWAY : forward
+API_GATEWAY --> AUTH_SERVICE : validate token
+API_GATEWAY --> CATALOG_SERVICE : browse catalog
+API_GATEWAY --> CART_SERVICE : mutate cart
+API_GATEWAY --> ORDER_SERVICE : submit checkout
+API_GATEWAY --> PAYMENT_SERVICE : authorize payment
+API_GATEWAY --> NOTIFICATION_SERVICE : send alert
+
+AUTH_SERVICE --> CUSTOMER_DB : lookup principal
+CATALOG_SERVICE --> COMMERCE_DB : read products
+CART_SERVICE --> COMMERCE_DB : persist cart
+ORDER_SERVICE --> COMMERCE_DB : write order
+PAYMENT_SERVICE --> CUSTOMER_DB : fetch billing profile
+NOTIFICATION_SERVICE --> CUSTOMER_DB : load contact prefs
+
+ORDER_SERVICE --> PAYMENT_SERVICE : request capture
+ORDER_SERVICE --> NOTIFICATION_SERVICE : order confirmed
+PAYMENT_SERVICE --> STRIPE : charge card
+NOTIFICATION_SERVICE --> TWILIO : send sms
+AUTH_SERVICE <-.- TRAFFIC_MANAGER : rotate routing policy
+
+annotation "Gateway fans out into six mesh services,\nthen converges into two shared datastores." near API_GATEWAY side top
+annotation "This fixture stresses wide LR spacing,\nsubgraph packing, and labeled cross-links." near COMMERCE_DB side bottom

@@ -1,0 +1,52 @@
+type flow
+title "Stress Test 2: CI/CD chain across build, test, and deploy"
+direction LR
+spacing balanced
+
+actor "Developer"
+service "Git Provider" {fill: hero, sublabel: "Branch protection\nPR checks"}
+
+subgraph "Build" {fill: dotgrid, badge: "BUILD", border-style: dashed}
+  component "Checkout" {fill: dotgrid, sublabel: "Fetch source"}
+  component "Dependency Restore" {fill: dotgrid, sublabel: "npm ci"}
+  component "Compile" {fill: dotgrid, sublabel: "TypeScript"}
+  component "Image Package" {fill: dotgrid, sublabel: "OCI image"}
+end
+
+subgraph "Test" {fill: dotgrid, badge: "TEST", border-style: dashed}
+  component "Unit Tests" {fill: dotgrid, sublabel: "Fast suite"}
+  component "Integration Tests" {fill: dotgrid, sublabel: "Service contracts"}
+  component "Security Scan" {fill: crosshatch, sublabel: "SAST + deps"}
+end
+
+subgraph "Deploy" {fill: dotgrid, badge: "DEPLOY", border-style: dashed}
+  component "Push Registry" {fill: crosshatch, sublabel: "Promote image"}
+  service "Staging Rollout" {fill: hero, sublabel: "Smoke checks"}
+  service "Canary Release" {fill: hero, sublabel: "10% traffic"}
+  service "Production Release" {fill: hero, sublabel: "Full traffic"}
+end
+
+datastore "Artifact Cache" {fill: crosshatch}
+datastore "Container Registry" {fill: crosshatch}
+external "PagerDuty" {fill: none}
+external "Slack" {fill: none}
+
+DEVELOPER --> GIT_PROVIDER : push branch
+GIT_PROVIDER --> CHECKOUT : trigger workflow
+CHECKOUT --> DEPENDENCY_RESTORE : restore lockfile
+DEPENDENCY_RESTORE --> COMPILE : build app
+DEPENDENCY_RESTORE --> ARTIFACT_CACHE : reuse cache
+COMPILE --> IMAGE_PACKAGE : assemble image
+IMAGE_PACKAGE --> UNIT_TESTS : run fast checks
+UNIT_TESTS --> INTEGRATION_TESTS : promote candidate
+INTEGRATION_TESTS --> SECURITY_SCAN : gate release
+SECURITY_SCAN --> PUSH_REGISTRY : publish signed image
+PUSH_REGISTRY --> CONTAINER_REGISTRY : store artifact
+PUSH_REGISTRY --> STAGING_ROLLOUT : deploy staging
+STAGING_ROLLOUT --> CANARY_RELEASE : start canary
+CANARY_RELEASE --> PRODUCTION_RELEASE : expand traffic
+STAGING_ROLLOUT --> SLACK : post result
+PRODUCTION_RELEASE --> PAGERDUTY : update service status
+
+annotation "Eleven labeled LR edges run through three subgraphs,\nforcing long-chain routing and box alignment." near COMPILE side top
+annotation "Deploy stages stay in-chain while registry,\nSlack, and PagerDuty add side pressure." near CANARY_RELEASE side bottom
