@@ -1,6 +1,6 @@
 # n9tgraph
 
-A beautiful, opinionated diagramming DSL and renderer. Write `.n9` diagram source, get SVG or PNG output.
+A beautiful, opinionated diagramming DSL and renderer. Write `.n9` diagram source, get SVG or PNG output. Inspired by the diagram style in [OpenAI's Codex engineering blog](https://openai.com/index/harness-engineering/).
 
 Supports **flow**, **sequence**, and **card** diagram types with automatic layout, subgraphs, annotations, dark/white themes, and custom accent colors.
 
