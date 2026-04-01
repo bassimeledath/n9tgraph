@@ -3,7 +3,7 @@ direction LR
 spacing spacious
 
 actor " " {sublabel: "you"}
-service "Claude" {fill: hero, sublabel: "MCP client"}
+service "AI Agent" {fill: hero, sublabel: "MCP client"}
 
 subgraph "n9tgraph" {fill: dotgrid}
   component "Parser"
@@ -13,8 +13,8 @@ end
 
 external "Output" {sublabel: "this diagram"}
 
-__ --> CLAUDE : prompt
-CLAUDE --> PARSER : n9t.render()
+__ --> AI_AGENT : prompt
+AI_AGENT --> PARSER : n9t.render()
 PARSER --> LAYOUT
 LAYOUT --> RENDERER
 RENDERER --> OUTPUT
